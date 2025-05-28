@@ -1,43 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_work_app/screens/login_signup/login_screen.dart';
+import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/services/auth_services.dart';
-import 'package:get_work_app/screens/main/home_screen.dart';
-import 'package:get_work_app/screens/initial/splash_screen.dart';
+import 'package:get_work_app/screens/main/user/user_home_screen.dart';
+import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
+import 'package:get_work_app/screens/login_signup/login_screen.dart';
 
-class AuthWrapper extends StatefulWidget {
+class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
-  State<AuthWrapper> createState() => _AuthWrapperState();
-}
-
-class _AuthWrapperState extends State<AuthWrapper> {
-  bool _showSplash = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // Show splash for 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _showSplash = false;
-        });
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_showSplash) {
-      return const SplashScreen();
-    }
-
     return StreamBuilder<User?>(
       stream: AuthService.authStateChanges,
       builder: (context, snapshot) {
-        // Show loading while checking auth state
+        // Show loading while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
@@ -45,14 +22,81 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ),
           );
         }
-        
-        // If user is logged in, show home screen
-        if (snapshot.hasData && snapshot.data != null) {
-          return const HomeScreen();
+
+        // If user is not authenticated, show login screen
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const LoginScreen();
         }
-        
-        // If not logged in, show login screen
-        return const LoginScreen();
+
+        // If user is authenticated, determine which home screen to show
+        return FutureBuilder<String?>(
+          future: AuthService.getCurrentUserRole(),
+          builder: (context, roleSnapshot) {
+            // Show loading while getting user role
+            if (roleSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
+            // Handle error in getting user role
+            if (roleSnapshot.hasError) {
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Error loading user data',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Error: ${roleSnapshot.error}',
+                        style: const TextStyle(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await AuthService.signOut();
+                          if (context.mounted) {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              AppRoutes.login,
+                              (route) => false,
+                            );
+                          }
+                        },
+                        child: const Text('Sign Out'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // Navigate to appropriate home screen based on role
+            String? userRole = roleSnapshot.data;
+            
+            if (userRole == 'employee') {
+              return const EmployeeHomeScreen();
+            } else if (userRole == 'user') {
+              return const UserHomeScreen();
+            } else {
+              // Default to user home if role is null or unrecognized
+              return const UserHomeScreen();
+            }
+          },
+        );
       },
     );
   }

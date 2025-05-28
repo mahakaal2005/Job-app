@@ -14,21 +14,36 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
-  bool _otpSent = false;
-  String _verificationId = '';
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  String _selectedRole = 'user'; // Default role
+
+  @override
+  void initState() {
+    super.initState();
+    // Get email from arguments if passed from login screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String && args.isNotEmpty) {
+        _emailController.text = args;
+      }
+    });
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
-    _otpController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _sendOTP() async {
+  Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -36,78 +51,57 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      await AuthService.sendOTP(
-        phoneNumber: _phoneController.text,
-        onCodeSent: (verificationId) {
-          if (mounted) {
-            setState(() {
-              _verificationId = verificationId;
-              _otpSent = true;
-              _isLoading = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('OTP sent successfully!')),
-            );
-          }
-        },
-        onVerificationFailed: (FirebaseAuthException e) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Verification failed: ${e.message}')),
-            );
-          }
-        },
-        onVerificationCompleted: (PhoneAuthCredential credential) async {
-          try {
-            await AuthService.signInWithCredential(credential);
-            await _updateUserProfile();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Account created successfully!')),
-              );
-            }
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Signup failed: $e')),
-              );
-            }
-          }
-        },
+      // Check if email is already registered
+      bool isRegistered = await AuthService.isEmailRegistered(
+        _emailController.text.trim(),
       );
-    } catch (e) {
-      if (mounted) {
+      if (isRegistered) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Email is already registered. Please login instead.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Create the account
+      UserCredential? userCredential = await AuthService.signUpWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        fullName: _nameController.text.trim(),
+        role: _selectedRole,
+      );
+
+      if (mounted && userCredential != null) {
         setState(() {
           _isLoading = false;
         });
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(
+            content: Text('Welcome ${_nameController.text.trim()}! Account created successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
-      }
-    }
-  }
 
-  Future<void> _verifyOTP() async {
-    if (!_formKey.currentState!.validate()) return;
+        // Small delay to show the success message
+        await Future.delayed(const Duration(milliseconds: 500));
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await AuthService.verifyOTP(
-        verificationId: _verificationId,
-        smsCode: _otpController.text,
-      );
-      await _updateUserProfile();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account created successfully!')),
-        );
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        // Navigate to AuthWrapper which will handle role-based routing
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.home, // This goes to AuthWrapper
+            (route) => false,
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -115,7 +109,10 @@ class _SignupScreenState extends State<SignupScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Authentication failed: ${e.message}')),
+          SnackBar(
+            content: Text(e.message ?? 'Registration failed'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
@@ -124,19 +121,10 @@ class _SignupScreenState extends State<SignupScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
-  Future<void> _updateUserProfile() async {
-    try {
-      await AuthService.updateUserProfile(displayName: _nameController.text);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not update profile: ${e.toString()}')),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -160,7 +148,7 @@ class _SignupScreenState extends State<SignupScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Header
                 const Text(
                   'Create Account',
@@ -171,16 +159,13 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Sign up to get started',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColors.grey,
-                  ),
+                Text(
+                  'Sign up as ${_selectedRole == 'user' ? 'a User' : 'an Employee'} to get started',
+                  style: const TextStyle(fontSize: 16, color: AppColors.grey),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Name input
                 const Text(
                   'Full Name',
@@ -193,132 +178,205 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     hintText: 'Enter your full name',
                     prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Please enter your name';
                     }
-                    if (value.length < 2) {
+                    if (value.trim().length < 2) {
                       return 'Name must be at least 2 characters';
                     }
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 20),
-                
-                // Phone number input
-                if (!_otpSent) ...[
-                  const Text(
-                    'Phone Number',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.black,
+
+                // Email input
+                const Text(
+                  'Email',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter your email',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value.trim())) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Password input
+                const Text(
+                  'Password',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your password',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your phone number',
-                      prefixText: '+91 ',
-                      prefixIcon: Icon(Icons.phone),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter phone number';
-                      }
-                      if (value.length != 10) {
-                        return 'Enter valid 10-digit number';
-                      }
-                      if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                        return 'Please enter only numbers';
-                      }
-                      return null;
-                    },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Confirm Password input
+                const Text(
+                  'Confirm Password',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.black,
                   ),
-                ] else ...[
-                  // OTP input
-                  const Text(
-                    'Enter OTP',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.black,
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    hintText: 'Confirm your password',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sent to +91${_phoneController.text}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.grey,
-                    ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Role selection
+                const Text(
+                  'I am a',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.black,
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _otpController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter 6-digit OTP',
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter OTP';
-                      }
-                      if (value.length != 6) {
-                        return 'OTP must be 6 digits';
-                      }
-                      if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                        return 'OTP must contain only numbers';
-                      }
-                      return null;
-                    },
-                    maxLength: 6,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ],
-                
+                  child: Column(
+                    children: [
+                      RadioListTile<String>(
+                        title: const Text('User'),
+                        subtitle: const Text('Looking for services'),
+                        value: 'user',
+                        groupValue: _selectedRole,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value!;
+                          });
+                        },
+                      ),
+                      const Divider(height: 1),
+                      RadioListTile<String>(
+                        title: const Text('Employee'),
+                        subtitle: const Text('Providing services'),
+                        value: 'employee',
+                        groupValue: _selectedRole,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedRole = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 30),
-                
+
                 // Submit button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading 
-                        ? null 
-                        : (_otpSent ? _verifyOTP : _sendOTP),
+                    onPressed: _isLoading ? null : _signUp,
                     child: _isLoading
                         ? const CircularProgressIndicator(
                             color: AppColors.white,
                           )
-                        : Text(_otpSent ? 'Verify & Sign Up' : 'Send OTP'),
+                        : Text(
+                            'Create ${_selectedRole == 'user' ? 'User' : 'Employee'} Account',
+                            style: const TextStyle(fontSize: 16),
+                          ),
                   ),
                 ),
-                
-                if (_otpSent) ...[
-                  const SizedBox(height: 20),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _otpSent = false;
-                          _otpController.clear();
-                        });
-                      },
-                      child: const Text('Change Phone Number'),
-                    ),
-                  ),
-                ],
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Login link
                 Center(
                   child: TextButton(

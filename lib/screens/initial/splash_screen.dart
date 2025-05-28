@@ -45,13 +45,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _checkUserStatus() async {
+    // Wait for splash animation to complete
     await Future.delayed(const Duration(seconds: 3));
     
     if (mounted) {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        // User is logged in, navigate to AuthWrapper which will handle role-based routing
         Navigator.pushReplacementNamed(context, AppRoutes.home);
       } else {
+        // User is not logged in, navigate to onboarding or login
         Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
       }
     }
@@ -96,14 +99,14 @@ class _SplashScreenState extends State<SplashScreen>
                           ],
                         ),
                         child: const Icon(
-                          Icons.flutter_dash,
+                          Icons.work_outline,
                           size: 60,
                           color: AppColors.primaryBlue,
                         ),
                       ),
                       const SizedBox(height: 30),
                       const Text(
-                        'Welcome',
+                        'GetWork',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -112,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'Your App Name',
+                        'Connect • Work • Grow',
                         style: TextStyle(
                           fontSize: 18,
                           color: AppColors.white,

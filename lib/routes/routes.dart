@@ -3,14 +3,18 @@ import 'package:get_work_app/screens/initial/onboarding_screen.dart';
 import 'package:get_work_app/screens/initial/splash_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
 import 'package:get_work_app/screens/login_signup/signup_screen.dart';
-import 'package:get_work_app/screens/main/home_screen.dart';
+import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
+import 'package:get_work_app/screens/main/user/user_home_screen.dart';
+import 'package:get_work_app/services/auth_wrapper.dart';
 
 class AppRoutes {
   static const String splash = '/';
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String signup = '/signup';
-  static const String home = '/home';
+  static const String home = '/home'; // This will be handled by AuthWrapper
+  static const String userHome = '/user-home';
+  static const String employeeHome = '/employee-home';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -23,7 +27,11 @@ class AppRoutes {
       case signup:
         return MaterialPageRoute(builder: (_) => const SignupScreen());
       case home:
-        return MaterialPageRoute(builder: (_) => const HomeScreen());
+        return MaterialPageRoute(builder: (_) => const AuthWrapper());
+      case userHome:
+        return MaterialPageRoute(builder: (_) => const UserHomeScreen());
+      case employeeHome:
+        return MaterialPageRoute(builder: (_) => const EmployeeHomeScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
