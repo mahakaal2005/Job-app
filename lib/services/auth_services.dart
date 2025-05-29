@@ -43,10 +43,13 @@ class AuthService {
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
+        'onboardingCompleted':
+            role == 'employee', // Employees don't need onboarding
       };
 
       // Save to role-specific collection only
-      String collectionName = role == 'employee' ? 'employees' : 'users_specific';
+      String collectionName =
+          role == 'employee' ? 'employees' : 'users_specific';
       await _firestore
           .collection(collectionName)
           .doc(userCredential.user?.uid)
@@ -56,7 +59,6 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw FirebaseAuthException(
         code: e.code,
-        message: _getErrorMessage(e.code),
       );
     } catch (e) {
       throw Exception('An unexpected error occurred: ${e.toString()}');
@@ -77,7 +79,6 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw FirebaseAuthException(
         code: e.code,
-        message: _getErrorMessage(e.code),
       );
     } catch (e) {
       throw Exception('An unexpected error occurred: ${e.toString()}');
@@ -90,20 +91,19 @@ class AuthService {
       if (currentUser == null) return null;
 
       // Check employees collection first
-      DocumentSnapshot employeeDoc = await _firestore
-          .collection('employees')
-          .doc(currentUser!.uid)
-          .get();
+      DocumentSnapshot employeeDoc =
+          await _firestore.collection('employees').doc(currentUser!.uid).get();
 
       if (employeeDoc.exists) {
         return 'employee';
       }
 
       // Check users_specific collection
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users_specific')
-          .doc(currentUser!.uid)
-          .get();
+      DocumentSnapshot userDoc =
+          await _firestore
+              .collection('users_specific')
+              .doc(currentUser!.uid)
+              .get();
 
       if (userDoc.exists) {
         return 'user';
@@ -122,6 +122,58 @@ class AuthService {
     return await getUserRole();
   }
 
+  // Check if user has completed onboarding
+  static Future<bool> hasUserCompletedOnboarding(String uid) async {
+    try {
+      // Check in users_specific collection
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users_specific').doc(uid).get();
+
+      if (userDoc.exists) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        return userData['onboardingCompleted'] ?? false;
+      }
+
+      return false;
+    } catch (e) {
+      // If there's an error, assume onboarding is not completed
+      return false;
+    }
+  }
+
+  // Complete user onboarding
+  static Future<void> completeUserOnboarding(
+    Map<String, dynamic> onboardingData,
+  ) async {
+    try {
+      if (currentUser == null) {
+        throw Exception('No user is currently logged in');
+      }
+
+      // Get current user data
+      DocumentSnapshot userDoc =
+          await _firestore
+              .collection('users_specific')
+              .doc(currentUser!.uid)
+              .get();
+
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      // Update user document with onboarding data
+      await _firestore
+          .collection('users_specific')
+          .doc(currentUser!.uid)
+          .update({
+            ...onboardingData,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      throw Exception('Failed to complete onboarding: ${e.toString()}');
+    }
+  }
+
   // Create user document if it doesn't exist
   static Future<void> _createUserDocument(String defaultRole) async {
     if (currentUser == null) return;
@@ -133,9 +185,11 @@ class AuthService {
       'role': defaultRole,
       'createdAt': FieldValue.serverTimestamp(),
       'isActive': true,
+      'onboardingCompleted': defaultRole == 'employee',
     };
 
-    String collectionName = defaultRole == 'employee' ? 'employees' : 'users_specific';
+    String collectionName =
+        defaultRole == 'employee' ? 'employees' : 'users_specific';
     await _firestore
         .collection(collectionName)
         .doc(currentUser!.uid)
@@ -149,14 +203,17 @@ class AuthService {
     String? currentRole = await getUserRole();
     if (currentRole == newRole) return; // No change needed
 
-    Map<String, dynamic> userData = await _getUserDataFromRoleCollection() ?? {};
+    Map<String, dynamic> userData =
+        await _getUserDataFromRoleCollection() ?? {};
     userData.addAll({
       'role': newRole,
       'updatedAt': FieldValue.serverTimestamp(),
+      'onboardingCompleted': newRole == 'employee',
     });
 
     // Add to new role-specific collection
-    String newCollection = newRole == 'employee' ? 'employees' : 'users_specific';
+    String newCollection =
+        newRole == 'employee' ? 'employees' : 'users_specific';
     await _firestore
         .collection(newCollection)
         .doc(currentUser!.uid)
@@ -164,11 +221,9 @@ class AuthService {
 
     // Remove from old role-specific collection if it exists
     if (currentRole != null) {
-      String oldCollection = currentRole == 'employee' ? 'employees' : 'users_specific';
-      await _firestore
-          .collection(oldCollection)
-          .doc(currentUser!.uid)
-          .delete();
+      String oldCollection =
+          currentRole == 'employee' ? 'employees' : 'users_specific';
+      await _firestore.collection(oldCollection).doc(currentUser!.uid).delete();
     }
   }
 
@@ -208,7 +263,7 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw FirebaseAuthException(
         code: e.code,
-        message: _getErrorMessage(e.code),
+        
       );
     } catch (e) {
       throw Exception('Failed to send reset email: ${e.toString()}');
@@ -219,28 +274,32 @@ class AuthService {
   static Future<bool> isEmailRegistered(String email) async {
     try {
       // First check Firebase Auth
-      List<String> signInMethods = await _auth.fetchSignInMethodsForEmail(email);
+      List<String> signInMethods = await _auth.fetchSignInMethodsForEmail(
+        email,
+      );
       if (signInMethods.isNotEmpty) {
         return true;
       }
 
       // Also check Firestore collections for existing email
       // This handles cases where the user might exist in Firestore but not in Auth
-      final employeeQuery = await _firestore
-          .collection('employees')
-          .where('email', isEqualTo: email)
-          .limit(1)
-          .get();
+      final employeeQuery =
+          await _firestore
+              .collection('employees')
+              .where('email', isEqualTo: email)
+              .limit(1)
+              .get();
 
       if (employeeQuery.docs.isNotEmpty) {
         return true;
       }
 
-      final userQuery = await _firestore
-          .collection('users_specific')
-          .where('email', isEqualTo: email)
-          .limit(1)
-          .get();
+      final userQuery =
+          await _firestore
+              .collection('users_specific')
+              .where('email', isEqualTo: email)
+              .limit(1)
+              .get();
 
       return userQuery.docs.isNotEmpty;
     } catch (e) {
@@ -260,20 +319,19 @@ class AuthService {
       if (currentUser == null) return null;
 
       // Check employees collection first
-      DocumentSnapshot employeeDoc = await _firestore
-          .collection('employees')
-          .doc(currentUser!.uid)
-          .get();
+      DocumentSnapshot employeeDoc =
+          await _firestore.collection('employees').doc(currentUser!.uid).get();
 
       if (employeeDoc.exists) {
         return employeeDoc.data() as Map<String, dynamic>?;
       }
 
       // Check users_specific collection
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users_specific')
-          .doc(currentUser!.uid)
-          .get();
+      DocumentSnapshot userDoc =
+          await _firestore
+              .collection('users_specific')
+              .doc(currentUser!.uid)
+              .get();
 
       if (userDoc.exists) {
         return userDoc.data() as Map<String, dynamic>?;
@@ -300,7 +358,7 @@ class AuthService {
 
       String? currentRole = await getUserRole();
       Map<String, dynamic>? currentData = await getUserData();
-      
+
       if (currentData == null) {
         throw Exception('User data not found');
       }
@@ -325,7 +383,10 @@ class AuthService {
       }
 
       // Update in current role-specific collection
-      String collectionName = (currentRole ?? 'user') == 'employee' ? 'employees' : 'users_specific';
+      String collectionName =
+          (currentRole ?? 'user') == 'employee'
+              ? 'employees'
+              : 'users_specific';
       await _firestore
           .collection(collectionName)
           .doc(currentUser!.uid)
@@ -338,11 +399,13 @@ class AuthService {
   // Get all users by role (utility method for admin features)
   static Future<List<Map<String, dynamic>>> getUsersByRole(String role) async {
     try {
-      String collectionName = role == 'employee' ? 'employees' : 'users_specific';
-      QuerySnapshot snapshot = await _firestore
-          .collection(collectionName)
-          .where('isActive', isEqualTo: true)
-          .get();
+      String collectionName =
+          role == 'employee' ? 'employees' : 'users_specific';
+      QuerySnapshot snapshot =
+          await _firestore
+              .collection(collectionName)
+              .where('isActive', isEqualTo: true)
+              .get();
 
       return snapshot.docs
           .map((doc) => doc.data() as Map<String, dynamic>)
@@ -353,6 +416,7 @@ class AuthService {
   }
 
   // Deactivate user account
+  // Deactivate user account
   static Future<void> deactivateUser() async {
     try {
       if (currentUser == null) return;
@@ -360,41 +424,17 @@ class AuthService {
       String? role = await getUserRole();
       if (role == null) return;
 
-      String collectionName = role == 'employee' ? 'employees' : 'users_specific';
-      await _firestore
-          .collection(collectionName)
-          .doc(currentUser!.uid)
-          .update({
+      String collectionName =
+          role == 'employee' ? 'employees' : 'users_specific';
+      await _firestore.collection(collectionName).doc(currentUser!.uid).update({
         'isActive': false,
         'deactivatedAt': FieldValue.serverTimestamp(),
       });
+
+      // Sign out the user after deactivation
+      await signOut();
     } catch (e) {
       throw Exception('Failed to deactivate user: ${e.toString()}');
-    }
-  }
-
-  static String _getErrorMessage(String errorCode) {
-    switch (errorCode) {
-      case 'weak-password':
-        return 'The password provided is too weak.';
-      case 'email-already-in-use':
-        return 'An account already exists for this email address.';
-      case 'invalid-email':
-        return 'The email address is not valid.';
-      case 'user-not-found':
-        return 'No user found for this email address.';
-      case 'wrong-password':
-        return 'Wrong password provided.';
-      case 'user-disabled':
-        return 'This user account has been disabled.';
-      case 'too-many-requests':
-        return 'Too many requests. Try again later.';
-      case 'operation-not-allowed':
-        return 'Signing in with Email and Password is not enabled.';
-      case 'invalid-credential':
-        return 'The provided credentials are invalid.';
-      default:
-        return 'An error occurred. Please try again.';
     }
   }
 }

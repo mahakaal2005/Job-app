@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/initial/onboarding_screen.dart';
+import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
-
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -28,12 +29,12 @@ class AuthWrapper extends StatelessWidget {
           return const LoginScreen();
         }
 
-        // If user is authenticated, determine which home screen to show
-        return FutureBuilder<String?>(
-          future: AuthService.getCurrentUserRole(),
-          builder: (context, roleSnapshot) {
-            // Show loading while getting user role
-            if (roleSnapshot.connectionState == ConnectionState.waiting) {
+        // If user is authenticated, determine which screen to show
+        return FutureBuilder<Map<String, dynamic>>(
+          future: _getUserStateAndRole(snapshot.data!.uid),
+          builder: (context, stateSnapshot) {
+            // Show loading while getting user state and role
+            if (stateSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 body: Center(
                   child: CircularProgressIndicator(),
@@ -41,8 +42,8 @@ class AuthWrapper extends StatelessWidget {
               );
             }
 
-            // Handle error in getting user role
-            if (roleSnapshot.hasError) {
+            // Handle error in getting user state and role
+            if (stateSnapshot.hasError) {
               return Scaffold(
                 body: Center(
                   child: Column(
@@ -60,7 +61,7 @@ class AuthWrapper extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Error: ${roleSnapshot.error}',
+                        'Error: ${stateSnapshot.error}',
                         style: const TextStyle(color: Colors.grey),
                         textAlign: TextAlign.center,
                       ),
@@ -84,9 +85,16 @@ class AuthWrapper extends StatelessWidget {
               );
             }
 
+            final userState = stateSnapshot.data!;
+            final String? userRole = userState['role'];
+            final bool onboardingCompleted = userState['onboardingCompleted'] ?? false;
+
+            // If user role is 'user' (student) and onboarding is not completed
+            if (userRole == 'user' && !onboardingCompleted) {
+              return const StudentOnboardingScreen();
+            }
+
             // Navigate to appropriate home screen based on role
-            String? userRole = roleSnapshot.data;
-            
             if (userRole == 'employee') {
               return const EmployeeHomeScreen();
             } else if (userRole == 'user') {
@@ -99,5 +107,28 @@ class AuthWrapper extends StatelessWidget {
         );
       },
     );
+  }
+
+  // Get both user role and onboarding status
+  Future<Map<String, dynamic>> _getUserStateAndRole(String uid) async {
+    try {
+      // Get user role from AuthService
+      final String? userRole = await AuthService.getCurrentUserRole();
+      
+      // If user is a student, check onboarding status
+      bool onboardingCompleted = true; // Default for employees
+      
+      if (userRole == 'user') {
+        // Check if student has completed onboarding
+        onboardingCompleted = await AuthService.hasUserCompletedOnboarding(uid);
+      }
+
+      return {
+        'role': userRole,
+        'onboardingCompleted': onboardingCompleted,
+      };
+    } catch (e) {
+      throw Exception('Failed to get user state and role: ${e.toString()}');
+    }
   }
 }

@@ -4,6 +4,7 @@ import 'package:get_work_app/screens/initial/splash_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
 import 'package:get_work_app/screens/login_signup/signup_screen.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
+import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
 import 'package:get_work_app/services/auth_wrapper.dart';
 
@@ -15,30 +16,79 @@ class AppRoutes {
   static const String home = '/home'; // This will be handled by AuthWrapper
   static const String userHome = '/user-home';
   static const String employeeHome = '/employee-home';
+  static const String studentOnboarding = '/student-onboarding';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
-      case onboarding:
-        return MaterialPageRoute(builder: (_) => const OnboardingScreen());
       case login:
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
+        return MaterialPageRoute(
+          builder: (_) => const LoginScreen(),
+          settings: settings,
+        );
       case signup:
-        return MaterialPageRoute(builder: (_) => const SignupScreen());
+        return MaterialPageRoute(
+          builder: (_) => const SignupScreen(),
+          settings: settings,
+        );
+      case onboarding:
+        return MaterialPageRoute(
+          builder: (_) => const OnboardingScreen(),
+          settings: settings,
+        );
       case home:
         return MaterialPageRoute(builder: (_) => const AuthWrapper());
+
       case userHome:
         return MaterialPageRoute(builder: (_) => const UserHomeScreen());
+
       case employeeHome:
         return MaterialPageRoute(builder: (_) => const EmployeeHomeScreen());
+
+      case studentOnboarding:
+        return MaterialPageRoute(
+          builder: (_) => const StudentOnboardingScreen(),
+          settings: settings,
+        );
+
       default:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            body: Center(
-              child: Text('No route defined for ${settings.name}'),
-            ),
-          ),
+          builder:
+              (_) => Builder(
+                builder:
+                    (context) => Scaffold(
+                      appBar: AppBar(title: const Text('Page Not Found')),
+                      body: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No route defined for ${settings.name}',
+                              style: const TextStyle(fontSize: 18),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  AppRoutes.home,
+                                );
+                              },
+                              child: const Text('Go Home'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+              ),
         );
     }
   }
