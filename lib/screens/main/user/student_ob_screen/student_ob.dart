@@ -3,6 +3,7 @@ import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -29,6 +30,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   final _bioController = TextEditingController();
   final _collegeController = TextEditingController();
   final _ageController = TextEditingController();
+  final _customEducationController = TextEditingController();
+  final _skillsSearchController = TextEditingController();
   
   String _selectedGender = '';
   String _selectedEducationLevel = '';
@@ -36,48 +39,261 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   
   // New fields for student model
   List<String> _selectedSkills = [];
+  List<String> _filteredSkills = [];
   int _weeklyHours = 10;
   List<String> _selectedTimeSlots = [];
   File? _resumeFile;
   String? _resumeFileName;
+  File? _profileImage;
   bool _isUploadingResume = false;
+  bool _isUploadingImage = false;
 
-  // Education level options
+  // Enhanced education level options
   final List<String> _educationLevels = [
-    'High School',
+    'High School Diploma',
+    'High School (In Progress)',
+    'Associate Degree',
     'Bachelor\'s Degree',
+    'Bachelor\'s Degree (In Progress)',
     'Master\'s Degree',
+    'Master\'s Degree (In Progress)',
     'PhD',
+    'PhD (In Progress)',
+    'Professional Certificate',
+    'Trade School',
+    'Bootcamp Graduate',
+    'Self-Taught',
     'Other'
   ];
 
-  // Skills options
-  final List<String> _availableSkills = [
-    'Data Entry',
-    'Content Writing',
-    'Social Media Management',
-    'Graphic Design',
-    'Web Development',
-    'Customer Service',
-    'Translation',
-    'Research',
-    'Virtual Assistant',
-    'Video Editing',
-    'Photography',
-    'Marketing',
-    'Tutoring',
-    'Other'
-  ];
+  // Comprehensive skills list with categories
+  final Map<String, List<String>> _skillsCategories = {
+    'Technology & Programming': [
+      'Web Development',
+      'Mobile App Development',
+      'Frontend Development',
+      'Backend Development',
+      'Full Stack Development',
+      'UI/UX Design',
+      'Database Management',
+      'DevOps',
+      'Cloud Computing',
+      'Python Programming',
+      'JavaScript Programming',
+      'Java Programming',
+      'C++ Programming',
+      'React Development',
+      'Angular Development',
+      'Vue.js Development',
+      'Node.js Development',
+      'Flutter Development',
+      'React Native Development',
+      'WordPress Development',
+      'Shopify Development',
+      'Game Development',
+      'Machine Learning',
+      'Data Science',
+      'Artificial Intelligence',
+      'Cybersecurity',
+      'Network Administration',
+      'Software Testing',
+      'API Development',
+      'Blockchain Development',
+    ],
+    'Design & Creative': [
+      'Graphic Design',
+      'Logo Design',
+      'Web Design',
+      'Mobile UI Design',
+      'Brand Identity Design',
+      'Print Design',
+      'Packaging Design',
+      'Illustration',
+      'Digital Art',
+      'Photo Editing',
+      'Video Editing',
+      'Motion Graphics',
+      'Animation',
+      '3D Modeling',
+      'Photography',
+      'Videography',
+      'Adobe Photoshop',
+      'Adobe Illustrator',
+      'Adobe After Effects',
+      'Adobe Premiere Pro',
+      'Figma',
+      'Sketch',
+      'Canva Design',
+    ],
+    'Writing & Content': [
+      'Content Writing',
+      'Blog Writing',
+      'Technical Writing',
+      'Creative Writing',
+      'Copywriting',
+      'SEO Writing',
+      'Academic Writing',
+      'Grant Writing',
+      'Script Writing',
+      'Email Marketing',
+      'Social Media Content',
+      'Product Descriptions',
+      'Press Releases',
+      'Translation',
+      'Proofreading',
+      'Editing',
+      'Research Writing',
+    ],
+    'Marketing & Sales': [
+      'Digital Marketing',
+      'Social Media Marketing',
+      'Content Marketing',
+      'Email Marketing',
+      'SEO Optimization',
+      'SEM/PPC Advertising',
+      'Google Ads',
+      'Facebook Ads',
+      'Instagram Marketing',
+      'LinkedIn Marketing',
+      'Influencer Marketing',
+      'Affiliate Marketing',
+      'Market Research',
+      'Sales',
+      'Lead Generation',
+      'Customer Acquisition',
+      'Brand Management',
+      'PR & Communications',
+    ],
+    'Business & Finance': [
+      'Business Analysis',
+      'Project Management',
+      'Financial Analysis',
+      'Accounting',
+      'Bookkeeping',
+      'QuickBooks',
+      'Excel Analysis',
+      'Business Plan Writing',
+      'Market Analysis',
+      'Investment Research',
+      'Tax Preparation',
+      'Financial Planning',
+      'Risk Management',
+      'Operations Management',
+      'Supply Chain Management',
+      'HR Management',
+      'Recruitment',
+    ],
+    'Customer Service & Support': [
+      'Customer Service',
+      'Technical Support',
+      'Live Chat Support',
+      'Phone Support',
+      'Email Support',
+      'Help Desk Support',
+      'Customer Success',
+      'Community Management',
+      'Order Processing',
+      'Returns Management',
+      'Complaint Resolution',
+    ],
+    'Data & Analytics': [
+      'Data Entry',
+      'Data Analysis',
+      'Data Visualization',
+      'Excel',
+      'Google Sheets',
+      'SQL',
+      'Power BI',
+      'Tableau',
+      'Google Analytics',
+      'Market Research',
+      'Survey Creation',
+      'Statistical Analysis',
+      'Report Generation',
+    ],
+    'Administrative & Virtual Assistance': [
+      'Virtual Assistant',
+      'Administrative Support',
+      'Calendar Management',
+      'Email Management',
+      'Travel Planning',
+      'Event Planning',
+      'CRM Management',
+      'File Organization',
+      'Online Research',
+      'Lead Research',
+      'Contact List Building',
+      'Document Creation',
+      'Presentation Creation',
+    ],
+    'Education & Training': [
+      'Online Tutoring',
+      'Math Tutoring',
+      'Science Tutoring',
+      'Language Tutoring',
+      'Test Preparation',
+      'Curriculum Development',
+      'Course Creation',
+      'Educational Content',
+      'Training Materials',
+      'E-learning Development',
+      'Academic Coaching',
+      'Language Teaching',
+    ],
+    'Audio & Video': [
+      'Video Editing',
+      'Audio Editing',
+      'Podcast Editing',
+      'Voice Over',
+      'Music Production',
+      'Sound Design',
+      'Video Production',
+      'YouTube Editing',
+      'Live Streaming',
+      'Transcription',
+      'Subtitling',
+    ],
+    'Other Skills': [
+      'Event Management',
+      'Real Estate',
+      'Legal Research',
+      'Medical Writing',
+      'Healthcare Support',
+      'Fitness Coaching',
+      'Nutrition Planning',
+      'Travel Planning',
+      'Personal Shopping',
+      'Pet Care',
+      'Handyman Services',
+      'Cleaning Services',
+    ]
+  };
+
+  // All skills flattened for search
+  List<String> _allSkills = [];
 
   // Time slots options
   final List<String> _availableTimeSlots = [
-    'Morning (6AM - 12PM)',
-    'Afternoon (12PM - 6PM)',
-    'Evening (6PM - 10PM)',
-    'Night (10PM - 2AM)',
-    'Weekend Only',
-    'Flexible'
+    'Early Morning (5AM - 8AM)',
+    'Morning (8AM - 12PM)',
+    'Afternoon (12PM - 5PM)',
+    'Evening (5PM - 9PM)',
+    'Night (9PM - 12AM)',
+    'Late Night (12AM - 5AM)',
+    'Weekdays Only',
+    'Weekends Only',
+    'Flexible Schedule'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Flatten all skills for search functionality
+    _skillsCategories.values.forEach((skills) {
+      _allSkills.addAll(skills);
+    });
+    _filteredSkills = List.from(_allSkills);
+  }
 
   @override
   void dispose() {
@@ -89,8 +305,22 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     _bioController.dispose();
     _collegeController.dispose();
     _ageController.dispose();
+    _customEducationController.dispose();
+    _skillsSearchController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _filterSkills(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredSkills = List.from(_allSkills);
+      } else {
+        _filteredSkills = _allSkills
+            .where((skill) => skill.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
   }
 
   Future<void> _selectDateOfBirth() async {
@@ -128,6 +358,72 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     }
   }
 
+  Future<void> _pickProfileImage() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _getImageFromSource(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Take a Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _getImageFromSource(ImageSource.camera);
+                },
+              ),
+              if (_profileImage != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _profileImage = null;
+                    });
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _getImageFromSource(ImageSource source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _profileImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error selecting image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _pickResume() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -148,6 +444,44 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  Future<Map<String, String>?> _uploadImageToCloudinary(File imageFile) async {
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.cloudinary.com/v1_1/dteigt5oc/upload'),
+      );
+
+      request.fields['upload_preset'] = 'get_work';
+      request.fields['resource_type'] = 'image';
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+      var jsonResponse = json.decode(responseData);
+
+      if (response.statusCode == 200) {
+        return {
+          'url': jsonResponse['secure_url'],
+          'public_id': jsonResponse['public_id'],
+        };
+      } else {
+        throw Exception('Upload failed: ${jsonResponse['message']}');
+      }
+    } catch (e) {
+      throw Exception('Failed to upload image: $e');
+    } finally {
+      setState(() {
+        _isUploadingImage = false;
+      });
     }
   }
 
@@ -192,7 +526,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 3) { // Updated to 4 pages (0-3)
+    if (_currentPage < 4) { // Updated to 5 pages (0-4)
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -217,25 +551,20 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                _selectedDateOfBirth != null &&
                _ageController.text.trim().isNotEmpty;
       case 1:
-        // Fixed validation - check if all address fields are properly filled
-        bool addressValid = _addressController.text.trim().isNotEmpty &&
+        return _addressController.text.trim().isNotEmpty &&
                _cityController.text.trim().isNotEmpty &&
                _stateController.text.trim().isNotEmpty &&
                _zipController.text.trim().isNotEmpty;
-        
-        // Debug print to help identify the issue
-        print('Address validation: ${_addressController.text.trim()}');
-        print('City validation: ${_cityController.text.trim()}');
-        print('State validation: ${_stateController.text.trim()}');
-        print('ZIP validation: ${_zipController.text.trim()}');
-        print('Overall address valid: $addressValid');
-        
-        return addressValid;
       case 2:
-        return _selectedEducationLevel.isNotEmpty &&
-               _collegeController.text.trim().isNotEmpty;
+        bool educationValid = _selectedEducationLevel.isNotEmpty;
+        if (_selectedEducationLevel == 'Other') {
+          educationValid = educationValid && _customEducationController.text.trim().isNotEmpty;
+        }
+        return educationValid && _collegeController.text.trim().isNotEmpty;
       case 3:
         return _selectedSkills.isNotEmpty && _selectedTimeSlots.isNotEmpty;
+      case 4:
+        return true; // Profile photo and resume are optional
       default:
         return false;
     }
@@ -245,7 +574,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     if (!_validateCurrentPage()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill in all required fields'),
+          content: Text('Please complete all required fields'),
           backgroundColor: Colors.red,
         ),
       );
@@ -257,10 +586,22 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     });
 
     try {
+      // Upload profile image if selected
+      Map<String, String>? profileImageData;
+      if (_profileImage != null) {
+        profileImageData = await _uploadImageToCloudinary(_profileImage!);
+      }
+
       // Upload resume if selected
       Map<String, String>? resumeData;
       if (_resumeFile != null) {
         resumeData = await _uploadResumeToCloudinary();
+      }
+
+      // Prepare education level
+      String finalEducationLevel = _selectedEducationLevel;
+      if (_selectedEducationLevel == 'Other' && _customEducationController.text.trim().isNotEmpty) {
+        finalEducationLevel = _customEducationController.text.trim();
       }
 
       // Prepare onboarding data with student model structure
@@ -272,7 +613,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         'city': _cityController.text.trim(),
         'state': _stateController.text.trim(),
         'zipCode': _zipController.text.trim(),
-        'educationLevel': _selectedEducationLevel,
+        'educationLevel': finalEducationLevel,
         'bio': _bioController.text.trim(),
         'onboardingCompleted': true,
         'onboardingCompletedAt': DateTime.now(),
@@ -289,6 +630,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         },
         'totalEarned': 0.0,
         'upiLinked': false,
+        'profileImageUrl': profileImageData?['url'],
+        'profileImageCloudinaryId': profileImageData?['public_id'],
         'resumeUrl': resumeData?['url'],
         'resumeCloudinaryId': resumeData?['public_id'],
         'createdAt': DateTime.now(),
@@ -355,7 +698,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Step ${_currentPage + 1} of 4',
+                    'Step ${_currentPage + 1} of 5',
                     style: const TextStyle(
                       fontSize: 16,
                       color: AppColors.grey,
@@ -364,7 +707,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   const SizedBox(height: 16),
                   // Progress indicator
                   LinearProgressIndicator(
-                    value: (_currentPage + 1) / 4,
+                    value: (_currentPage + 1) / 5,
                     backgroundColor: AppColors.grey.withOpacity(0.3),
                     valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
                   ),
@@ -386,6 +729,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   _buildAddressPage(),
                   _buildEducationPage(),
                   _buildSkillsAndAvailabilityPage(),
+                  _buildProfileAndResumeUploadPage(),
                 ],
               ),
             ),
@@ -407,14 +751,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading
                           ? null
-                          : _currentPage == 3
+                          : _currentPage == 4
                               ? _completeOnboarding
                               : _validateCurrentPage()
                                   ? _nextPage
                                   : null,
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(_currentPage == 3 ? 'Complete Setup' : 'Next'),
+                          : Text(_currentPage == 4 ? 'Complete Setup' : 'Next'),
                     ),
                   ),
                 ],
@@ -455,7 +799,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               hintText: 'Enter your phone number',
               prefixIcon: Icon(Icons.phone),
             ),
-            onChanged: (value) => setState(() {}), // Trigger rebuild for validation
+            onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 20),
 
@@ -591,7 +935,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               hintText: 'Enter your street address',
               prefixIcon: Icon(Icons.home),
             ),
-            onChanged: (value) => setState(() {}), // Trigger rebuild for validation
+            onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 20),
 
@@ -607,7 +951,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               hintText: 'Enter your city',
               prefixIcon: Icon(Icons.location_city),
             ),
-            onChanged: (value) => setState(() {}), // Trigger rebuild for validation
+            onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 20),
 
@@ -629,7 +973,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         hintText: 'State',
                         prefixIcon: Icon(Icons.map),
                       ),
-                      onChanged: (value) => setState(() {}), // Trigger rebuild for validation
+                      onChanged: (value) => setState(() {}),
                     ),
                   ],
                 ),
@@ -651,7 +995,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         hintText: 'ZIP',
                         prefixIcon: Icon(Icons.local_post_office),
                       ),
-                      onChanged: (value) => setState(() {}), // Trigger rebuild for validation
+                      onChanged: (value) => setState(() {}),
                     ),
                   ],
                 ),
@@ -663,7 +1007,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     );
   }
 
-  Widget _buildEducationPage() {
+Widget _buildEducationPage() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -685,50 +1029,62 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(8),
+          DropdownButtonFormField<String>(
+            value: _selectedEducationLevel.isEmpty ? null : _selectedEducationLevel,
+            decoration: const InputDecoration(
+              hintText: 'Select your education level',
+              prefixIcon: Icon(Icons.school),
             ),
-            child: Column(
-              children: _educationLevels.map((level) {
-                return Column(
-                  children: [
-                    RadioListTile<String>(
-                      title: Text(level),
-                      value: level,
-                      groupValue: _selectedEducationLevel,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedEducationLevel = value!;
-                        });
-                      },
-                    ),
-                    if (level != _educationLevels.last) const Divider(height: 1),
-                  ],
-                );
-              }).toList(),
-            ),
+            items: _educationLevels.map((String level) {
+              return DropdownMenuItem<String>(
+                value: level,
+                child: Text(level),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedEducationLevel = newValue!;
+              });
+            },
           ),
+          
+          // Custom education field for "Other"
+          if (_selectedEducationLevel == 'Other') ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Please specify your education level *',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _customEducationController,
+              decoration: const InputDecoration(
+                hintText: 'Enter your education level',
+                prefixIcon: Icon(Icons.edit),
+              ),
+              onChanged: (value) => setState(() {}),
+            ),
+          ],
+          
           const SizedBox(height: 20),
 
-          // College/University
+          // College/Institution
           const Text(
-            'College/University *',
+            'College/Institution *',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _collegeController,
             decoration: const InputDecoration(
-              hintText: 'Enter your college or university name',
-              prefixIcon: Icon(Icons.school),
+              hintText: 'Enter your college or institution name',
+              prefixIcon: Icon(Icons.business),
             ),
             onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 20),
 
-          // Bio (Optional)
+          // Bio
           const Text(
             'Bio (Optional)',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -738,8 +1094,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             controller: _bioController,
             maxLines: 4,
             decoration: const InputDecoration(
-              hintText: 'Tell us a bit about yourself, your interests, or goals...',
-              prefixIcon: Icon(Icons.info_outline),
+              hintText: 'Tell us about yourself, your interests, and what you\'re looking for...',
               alignLabelWithHint: true,
             ),
           ),
@@ -764,181 +1119,394 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Skills
+          // Skills Section
           const Text(
             'Skills *',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Select all skills that apply to you:',
+            'Search and select skills that match your expertise',
             style: TextStyle(fontSize: 14, color: AppColors.grey),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _availableSkills.map((skill) {
-              bool isSelected = _selectedSkills.contains(skill);
-              return FilterChip(
-                label: Text(skill),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedSkills.add(skill);
-                    } else {
-                      _selectedSkills.remove(skill);
-                    }
-                  });
-                },
-                selectedColor: AppColors.primaryBlue.withOpacity(0.2),
-                checkmarkColor: AppColors.primaryBlue,
-              );
-            }).toList(),
+
+          // Skills search bar
+          TextFormField(
+            controller: _skillsSearchController,
+            decoration: const InputDecoration(
+              hintText: 'Search skills...',
+              prefixIcon: Icon(Icons.search),
+            ),
+            onChanged: _filterSkills,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Selected skills
+          if (_selectedSkills.isNotEmpty) ...[
+            const Text(
+              'Selected Skills:',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _selectedSkills.map((skill) {
+                return Chip(
+                  label: Text(skill),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  onDeleted: () {
+                    setState(() {
+                      _selectedSkills.remove(skill);
+                    });
+                  },
+                  backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+                  deleteIconColor: AppColors.primaryBlue,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Available skills
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListView.builder(
+              itemCount: _filteredSkills.length,
+              itemBuilder: (context, index) {
+                final skill = _filteredSkills[index];
+                final isSelected = _selectedSkills.contains(skill);
+                
+                return ListTile(
+                  title: Text(skill),
+                  trailing: isSelected 
+                    ? const Icon(Icons.check, color: AppColors.primaryBlue)
+                    : null,
+                  selected: isSelected,
+                  selectedTileColor: AppColors.primaryBlue.withOpacity(0.1),
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedSkills.remove(skill);
+                      } else {
+                        _selectedSkills.add(skill);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
 
           // Weekly Hours
           const Text(
-            'Weekly Hours Availability *',
+            'Weekly Availability',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Hours per week: $_weeklyHours',
-            style: const TextStyle(fontSize: 14, color: AppColors.grey),
+          const Text(
+            'How many hours per week are you available to work?',
+            style: TextStyle(fontSize: 14, color: AppColors.grey),
           ),
-          Slider(
-            value: _weeklyHours.toDouble(),
-            min: 5,
-            max: 40,
-            divisions: 7,
-            label: '$_weeklyHours hours',
-            onChanged: (value) {
-              setState(() {
-                _weeklyHours = value.round();
-              });
-            },
+          const SizedBox(height: 12),
+          
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: _weeklyHours.toDouble(),
+                  min: 5,
+                  max: 40,
+                  divisions: 7,
+                  label: '$_weeklyHours hours',
+                  onChanged: (value) {
+                    setState(() {
+                      _weeklyHours = value.round();
+                    });
+                  },
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$_weeklyHours hrs/week',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // Preferred Time Slots
+          // Time Slots
           const Text(
             'Preferred Time Slots *',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Select your preferred working hours:',
+            'Select your preferred working hours',
             style: TextStyle(fontSize: 14, color: AppColors.grey),
           ),
           const SizedBox(height: 12),
+          
           Column(
-            children: _availableTimeSlots.map((slot) {
-              bool isSelected = _selectedTimeSlots.contains(slot);
+            children: _availableTimeSlots.map((timeSlot) {
+              final isSelected = _selectedTimeSlots.contains(timeSlot);
               return CheckboxListTile(
-                title: Text(slot),
+                title: Text(timeSlot),
                 value: isSelected,
-                onChanged: (selected) {
+                onChanged: (bool? value) {
                   setState(() {
-                    if (selected == true) {
-                      _selectedTimeSlots.add(slot);
+                    if (value == true) {
+                      _selectedTimeSlots.add(timeSlot);
                     } else {
-                      _selectedTimeSlots.remove(slot);
+                      _selectedTimeSlots.remove(timeSlot);
                     }
                   });
                 },
                 activeColor: AppColors.primaryBlue,
+                controlAffinity: ListTileControlAffinity.leading,
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
 
-          // Resume Upload
+  Widget _buildProfileAndResumeUploadPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Profile & Documents',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Add a profile photo and upload your resume to stand out',
+            style: TextStyle(fontSize: 14, color: AppColors.grey),
+          ),
+          const SizedBox(height: 24),
+
+          // Profile Image Section
+          const Text(
+            'Profile Photo (Optional)',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 12),
+          
+          Center(
+            child: Stack(
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.grey.withOpacity(0.2),
+                    border: Border.all(
+                      color: AppColors.grey.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: _profileImage != null
+                      ? ClipOval(
+                          child: Image.file(
+                            _profileImage!,
+                            fit: BoxFit.cover,
+                            width: 120,
+                            height: 120,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: AppColors.grey,
+                        ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _isUploadingImage ? null : _pickProfileImage,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primaryBlue,
+                      ),
+                      child: _isUploadingImage
+                          ? const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Resume Section
           const Text(
             'Resume (Optional)',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Upload your resume to help employers find you:',
+            'Upload your resume in PDF, DOC, or DOCX format',
             style: TextStyle(fontSize: 14, color: AppColors.grey),
           ),
           const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              children: [
-                if (_resumeFile == null) ...[
-                  const Icon(
-                    Icons.upload_file,
-                    size: 48,
-                    color: AppColors.grey,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'No file selected',
-                    style: TextStyle(color: AppColors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: _pickResume,
-                    icon: const Icon(Icons.attachment),
-                    label: const Text('Choose File'),
-                  ),
-                ] else ...[
+
+          if (_resumeFile != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.primaryBlue.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
                   const Icon(
                     Icons.description,
-                    size: 48,
                     color: AppColors.primaryBlue,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _resumeFileName!,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                    textAlign: TextAlign.center,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _resumeFileName ?? 'Resume',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.black,
+                          ),
+                        ),
+                        Text(
+                          'Tap to change',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton.icon(
-                        onPressed: _pickResume,
-                        icon: const Icon(Icons.edit),
-                        label: const Text('Change'),
-                      ),
-                      const SizedBox(width: 16),
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _resumeFile = null;
-                            _resumeFileName = null;
-                          });
-                        },
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        label: const Text('Remove', style: TextStyle(color: Colors.red)),
-                      ),
-                    ],
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _resumeFile = null;
+                        _resumeFileName = null;
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.primaryBlue,
+                    ),
                   ),
                 ],
-                if (_isUploadingResume) ...[
-                  const SizedBox(height: 16),
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 8),
-                  const Text('Uploading resume...'),
-                ],
-              ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isUploadingResume ? null : _pickResume,
+              icon: _isUploadingResume
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.upload_file),
+              label: Text(_resumeFile == null ? 'Upload Resume' : 'Change Resume'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                side: BorderSide(color: AppColors.primaryBlue.withOpacity(0.5)),
+              ),
             ),
           ),
-          const Text(
-            'Accepted formats: PDF, DOC, DOCX',
-            style: TextStyle(fontSize: 12, color: AppColors.grey),
+          const SizedBox(height: 32),
+
+          // Tips section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.blue.withOpacity(0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: Colors.blue.shade600,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tips for Success',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.blue.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '• A profile photo increases your chances of getting hired by 40%\n'
+                  '• Upload a well-formatted resume to showcase your experience\n'
+                  '• Complete profiles get 3x more job opportunities',
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
