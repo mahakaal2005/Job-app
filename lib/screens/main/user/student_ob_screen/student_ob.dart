@@ -312,16 +312,18 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   }
 
   void _filterSkills(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredSkills = List.from(_allSkills);
-      } else {
-        _filteredSkills = _allSkills
-            .where((skill) => skill.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
-  }
+  setState(() {
+    if (query.isEmpty) {
+      _filteredSkills = [];
+    } else {
+      _filteredSkills = _allSkills
+          .where((skill) => 
+              skill.toLowerCase().contains(query.toLowerCase()) &&
+              !_selectedSkills.contains(skill)) // Exclude already selected skills
+          .toList();
+    }
+  });
+}
 
   Future<void> _selectDateOfBirth() async {
     final DateTime? picked = await showDatePicker(
@@ -1120,33 +1122,65 @@ Widget _buildEducationPage() {
           const SizedBox(height: 20),
 
           // Skills Section
-          const Text(
-            'Skills *',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Search and select skills that match your expertise',
-            style: TextStyle(fontSize: 14, color: AppColors.grey),
-          ),
-          const SizedBox(height: 12),
+          // Replace the skills section in _buildSkillsAndAvailabilityPage() with this:
 
-          // Skills search bar
-          TextFormField(
-            controller: _skillsSearchController,
-            decoration: const InputDecoration(
-              hintText: 'Search skills...',
-              prefixIcon: Icon(Icons.search),
-            ),
-            onChanged: _filterSkills,
-          ),
-          const SizedBox(height: 16),
+// Skills Section
+const Text(
+  'Skills *',
+  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+),
+const SizedBox(height: 8),
+const Text(
+  'Search and select skills that match your expertise',
+  style: TextStyle(fontSize: 14, color: AppColors.grey),
+),
+const SizedBox(height: 12),
 
-          // Selected skills
-          if (_selectedSkills.isNotEmpty) ...[
-            const Text(
-              'Selected Skills:',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+// Skills search bar with selected skills as chips
+Column(
+  children: [
+    // Search field
+    TextFormField(
+      controller: _skillsSearchController,
+      decoration: InputDecoration(
+        hintText: _selectedSkills.isEmpty 
+          ? 'Search skills...'
+          : 'Search more skills...',
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: _skillsSearchController.text.isNotEmpty
+          ? IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () {
+                _skillsSearchController.clear();
+                _filterSkills('');
+              },
+            )
+          : null,
+      ),
+      onChanged: _filterSkills,
+    ),
+    
+    // Selected skills chips inside search area
+    if (_selectedSkills.isNotEmpty) ...[
+      const SizedBox(height: 12),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.primaryBlue.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Selected Skills (${_selectedSkills.length}):',
+              style: const TextStyle(
+                fontSize: 14, 
+                fontWeight: FontWeight.w500,
+                color: AppColors.primaryBlue,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -1154,8 +1188,11 @@ Widget _buildEducationPage() {
               runSpacing: 8,
               children: _selectedSkills.map((skill) {
                 return Chip(
-                  label: Text(skill),
-                  deleteIcon: const Icon(Icons.close, size: 18),
+                  label: Text(
+                    skill,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  deleteIcon: const Icon(Icons.close, size: 16),
                   onDeleted: () {
                     setState(() {
                       _selectedSkills.remove(skill);
@@ -1163,21 +1200,37 @@ Widget _buildEducationPage() {
                   },
                   backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
                   deleteIconColor: AppColors.primaryBlue,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 );
               }).toList(),
             ),
-            const SizedBox(height: 16),
           ],
-
-          // Available skills
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: ListView.builder(
-              itemCount: _filteredSkills.length,
+        ),
+      ),
+    ],
+    
+    // Search results (only show when typing)
+    if (_skillsSearchController.text.isNotEmpty) ...[
+      const SizedBox(height: 12),
+      Container(
+        constraints: const BoxConstraints(maxHeight: 200),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: _filteredSkills.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'No skills found',
+                style: TextStyle(color: AppColors.grey),
+                textAlign: TextAlign.center,
+              ),
+            )
+          : ListView.separated(
+              shrinkWrap: true,
+              itemCount: _filteredSkills.length > 10 ? 10 : _filteredSkills.length, // Limit to 10 results
+              separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final skill = _filteredSkills[index];
                 final isSelected = _selectedSkills.contains(skill);
@@ -1186,22 +1239,22 @@ Widget _buildEducationPage() {
                   title: Text(skill),
                   trailing: isSelected 
                     ? const Icon(Icons.check, color: AppColors.primaryBlue)
-                    : null,
-                  selected: isSelected,
-                  selectedTileColor: AppColors.primaryBlue.withOpacity(0.1),
-                  onTap: () {
+                    : const Icon(Icons.add, color: AppColors.grey),
+                  enabled: !isSelected,
+                  onTap: isSelected ? null : () {
                     setState(() {
-                      if (isSelected) {
-                        _selectedSkills.remove(skill);
-                      } else {
-                        _selectedSkills.add(skill);
-                      }
+                      _selectedSkills.add(skill);
+                      _skillsSearchController.clear();
+                      _filterSkills(''); // Reset filtered skills
                     });
                   },
                 );
               },
             ),
-          ),
+      ),
+    ],
+  ],
+),
           const SizedBox(height: 24),
 
           // Weekly Hours
