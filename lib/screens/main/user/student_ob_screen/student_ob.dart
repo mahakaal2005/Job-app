@@ -7,12 +7,14 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'skills_list.dart';
 
 class StudentOnboardingScreen extends StatefulWidget {
   const StudentOnboardingScreen({super.key});
 
   @override
-  State<StudentOnboardingScreen> createState() => _StudentOnboardingScreenState();
+  State<StudentOnboardingScreen> createState() =>
+      _StudentOnboardingScreenState();
 }
 
 class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
@@ -32,11 +34,11 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   final _ageController = TextEditingController();
   final _customEducationController = TextEditingController();
   final _skillsSearchController = TextEditingController();
-  
+
   String _selectedGender = '';
   String _selectedEducationLevel = '';
   DateTime? _selectedDateOfBirth;
-  
+
   // New fields for student model
   List<String> _selectedSkills = [];
   List<String> _filteredSkills = [];
@@ -63,214 +65,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     'Trade School',
     'Bootcamp Graduate',
     'Self-Taught',
-    'Other'
+    'Other',
   ];
 
-  // Comprehensive skills list with categories
-  final Map<String, List<String>> _skillsCategories = {
-    'Technology & Programming': [
-      'Web Development',
-      'Mobile App Development',
-      'Frontend Development',
-      'Backend Development',
-      'Full Stack Development',
-      'UI/UX Design',
-      'Database Management',
-      'DevOps',
-      'Cloud Computing',
-      'Python Programming',
-      'JavaScript Programming',
-      'Java Programming',
-      'C++ Programming',
-      'React Development',
-      'Angular Development',
-      'Vue.js Development',
-      'Node.js Development',
-      'Flutter Development',
-      'React Native Development',
-      'WordPress Development',
-      'Shopify Development',
-      'Game Development',
-      'Machine Learning',
-      'Data Science',
-      'Artificial Intelligence',
-      'Cybersecurity',
-      'Network Administration',
-      'Software Testing',
-      'API Development',
-      'Blockchain Development',
-    ],
-    'Design & Creative': [
-      'Graphic Design',
-      'Logo Design',
-      'Web Design',
-      'Mobile UI Design',
-      'Brand Identity Design',
-      'Print Design',
-      'Packaging Design',
-      'Illustration',
-      'Digital Art',
-      'Photo Editing',
-      'Video Editing',
-      'Motion Graphics',
-      'Animation',
-      '3D Modeling',
-      'Photography',
-      'Videography',
-      'Adobe Photoshop',
-      'Adobe Illustrator',
-      'Adobe After Effects',
-      'Adobe Premiere Pro',
-      'Figma',
-      'Sketch',
-      'Canva Design',
-    ],
-    'Writing & Content': [
-      'Content Writing',
-      'Blog Writing',
-      'Technical Writing',
-      'Creative Writing',
-      'Copywriting',
-      'SEO Writing',
-      'Academic Writing',
-      'Grant Writing',
-      'Script Writing',
-      'Email Marketing',
-      'Social Media Content',
-      'Product Descriptions',
-      'Press Releases',
-      'Translation',
-      'Proofreading',
-      'Editing',
-      'Research Writing',
-    ],
-    'Marketing & Sales': [
-      'Digital Marketing',
-      'Social Media Marketing',
-      'Content Marketing',
-      'Email Marketing',
-      'SEO Optimization',
-      'SEM/PPC Advertising',
-      'Google Ads',
-      'Facebook Ads',
-      'Instagram Marketing',
-      'LinkedIn Marketing',
-      'Influencer Marketing',
-      'Affiliate Marketing',
-      'Market Research',
-      'Sales',
-      'Lead Generation',
-      'Customer Acquisition',
-      'Brand Management',
-      'PR & Communications',
-    ],
-    'Business & Finance': [
-      'Business Analysis',
-      'Project Management',
-      'Financial Analysis',
-      'Accounting',
-      'Bookkeeping',
-      'QuickBooks',
-      'Excel Analysis',
-      'Business Plan Writing',
-      'Market Analysis',
-      'Investment Research',
-      'Tax Preparation',
-      'Financial Planning',
-      'Risk Management',
-      'Operations Management',
-      'Supply Chain Management',
-      'HR Management',
-      'Recruitment',
-    ],
-    'Customer Service & Support': [
-      'Customer Service',
-      'Technical Support',
-      'Live Chat Support',
-      'Phone Support',
-      'Email Support',
-      'Help Desk Support',
-      'Customer Success',
-      'Community Management',
-      'Order Processing',
-      'Returns Management',
-      'Complaint Resolution',
-    ],
-    'Data & Analytics': [
-      'Data Entry',
-      'Data Analysis',
-      'Data Visualization',
-      'Excel',
-      'Google Sheets',
-      'SQL',
-      'Power BI',
-      'Tableau',
-      'Google Analytics',
-      'Market Research',
-      'Survey Creation',
-      'Statistical Analysis',
-      'Report Generation',
-    ],
-    'Administrative & Virtual Assistance': [
-      'Virtual Assistant',
-      'Administrative Support',
-      'Calendar Management',
-      'Email Management',
-      'Travel Planning',
-      'Event Planning',
-      'CRM Management',
-      'File Organization',
-      'Online Research',
-      'Lead Research',
-      'Contact List Building',
-      'Document Creation',
-      'Presentation Creation',
-    ],
-    'Education & Training': [
-      'Online Tutoring',
-      'Math Tutoring',
-      'Science Tutoring',
-      'Language Tutoring',
-      'Test Preparation',
-      'Curriculum Development',
-      'Course Creation',
-      'Educational Content',
-      'Training Materials',
-      'E-learning Development',
-      'Academic Coaching',
-      'Language Teaching',
-    ],
-    'Audio & Video': [
-      'Video Editing',
-      'Audio Editing',
-      'Podcast Editing',
-      'Voice Over',
-      'Music Production',
-      'Sound Design',
-      'Video Production',
-      'YouTube Editing',
-      'Live Streaming',
-      'Transcription',
-      'Subtitling',
-    ],
-    'Other Skills': [
-      'Event Management',
-      'Real Estate',
-      'Legal Research',
-      'Medical Writing',
-      'Healthcare Support',
-      'Fitness Coaching',
-      'Nutrition Planning',
-      'Travel Planning',
-      'Personal Shopping',
-      'Pet Care',
-      'Handyman Services',
-      'Cleaning Services',
-    ]
-  };
-
   // All skills flattened for search
-  List<String> _allSkills = [];
 
   // Time slots options
   final List<String> _availableTimeSlots = [
@@ -282,17 +80,13 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     'Late Night (12AM - 5AM)',
     'Weekdays Only',
     'Weekends Only',
-    'Flexible Schedule'
+    'Flexible Schedule',
   ];
 
   @override
   void initState() {
     super.initState();
-    // Flatten all skills for search functionality
-    _skillsCategories.values.forEach((skills) {
-      _allSkills.addAll(skills);
-    });
-    _filteredSkills = List.from(_allSkills);
+    _filteredSkills = [];
   }
 
   @override
@@ -316,10 +110,16 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     if (query.isEmpty) {
       _filteredSkills = [];
     } else {
-      _filteredSkills = _allSkills
-          .where((skill) => 
-              skill.toLowerCase().contains(query.toLowerCase()) &&
-              !_selectedSkills.contains(skill)) // Exclude already selected skills
+      final queryLower = query.toLowerCase();
+      _filteredSkills = allSkills
+          .where((skill) =>
+              (skill.toLowerCase().contains(queryLower) ||
+                  skill
+                      .toLowerCase()
+                      .split(' ')
+                      .any((word) => word.startsWith(queryLower))) &&
+              !_selectedSkills.contains(skill))
+          .take(10)
           .toList();
     }
   });
@@ -328,7 +128,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   Future<void> _selectDateOfBirth() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 6570)), // 18 years ago
+      initialDate: DateTime.now().subtract(
+        const Duration(days: 6570),
+      ), // 18 years ago
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -345,14 +147,15 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDateOfBirth) {
       setState(() {
         _selectedDateOfBirth = picked;
         // Calculate age from date of birth
         int age = DateTime.now().year - picked.year;
-        if (DateTime.now().month < picked.month || 
-            (DateTime.now().month == picked.month && DateTime.now().day < picked.day)) {
+        if (DateTime.now().month < picked.month ||
+            (DateTime.now().month == picked.month &&
+                DateTime.now().day < picked.day)) {
           age--;
         }
         _ageController.text = age.toString();
@@ -386,7 +189,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               if (_profileImage != null)
                 ListTile(
                   leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                  title: const Text(
+                    'Remove Photo',
+                    style: TextStyle(color: Colors.red),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     setState(() {
@@ -528,7 +334,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 4) { // Updated to 5 pages (0-4)
+    if (_currentPage < 4) {
+      // Updated to 5 pages (0-4)
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -549,18 +356,20 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     switch (_currentPage) {
       case 0:
         return _phoneController.text.trim().isNotEmpty &&
-               _selectedGender.isNotEmpty &&
-               _selectedDateOfBirth != null &&
-               _ageController.text.trim().isNotEmpty;
+            _selectedGender.isNotEmpty &&
+            _selectedDateOfBirth != null &&
+            _ageController.text.trim().isNotEmpty;
       case 1:
         return _addressController.text.trim().isNotEmpty &&
-               _cityController.text.trim().isNotEmpty &&
-               _stateController.text.trim().isNotEmpty &&
-               _zipController.text.trim().isNotEmpty;
+            _cityController.text.trim().isNotEmpty &&
+            _stateController.text.trim().isNotEmpty &&
+            _zipController.text.trim().isNotEmpty;
       case 2:
         bool educationValid = _selectedEducationLevel.isNotEmpty;
         if (_selectedEducationLevel == 'Other') {
-          educationValid = educationValid && _customEducationController.text.trim().isNotEmpty;
+          educationValid =
+              educationValid &&
+              _customEducationController.text.trim().isNotEmpty;
         }
         return educationValid && _collegeController.text.trim().isNotEmpty;
       case 3:
@@ -602,7 +411,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
 
       // Prepare education level
       String finalEducationLevel = _selectedEducationLevel;
-      if (_selectedEducationLevel == 'Other' && _customEducationController.text.trim().isNotEmpty) {
+      if (_selectedEducationLevel == 'Other' &&
+          _customEducationController.text.trim().isNotEmpty) {
         finalEducationLevel = _customEducationController.text.trim();
       }
 
@@ -619,7 +429,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         'bio': _bioController.text.trim(),
         'onboardingCompleted': true,
         'onboardingCompletedAt': DateTime.now(),
-        
+
         // Student model specific fields
         'userType': 'student',
         'name': '', // This should be filled from user's display name
@@ -701,17 +511,16 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Step ${_currentPage + 1} of 5',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: AppColors.grey),
                   ),
                   const SizedBox(height: 16),
                   // Progress indicator
                   LinearProgressIndicator(
                     value: (_currentPage + 1) / 5,
                     backgroundColor: AppColors.grey.withOpacity(0.3),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primaryBlue,
+                    ),
                   ),
                 ],
               ),
@@ -751,16 +560,22 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   if (_currentPage > 0) const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : _currentPage == 4
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : _currentPage == 4
                               ? _completeOnboarding
                               : _validateCurrentPage()
-                                  ? _nextPage
-                                  : null,
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(_currentPage == 4 ? 'Complete Setup' : 'Next'),
+                              ? _nextPage
+                              : null,
+                      child:
+                          _isLoading
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : Text(
+                                _currentPage == 4 ? 'Complete Setup' : 'Next',
+                              ),
                     ),
                   ),
                 ],
@@ -878,9 +693,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         ? '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}'
                         : 'Select your date of birth',
                     style: TextStyle(
-                      color: _selectedDateOfBirth != null
-                          ? AppColors.black
-                          : AppColors.grey,
+                      color:
+                          _selectedDateOfBirth != null
+                              ? AppColors.black
+                              : AppColors.grey,
                     ),
                   ),
                 ],
@@ -966,7 +782,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   children: [
                     const Text(
                       'State *',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -987,7 +806,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   children: [
                     const Text(
                       'ZIP Code *',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -1009,7 +831,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     );
   }
 
-Widget _buildEducationPage() {
+  Widget _buildEducationPage() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1032,24 +854,28 @@ Widget _buildEducationPage() {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedEducationLevel.isEmpty ? null : _selectedEducationLevel,
+            value:
+                _selectedEducationLevel.isEmpty
+                    ? null
+                    : _selectedEducationLevel,
             decoration: const InputDecoration(
               hintText: 'Select your education level',
               prefixIcon: Icon(Icons.school),
             ),
-            items: _educationLevels.map((String level) {
-              return DropdownMenuItem<String>(
-                value: level,
-                child: Text(level),
-              );
-            }).toList(),
+            items:
+                _educationLevels.map((String level) {
+                  return DropdownMenuItem<String>(
+                    value: level,
+                    child: Text(level),
+                  );
+                }).toList(),
             onChanged: (String? newValue) {
               setState(() {
                 _selectedEducationLevel = newValue!;
               });
             },
           ),
-          
+
           // Custom education field for "Other"
           if (_selectedEducationLevel == 'Other') ...[
             const SizedBox(height: 16),
@@ -1067,7 +893,7 @@ Widget _buildEducationPage() {
               onChanged: (value) => setState(() {}),
             ),
           ],
-          
+
           const SizedBox(height: 20),
 
           // College/Institution
@@ -1096,7 +922,8 @@ Widget _buildEducationPage() {
             controller: _bioController,
             maxLines: 4,
             decoration: const InputDecoration(
-              hintText: 'Tell us about yourself, your interests, and what you\'re looking for...',
+              hintText:
+                  'Tell us about yourself, your interests, and what you\'re looking for...',
               alignLabelWithHint: true,
             ),
           ),
@@ -1122,141 +949,101 @@ Widget _buildEducationPage() {
           const SizedBox(height: 20),
 
           // Skills Section
-          // Replace the skills section in _buildSkillsAndAvailabilityPage() with this:
+          const Text(
+            'Skills *',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Search and select skills that match your expertise',
+            style: TextStyle(fontSize: 14, color: AppColors.grey),
+          ),
+          const SizedBox(height: 12),
 
-// Skills Section
-const Text(
-  'Skills *',
-  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-),
-const SizedBox(height: 8),
-const Text(
-  'Search and select skills that match your expertise',
-  style: TextStyle(fontSize: 14, color: AppColors.grey),
-),
-const SizedBox(height: 12),
-
-// Skills search bar with selected skills as chips
-Column(
-  children: [
-    // Search field
-    TextFormField(
-      controller: _skillsSearchController,
-      decoration: InputDecoration(
-        hintText: _selectedSkills.isEmpty 
-          ? 'Search skills...'
-          : 'Search more skills...',
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: _skillsSearchController.text.isNotEmpty
-          ? IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                _skillsSearchController.clear();
-                _filterSkills('');
-              },
-            )
-          : null,
-      ),
-      onChanged: _filterSkills,
-    ),
-    
-    // Selected skills chips inside search area
-    if (_selectedSkills.isNotEmpty) ...[
-      const SizedBox(height: 12),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.primaryBlue.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Selected Skills (${_selectedSkills.length}):',
-              style: const TextStyle(
-                fontSize: 14, 
-                fontWeight: FontWeight.w500,
-                color: AppColors.primaryBlue,
-              ),
+          // Skills search field
+          TextFormField(
+            controller: _skillsSearchController,
+            decoration: InputDecoration(
+              hintText: 'Search skills...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon:
+                  _skillsSearchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _skillsSearchController.clear();
+                          _filterSkills('');
+                        },
+                      )
+                      : null,
             ),
-            const SizedBox(height: 8),
+            onChanged: _filterSkills,
+          ),
+
+          // Selected skills chips
+          if (_selectedSkills.isNotEmpty) ...[
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _selectedSkills.map((skill) {
-                return Chip(
-                  label: Text(
-                    skill,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  onDeleted: () {
-                    setState(() {
-                      _selectedSkills.remove(skill);
-                    });
-                  },
-                  backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-                  deleteIconColor: AppColors.primaryBlue,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                );
-              }).toList(),
+              children:
+                  _selectedSkills.map((skill) {
+                    return Chip(
+                      label: Text(skill),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () {
+                        setState(() {
+                          _selectedSkills.remove(skill);
+                        });
+                      },
+                      backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+                      deleteIconColor: AppColors.primaryBlue,
+                    );
+                  }).toList(),
             ),
           ],
-        ),
-      ),
-    ],
-    
-    // Search results (only show when typing)
-    if (_skillsSearchController.text.isNotEmpty) ...[
-      const SizedBox(height: 12),
-      Container(
-        constraints: const BoxConstraints(maxHeight: 200),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.grey.withOpacity(0.3)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: _filteredSkills.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'No skills found',
-                style: TextStyle(color: AppColors.grey),
-                textAlign: TextAlign.center,
-              ),
-            )
-          : ListView.separated(
-              shrinkWrap: true,
-              itemCount: _filteredSkills.length > 10 ? 10 : _filteredSkills.length, // Limit to 10 results
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final skill = _filteredSkills[index];
-                final isSelected = _selectedSkills.contains(skill);
-                
-                return ListTile(
-                  title: Text(skill),
-                  trailing: isSelected 
-                    ? const Icon(Icons.check, color: AppColors.primaryBlue)
-                    : const Icon(Icons.add, color: AppColors.grey),
-                  enabled: !isSelected,
-                  onTap: isSelected ? null : () {
-                    setState(() {
-                      _selectedSkills.add(skill);
-                      _skillsSearchController.clear();
-                      _filterSkills(''); // Reset filtered skills
-                    });
-                  },
-                );
-              },
-            ),
-      ),
-    ],
-  ],
-),
-          const SizedBox(height: 24),
 
+          // Search results
+          if (_skillsSearchController.text.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child:
+                  _filteredSkills.isEmpty
+                      ? const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          'No skills found',
+                          style: TextStyle(color: AppColors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                      : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _filteredSkills.length,
+                        itemBuilder: (context, index) {
+                          final skill = _filteredSkills[index];
+                          return ListTile(
+                            title: Text(skill),
+                            onTap: () {
+                              setState(() {
+                                if (!_selectedSkills.contains(skill)) {
+                                  _selectedSkills.add(skill);
+                                }
+                                _skillsSearchController.clear();
+                                _filterSkills('');
+                              });
+                            },
+                          );
+                        },
+                      ),
+            ),
+          ],
+          const SizedBox(height: 24),
           // Weekly Hours
           const Text(
             'Weekly Availability',
@@ -1268,7 +1055,7 @@ Column(
             style: TextStyle(fontSize: 14, color: AppColors.grey),
           ),
           const SizedBox(height: 12),
-          
+
           Row(
             children: [
               Expanded(
@@ -1286,7 +1073,10 @@ Column(
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primaryBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1314,26 +1104,27 @@ Column(
             style: TextStyle(fontSize: 14, color: AppColors.grey),
           ),
           const SizedBox(height: 12),
-          
+
           Column(
-            children: _availableTimeSlots.map((timeSlot) {
-              final isSelected = _selectedTimeSlots.contains(timeSlot);
-              return CheckboxListTile(
-                title: Text(timeSlot),
-                value: isSelected,
-                onChanged: (bool? value) {
-                  setState(() {
-                    if (value == true) {
-                      _selectedTimeSlots.add(timeSlot);
-                    } else {
-                      _selectedTimeSlots.remove(timeSlot);
-                    }
-                  });
-                },
-                activeColor: AppColors.primaryBlue,
-                controlAffinity: ListTileControlAffinity.leading,
-              );
-            }).toList(),
+            children:
+                _availableTimeSlots.map((timeSlot) {
+                  final isSelected = _selectedTimeSlots.contains(timeSlot);
+                  return CheckboxListTile(
+                    title: Text(timeSlot),
+                    value: isSelected,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedTimeSlots.add(timeSlot);
+                        } else {
+                          _selectedTimeSlots.remove(timeSlot);
+                        }
+                      });
+                    },
+                    activeColor: AppColors.primaryBlue,
+                    controlAffinity: ListTileControlAffinity.leading,
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -1367,7 +1158,7 @@ Column(
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 12),
-          
+
           Center(
             child: Stack(
               children: [
@@ -1382,20 +1173,21 @@ Column(
                       width: 2,
                     ),
                   ),
-                  child: _profileImage != null
-                      ? ClipOval(
-                          child: Image.file(
-                            _profileImage!,
-                            fit: BoxFit.cover,
-                            width: 120,
-                            height: 120,
+                  child:
+                      _profileImage != null
+                          ? ClipOval(
+                            child: Image.file(
+                              _profileImage!,
+                              fit: BoxFit.cover,
+                              width: 120,
+                              height: 120,
+                            ),
+                          )
+                          : const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: AppColors.grey,
                           ),
-                        )
-                      : const Icon(
-                          Icons.person,
-                          size: 60,
-                          color: AppColors.grey,
-                        ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -1409,19 +1201,20 @@ Column(
                         shape: BoxShape.circle,
                         color: AppColors.primaryBlue,
                       ),
-                      child: _isUploadingImage
-                          ? const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: CircularProgressIndicator(
+                      child:
+                          _isUploadingImage
+                              ? const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(
+                                Icons.camera_alt,
                                 color: Colors.white,
-                                strokeWidth: 2,
+                                size: 20,
                               ),
-                            )
-                          : const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 20,
-                            ),
                     ),
                   ),
                 ),
@@ -1454,10 +1247,7 @@ Column(
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.description,
-                    color: AppColors.primaryBlue,
-                  ),
+                  const Icon(Icons.description, color: AppColors.primaryBlue),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1472,10 +1262,7 @@ Column(
                         ),
                         Text(
                           'Tap to change',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.grey,
-                          ),
+                          style: TextStyle(fontSize: 12, color: AppColors.grey),
                         ),
                       ],
                     ),
@@ -1487,10 +1274,7 @@ Column(
                         _resumeFileName = null;
                       });
                     },
-                    icon: const Icon(
-                      Icons.close,
-                      color: AppColors.primaryBlue,
-                    ),
+                    icon: const Icon(Icons.close, color: AppColors.primaryBlue),
                   ),
                 ],
               ),
@@ -1502,14 +1286,17 @@ Column(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _isUploadingResume ? null : _pickResume,
-              icon: _isUploadingResume
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.upload_file),
-              label: Text(_resumeFile == null ? 'Upload Resume' : 'Change Resume'),
+              icon:
+                  _isUploadingResume
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.upload_file),
+              label: Text(
+                _resumeFile == null ? 'Upload Resume' : 'Change Resume',
+              ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(color: AppColors.primaryBlue.withOpacity(0.5)),
@@ -1524,9 +1311,7 @@ Column(
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Colors.blue.withOpacity(0.2),
-              ),
+              border: Border.all(color: Colors.blue.withOpacity(0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1553,10 +1338,7 @@ Column(
                   '• A profile photo increases your chances of getting hired by 40%\n'
                   '• Upload a well-formatted resume to showcase your experience\n'
                   '• Complete profiles get 3x more job opportunities',
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
+                  style: TextStyle(fontSize: 14, height: 1.5),
                 ),
               ],
             ),

@@ -473,6 +473,23 @@ class AuthService {
     }
   }
 
+  static Future<Map<String, dynamic>> getProfileData() async {
+  try {
+    if (currentUser == null) throw Exception('No user logged in');
+    
+    final role = await getUserRole();
+    final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+    
+    final doc = await _firestore.collection(collectionName).doc(currentUser!.uid).get();
+    
+    if (!doc.exists) throw Exception('User document not found');
+    
+    return doc.data() as Map<String, dynamic>;
+  } catch (e) {
+    throw Exception('Failed to get profile data: ${e.toString()}');
+  }
+}
+
   // Get user data from role-specific collection
   static Future<Map<String, dynamic>?> getUserData() async {
     return await _getUserDataFromRoleCollection();

@@ -46,7 +46,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const UserHomeScreen());
 
       case employeeHome:
-        return MaterialPageRoute(builder: (_) => const EmployeeHomeScreen());
+        return MaterialPageRoute(builder: (_) => const EmployerHomeScreen());
 
       case studentOnboarding:
         return MaterialPageRoute(

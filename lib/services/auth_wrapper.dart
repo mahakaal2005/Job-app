@@ -104,7 +104,7 @@ class AuthWrapper extends StatelessWidget {
               if (!onboardingCompleted) {
                 return const EmployeeOnboardingScreen();
               } else {
-                return const EmployeeHomeScreen();
+                return const EmployerHomeScreen();
               }
             } else {
               // Default case - redirect to user onboarding if role is not set

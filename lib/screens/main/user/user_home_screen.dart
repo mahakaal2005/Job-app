@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
-import 'package:get_work_app/screens/main/user/chats.dart';
-import 'package:get_work_app/screens/main/user/my_gigs.dart';
-import 'package:get_work_app/screens/main/user/profile.dart';
+import 'package:get_work_app/screens/main/user/user_chats.dart';
+import 'package:get_work_app/screens/main/user/user_my_gigs.dart';
+import 'package:get_work_app/screens/main/user/user_profile.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 
@@ -306,7 +306,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
       child: Column(
         children: [
           Container(
-            height: 200,
+            height: MediaQuery.of(context).size.height * 0.25, // Responsive height
             decoration: BoxDecoration(
               gradient: AppColors.blackGradient,
               borderRadius: BorderRadius.only(topRight: Radius.circular(24)),
@@ -330,25 +330,30 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         ],
                       ),
                       child: CircleAvatar(
-                        radius: 36,
+                        radius: MediaQuery.of(context).size.width * 0.09, // Responsive size
                         backgroundColor: AppColors.primaryBlue,
                         child: Text(
                           _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
                           style: TextStyle(
                             color: AppColors.white,
-                            fontSize: 28,
+                            fontSize: MediaQuery.of(context).size.width * 0.07, // Responsive
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
                     SizedBox(height: 16),
-                    Text(
-                      _userName,
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        _userName,
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: MediaQuery.of(context).size.width * 0.05, // Responsive
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     SizedBox(height: 4),
@@ -363,7 +368,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         'Job Seeker',
                         style: TextStyle(
                           color: AppColors.neonBlue,
-                          fontSize: 12,
+                          fontSize: MediaQuery.of(context).size.width * 0.03, // Responsive
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -453,14 +458,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
           child: Icon(
             icon,
             color: iconColor ?? AppColors.primaryBlue,
-            size: 20,
+            size: MediaQuery.of(context).size.width * 0.05, // Responsive
           ),
         ),
         title: Text(
           title,
           style: TextStyle(
             color: textColor ?? AppColors.black,
-            fontSize: 16,
+            fontSize: MediaQuery.of(context).size.width * 0.04, // Responsive
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -486,7 +491,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
             child: Icon(
               Icons.notifications_outlined,
               color: AppColors.white,
-              size: 22,
+              size: MediaQuery.of(context).size.width * 0.06, // Responsive
             ),
           ),
           if (unreadCount > 0)
@@ -510,7 +515,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                   '$unreadCount',
                   style: TextStyle(
                     color: AppColors.white,
-                    fontSize: 10,
+                    fontSize: MediaQuery.of(context).size.width * 0.025, // Responsive
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -528,7 +533,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
             value: -1,
             enabled: false,
             child: Container(
-              width: 320,
+              width: MediaQuery.of(context).size.width * 0.8, // Responsive width
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -536,7 +541,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                   Text(
                     'Notifications',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: MediaQuery.of(context).size.width * 0.045, // Responsive
                       fontWeight: FontWeight.bold,
                       color: AppColors.black,
                     ),
@@ -552,7 +557,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                       child: Text(
                         'Mark all read',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: MediaQuery.of(context).size.width * 0.03, // Responsive
                           color: AppColors.primaryBlue,
                           fontWeight: FontWeight.w600,
                         ),
@@ -566,7 +571,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
             return PopupMenuItem<int>(
               value: notification['id'],
               child: Container(
-                width: 320,
+                width: MediaQuery.of(context).size.width * 0.8, // Responsive width
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
@@ -579,7 +584,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                       child: Icon(
                         notification['icon'],
                         color: AppColors.primaryBlue,
-                        size: 18,
+                        size: MediaQuery.of(context).size.width * 0.045, // Responsive
                       ),
                     ),
                     SizedBox(width: 12),
@@ -593,7 +598,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                                 child: Text(
                                   notification['title'],
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
                                     fontWeight: notification['isRead'] 
                                         ? FontWeight.w500 
                                         : FontWeight.bold,
@@ -603,8 +608,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                               ),
                               if (!notification['isRead'])
                                 Container(
-                                  width: 8,
-                                  height: 8,
+                                  width: MediaQuery.of(context).size.width * 0.02, // Responsive
+                                  height: MediaQuery.of(context).size.width * 0.02, // Responsive
                                   decoration: BoxDecoration(
                                     color: AppColors.primaryBlue,
                                     shape: BoxShape.circle,
@@ -616,7 +621,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                           Text(
                             notification['message'],
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: MediaQuery.of(context).size.width * 0.032, // Responsive
                               color: AppColors.secondaryText,
                               height: 1.3,
                             ),
@@ -627,7 +632,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                           Text(
                             notification['time'],
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: MediaQuery.of(context).size.width * 0.03, // Responsive
                               color: AppColors.hintText,
                               fontWeight: FontWeight.w500,
                             ),
@@ -663,7 +668,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, 24),
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.05, // Responsive
+            vertical: 16,
+          ),
           child: Column(
             children: [
               Row(
@@ -676,7 +684,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: MediaQuery.of(context).size.width * 0.04, // Responsive
                             color: AppColors.white.withOpacity(0.9),
                             fontWeight: FontWeight.w500,
                           ),
@@ -685,36 +693,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         Text(
                           _userName.split(' ').first,
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: MediaQuery.of(context).size.width * 0.07, // Responsive
                             fontWeight: FontWeight.bold,
                             color: AppColors.white,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 8),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.white.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.trending_up_rounded, 
-                                   color: AppColors.neonBlue, size: 16),
-                              SizedBox(width: 6),
-                              Text(
-                                '${_jobListings.length} new opportunities',
-                                style: TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        
                       ],
                     ),
                   ),
@@ -730,7 +717,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                             color: AppColors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(Icons.menu_rounded, color: AppColors.white, size: 22),
+                          child: Icon(
+                            Icons.menu_rounded, 
+                            color: AppColors.white, 
+                            size: MediaQuery.of(context).size.width * 0.06, // Responsive
+                          ),
                         ),
                       ),
                     ],
@@ -746,23 +737,26 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
 
   Widget _buildFilterChips() {
     return Container(
-      height: 70,
+      height: MediaQuery.of(context).size.height * 0.07, 
       padding: EdgeInsets.symmetric(vertical: 12),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04), 
         itemCount: _filterOptions.length,
         itemBuilder: (context, index) {
           final filter = _filterOptions[index];
           final isSelected = _selectedFilter == filter;
 
           return Padding(
-            padding: EdgeInsets.only(right: 12),
+            padding: EdgeInsets.only(right: MediaQuery.of(context).size.width * 0.03), // Responsive
             child: GestureDetector(
               onTap: () => setState(() => _selectedFilter = filter),
               child: AnimatedContainer(
                 duration: Duration(milliseconds: 200),
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.04, // Responsive
+                  vertical: MediaQuery.of(context).size.height * 0.01, // Responsive
+                ),
                 decoration: BoxDecoration(
                   gradient: isSelected ? AppColors.primaryGradient : null,
                   color: isSelected ? null : AppColors.white,
@@ -786,7 +780,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                   style: TextStyle(
                     color: isSelected ? AppColors.white : AppColors.secondaryText,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
                   ),
                 ),
               ),
@@ -799,7 +793,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
 
   Widget _buildJobCard(Map<String, dynamic> job) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.04, // Responsive
+        vertical: 8,
+      ),
       child: Card(
         elevation: 8,
         shadowColor: AppColors.shadowLight,
@@ -822,7 +819,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.all(20),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04), // Responsive
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -846,10 +843,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         child: Icon(
                           job['logo'],
                           color: job['color'],
-                          size: 24,
+                          size: MediaQuery.of(context).size.width * 0.06, // Responsive
                         ),
                       ),
-                      SizedBox(width: 16),
+                      SizedBox(width: MediaQuery.of(context).size.width * 0.03), // Responsive
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -857,42 +854,48 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                             Text(
                               job['title'],
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: MediaQuery.of(context).size.width * 0.045, // Responsive
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.black,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             SizedBox(height: 4),
                             Text(
                               job['employer'],
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
                                 color: AppColors.secondaryText,
                                 fontWeight: FontWeight.w500,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             SizedBox(height: 8),
                             Row(
                               children: [
                                 Icon(Icons.star_rounded, 
-                                     color: AppColors.warning, size: 16),
+                                     color: AppColors.warning, 
+                                     size: MediaQuery.of(context).size.width * 0.04), // Responsive
                                 SizedBox(width: 4),
                                 Text(
                                   '${job['rating']}',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.black,
                                   ),
                                 ),
                                 SizedBox(width: 12),
                                 Icon(Icons.people_outline_rounded, 
-                                     color: AppColors.hintText, size: 16),
+                                     color: AppColors.hintText, 
+                                     size: MediaQuery.of(context).size.width * 0.04), // Responsive
                                 SizedBox(width: 4),
                                 Text(
                                   '${job['applications']} applied',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
                                     color: AppColors.hintText,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -906,7 +909,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: MediaQuery.of(context).size.width * 0.03, // Responsive
+                              vertical: MediaQuery.of(context).size.height * 0.01, // Responsive
+                            ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
@@ -926,7 +932,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                             child: Text(
                               '₹${job['hourlyRate']}/hr',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.white,
                               ),
@@ -937,12 +943,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.location_on_rounded, 
-                                   size: 14, color: AppColors.hintText),
+                                   size: MediaQuery.of(context).size.width * 0.035, // Responsive
+                                   color: AppColors.hintText),
                               SizedBox(width: 4),
                               Text(
                                 '${job['distance']} km',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: MediaQuery.of(context).size.width * 0.032, // Responsive
                                   color: AppColors.hintText,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -960,7 +967,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                     children: job['badges'].map<Widget>((badge) {
                       final isUrgent = badge.toLowerCase() == 'urgent';
                       return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: MediaQuery.of(context).size.width * 0.03, // Responsive
+                          vertical: MediaQuery.of(context).size.height * 0.01, // Responsive
+                        ),
                         decoration: BoxDecoration(
                           gradient: isUrgent
                               ? LinearGradient(
@@ -983,7 +993,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         child: Text(
                           badge,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: MediaQuery.of(context).size.width * 0.032, // Responsive
                             color: isUrgent ? AppColors.white : job['color'],
                             fontWeight: FontWeight.w600,
                           ),
@@ -995,32 +1005,44 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.access_time_rounded, 
-                               size: 16, color: AppColors.hintText),
-                          SizedBox(width: 6),
-                          Text(
-                            job['duration'],
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.secondaryText,
-                              fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Row(
+                          children: [
+                            Icon(Icons.access_time_rounded, 
+                                 size: MediaQuery.of(context).size.width * 0.04, // Responsive
+                                 color: AppColors.hintText),
+                            SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                job['duration'],
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
+                                  color: AppColors.secondaryText,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 16),
-                          Icon(Icons.work_outline_rounded, 
-                               size: 16, color: AppColors.hintText),
-                          SizedBox(width: 6),
-                          Text(
-                            job['type'],
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.secondaryText,
-                              fontWeight: FontWeight.w600,
+                            SizedBox(width: 16),
+                            Icon(Icons.work_outline_rounded, 
+                                 size: MediaQuery.of(context).size.width * 0.04, // Responsive
+                                 color: AppColors.hintText),
+                            SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                job['type'],
+                                style: TextStyle(
+                                  fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
+                                  color: AppColors.secondaryText,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       Container(
                         decoration: BoxDecoration(
@@ -1042,7 +1064,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                             backgroundColor: Colors.transparent,
                             foregroundColor: AppColors.white,
                             shadowColor: Colors.transparent,
-                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: MediaQuery.of(context).size.width * 0.04, // Responsive
+                              vertical: MediaQuery.of(context).size.height * 0.015, // Responsive
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -1054,11 +1079,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                                 'Apply Now',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
                                 ),
                               ),
                               SizedBox(width: 6),
-                              Icon(Icons.arrow_forward_rounded, size: 16),
+                              Icon(Icons.arrow_forward_rounded, 
+                                   size: MediaQuery.of(context).size.width * 0.04), // Responsive
                             ],
                           ),
                         ),
