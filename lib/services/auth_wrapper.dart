@@ -3,10 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/initial/onboarding_screen.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
+import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
+
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -89,19 +91,24 @@ class AuthWrapper extends StatelessWidget {
             final String? userRole = userState['role'];
             final bool onboardingCompleted = userState['onboardingCompleted'] ?? false;
 
-            // If user role is 'user' (student) and onboarding is not completed
-            if (userRole == 'user' && !onboardingCompleted) {
-              return const StudentOnboardingScreen();
-            }
-
-            // Navigate to appropriate home screen based on role
-            if (userRole == 'employee') {
-              return const EmployeeHomeScreen();
-            } else if (userRole == 'user') {
-              return const UserHomeScreen();
+            // Route based on role and onboarding status
+            if (userRole == 'user') {
+              // User role (student)
+              if (!onboardingCompleted) {
+                return const StudentOnboardingScreen();
+              } else {
+                return const UserHomeScreen();
+              }
+            } else if (userRole == 'employee') {
+              // Employee role
+              if (!onboardingCompleted) {
+                return const EmployeeOnboardingScreen();
+              } else {
+                return const EmployeeHomeScreen();
+              }
             } else {
-              // Default to user home if role is null or unrecognized
-              return const UserHomeScreen();
+              // Default case - redirect to user onboarding if role is not set
+              return const StudentOnboardingScreen();
             }
           },
         );
@@ -115,13 +122,8 @@ class AuthWrapper extends StatelessWidget {
       // Get user role from AuthService
       final String? userRole = await AuthService.getCurrentUserRole();
       
-      // If user is a student, check onboarding status
-      bool onboardingCompleted = true; // Default for employees
-      
-      if (userRole == 'user') {
-        // Check if student has completed onboarding
-        onboardingCompleted = await AuthService.hasUserCompletedOnboarding(uid);
-      }
+      // Check if user has completed onboarding (works for both users and employees)
+      bool onboardingCompleted = await AuthService.hasUserCompletedOnboarding(uid);
 
       return {
         'role': userRole,

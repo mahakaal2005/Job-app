@@ -43,8 +43,7 @@ class AuthService {
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
-        'onboardingCompleted':
-            role == 'employee', // Employees don't need onboarding
+        'onboardingCompleted': false, // Both roles need onboarding now
       };
 
       // Save to role-specific collection only
@@ -125,6 +124,15 @@ class AuthService {
   // Check if user has completed onboarding
   static Future<bool> hasUserCompletedOnboarding(String uid) async {
     try {
+      // Check in employees collection first
+      DocumentSnapshot employeeDoc =
+          await _firestore.collection('employees').doc(uid).get();
+
+      if (employeeDoc.exists) {
+        Map<String, dynamic> employeeData = employeeDoc.data() as Map<String, dynamic>;
+        return employeeData['onboardingCompleted'] ?? false;
+      }
+
       // Check in users_specific collection
       DocumentSnapshot userDoc =
           await _firestore.collection('users_specific').doc(uid).get();
@@ -141,7 +149,13 @@ class AuthService {
     }
   }
 
-  // Complete user onboarding
+  // Check if current user has completed onboarding
+  static Future<bool> hasCurrentUserCompletedOnboarding() async {
+    if (currentUser == null) return false;
+    return await hasUserCompletedOnboarding(currentUser!.uid);
+  }
+
+  // Complete user onboarding (works for both employees and users)
   static Future<void> completeUserOnboarding(
     Map<String, dynamic> onboardingData,
   ) async {
@@ -150,12 +164,16 @@ class AuthService {
         throw Exception('No user is currently logged in');
       }
 
+      String? userRole = await getUserRole();
+      if (userRole == null) {
+        throw Exception('User role not found');
+      }
+
+      String collectionName = userRole == 'employee' ? 'employees' : 'users_specific';
+
       // Get current user data
       DocumentSnapshot userDoc =
-          await _firestore
-              .collection('users_specific')
-              .doc(currentUser!.uid)
-              .get();
+          await _firestore.collection(collectionName).doc(currentUser!.uid).get();
 
       if (!userDoc.exists) {
         throw Exception('User document not found');
@@ -163,14 +181,161 @@ class AuthService {
 
       // Update user document with onboarding data
       await _firestore
-          .collection('users_specific')
+          .collection(collectionName)
           .doc(currentUser!.uid)
           .update({
             ...onboardingData,
+            'onboardingCompleted': true,
             'updatedAt': FieldValue.serverTimestamp(),
           });
     } catch (e) {
       throw Exception('Failed to complete onboarding: ${e.toString()}');
+    }
+  }
+
+  // Complete employee onboarding specifically
+  static Future<void> completeEmployeeOnboarding(
+    Map<String, dynamic> employeeOnboardingData,
+  ) async {
+    try {
+      if (currentUser == null) {
+        throw Exception('No user is currently logged in');
+      }
+
+      String? userRole = await getUserRole();
+      if (userRole != 'employee') {
+        throw Exception('User is not an employee');
+      }
+
+      // Get current employee data
+      DocumentSnapshot employeeDoc =
+          await _firestore.collection('employees').doc(currentUser!.uid).get();
+
+      if (!employeeDoc.exists) {
+        throw Exception('Employee document not found');
+      }
+
+      // Update employee document with onboarding data
+      await _firestore
+          .collection('employees')
+          .doc(currentUser!.uid)
+          .update({
+            ...employeeOnboardingData,
+            'onboardingCompleted': true,
+            'onboardingCompletedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      throw Exception('Failed to complete employee onboarding: ${e.toString()}');
+    }
+  }
+
+  // Get employee company information
+  static Future<Map<String, dynamic>?> getEmployeeCompanyInfo() async {
+    try {
+      if (currentUser == null) return null;
+
+      String? userRole = await getUserRole();
+      if (userRole != 'employee') return null;
+
+      DocumentSnapshot employeeDoc =
+          await _firestore.collection('employees').doc(currentUser!.uid).get();
+
+      if (employeeDoc.exists) {
+        Map<String, dynamic> data = employeeDoc.data() as Map<String, dynamic>;
+        return data['companyInfo'] as Map<String, dynamic>?;
+      }
+
+      return null;
+    } catch (e) {
+      throw Exception('Failed to get company info: ${e.toString()}');
+    }
+  }
+
+  // Get employee work information
+  static Future<Map<String, dynamic>?> getEmployeeWorkInfo() async {
+    try {
+      if (currentUser == null) return null;
+
+      String? userRole = await getUserRole();
+      if (userRole != 'employee') return null;
+
+      DocumentSnapshot employeeDoc =
+          await _firestore.collection('employees').doc(currentUser!.uid).get();
+
+      if (employeeDoc.exists) {
+        Map<String, dynamic> data = employeeDoc.data() as Map<String, dynamic>;
+        return data['employeeInfo'] as Map<String, dynamic>?;
+      }
+
+      return null;
+    } catch (e) {
+      throw Exception('Failed to get work info: ${e.toString()}');
+    }
+  }
+
+  // Update employee company information
+  static Future<void> updateEmployeeCompanyInfo(Map<String, dynamic> companyInfo) async {
+    try {
+      if (currentUser == null) {
+        throw Exception('No user is currently logged in');
+      }
+
+      String? userRole = await getUserRole();
+      if (userRole != 'employee') {
+        throw Exception('User is not an employee');
+      }
+
+      await _firestore
+          .collection('employees')
+          .doc(currentUser!.uid)
+          .update({
+            'companyInfo': companyInfo,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      throw Exception('Failed to update company info: ${e.toString()}');
+    }
+  }
+
+  // Update employee work information
+  static Future<void> updateEmployeeWorkInfo(Map<String, dynamic> workInfo) async {
+    try {
+      if (currentUser == null) {
+        throw Exception('No user is currently logged in');
+      }
+
+      String? userRole = await getUserRole();
+      if (userRole != 'employee') {
+        throw Exception('User is not an employee');
+      }
+
+      await _firestore
+          .collection('employees')
+          .doc(currentUser!.uid)
+          .update({
+            'employeeInfo': workInfo,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+    } catch (e) {
+      throw Exception('Failed to update work info: ${e.toString()}');
+    }
+  }
+
+  // Get employees by company (for company admin features)
+  static Future<List<Map<String, dynamic>>> getEmployeesByCompany(String companyName) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('employees')
+          .where('companyInfo.companyName', isEqualTo: companyName)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to get company employees: ${e.toString()}');
     }
   }
 
@@ -185,7 +350,7 @@ class AuthService {
       'role': defaultRole,
       'createdAt': FieldValue.serverTimestamp(),
       'isActive': true,
-      'onboardingCompleted': defaultRole == 'employee',
+      'onboardingCompleted': false,
     };
 
     String collectionName =
@@ -208,7 +373,7 @@ class AuthService {
     userData.addAll({
       'role': newRole,
       'updatedAt': FieldValue.serverTimestamp(),
-      'onboardingCompleted': newRole == 'employee',
+      'onboardingCompleted': false, // Reset onboarding for role change
     });
 
     // Add to new role-specific collection
@@ -415,7 +580,6 @@ class AuthService {
     }
   }
 
-  // Deactivate user account
   // Deactivate user account
   static Future<void> deactivateUser() async {
     try {

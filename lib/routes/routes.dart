@@ -3,6 +3,7 @@ import 'package:get_work_app/screens/initial/onboarding_screen.dart';
 import 'package:get_work_app/screens/initial/splash_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
 import 'package:get_work_app/screens/login_signup/signup_screen.dart';
+import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String userHome = '/user-home';
   static const String employeeHome = '/employee-home';
   static const String studentOnboarding = '/student-onboarding';
+  static const String employeeOnboarding = '/employee-onboarding';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -49,6 +51,12 @@ class AppRoutes {
       case studentOnboarding:
         return MaterialPageRoute(
           builder: (_) => const StudentOnboardingScreen(),
+          settings: settings,
+        );
+
+      case employeeOnboarding:
+        return MaterialPageRoute(
+          builder: (_) => const EmployeeOnboardingScreen(),
           settings: settings,
         );
 

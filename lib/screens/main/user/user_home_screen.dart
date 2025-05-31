@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/main/user/chats.dart';
+import 'package:get_work_app/screens/main/user/my_gigs.dart';
+import 'package:get_work_app/screens/main/user/profile.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 
@@ -10,57 +13,72 @@ class UserHomeScreen extends StatefulWidget {
   State<UserHomeScreen> createState() => _UserHomeScreenState();
 }
 
-class _UserHomeScreenState extends State<UserHomeScreen> {
+class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStateMixin {
   String _userName = '';
   bool _isLoading = true;
   int _currentIndex = 0;
   String _selectedFilter = 'All';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
-  // Mock job data - replace with actual API calls
+  // Enhanced job data with better visuals
   final List<Map<String, dynamic>> _jobListings = [
     {
       'id': 1,
-      'title': 'Data Entry Assistant',
+      'title': 'Senior Data Analyst',
       'employer': 'TechCorp Solutions',
-      'logo': Icons.business,
-      'hourlyRate': 150,
+      'logo': Icons.analytics_outlined,
+      'hourlyRate': 1500,
       'distance': 2.3,
-      'badges': ['Evening Shift', 'Data Entry'],
-      'type': 'part-time',
-      'duration': '3 hours',
+      'badges': ['Remote', 'Full-time', 'Urgent'],
+      'type': 'full-time',
+      'duration': '8 hours',
+      'color': AppColors.primaryBlue,
+      'rating': 4.8,
+      'applications': 12,
     },
     {
       'id': 2,
-      'title': 'Retail Sales Associate',
-      'employer': 'Fashion Hub',
-      'logo': Icons.shopping_bag,
-      'hourlyRate': 120,
+      'title': 'UI/UX Designer',
+      'employer': 'Creative Studio',
+      'logo': Icons.design_services_outlined,
+      'hourlyRate': 1200,
       'distance': 1.8,
-      'badges': ['Retail', 'Customer Service'],
-      'type': 'part-time',
-      'duration': '4 hours',
+      'badges': ['Design', 'Creative', 'Portfolio'],
+      'type': 'contract',
+      'duration': '6 hours',
+      'color': AppColors.neonBlue,
+      'rating': 4.9,
+      'applications': 8,
     },
     {
       'id': 3,
-      'title': 'Content Writer',
-      'employer': 'Creative Agency',
-      'logo': Icons.edit,
-      'hourlyRate': 200,
+      'title': 'Content Strategist',
+      'employer': 'Digital Agency',
+      'logo': Icons.edit_outlined,
+      'hourlyRate': 1800,
       'distance': 3.1,
-      'badges': ['Writing', 'Remote'],
+      'badges': ['Writing', 'Strategy', 'Remote'],
       'type': 'freelance',
-      'duration': '2 hours',
+      'duration': '4 hours',
+      'color': AppColors.darkBlue,
+      'rating': 4.7,
+      'applications': 15,
     },
     {
       'id': 4,
-      'title': 'Delivery Partner',
-      'employer': 'QuickDelivery',
-      'logo': Icons.delivery_dining,
-      'hourlyRate': 100,
+      'title': 'Mobile Developer',
+      'employer': 'StartupTech',
+      'logo': Icons.phone_android_outlined,
+      'hourlyRate': 2000,
       'distance': 0.8,
-      'badges': ['Delivery', 'Flexible'],
-      'type': 'gig',
-      'duration': '6 hours',
+      'badges': ['Flutter', 'React Native', 'Full-time'],
+      'type': 'permanent',
+      'duration': '8 hours',
+      'color': AppColors.accentBlue,
+      'rating': 4.6,
+      'applications': 25,
     },
   ];
 
@@ -69,13 +87,58 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     'Nearby',
     'High Pay',
     'Remote',
-    'Part-time',
+    'Urgent',
+  ];
+
+  // Enhanced notifications
+  final List<Map<String, dynamic>> _notifications = [
+    {
+      'id': 1,
+      'title': 'Job Match Found!',
+      'message': 'Perfect Senior Data Analyst role matches your profile',
+      'time': '5 min ago',
+      'isRead': false,
+      'type': 'match',
+      'icon': Icons.work_outline,
+    },
+    {
+      'id': 2,
+      'title': 'Application Update',
+      'message': 'Your UI/UX Designer application is under review',
+      'time': '2 hours ago',
+      'isRead': false,
+      'type': 'update',
+      'icon': Icons.update,
+    },
+    {
+      'id': 3,
+      'title': 'Payment Received',
+      'message': 'You received ₹15,000 for completed project',
+      'time': '1 day ago',
+      'isRead': true,
+      'type': 'payment',
+      'icon': Icons.payment,
+    },
   ];
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
     _loadUserData();
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -97,237 +160,580 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
+  Future<void> _showLogoutDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: AppColors.white,
+          elevation: 20,
+          shadowColor: AppColors.shadowMedium,
+          title: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.errorLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.logout_rounded, color: AppColors.error, size: 24),
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Sign Out',
+                style: TextStyle(
+                  color: AppColors.black,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Are you sure you want to sign out of your account?',
+              style: TextStyle(
+                color: AppColors.secondaryText,
+                fontSize: 16,
+                height: 1.4,
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: AppColors.grey,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.white,
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: Text(
+                'Sign Out',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _logout();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _logout() async {
     try {
       await AuthService.signOut();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Logged out successfully')),
+          SnackBar(
+            content: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.check_circle_rounded, color: AppColors.white, size: 20),
+                ),
+                SizedBox(width: 12),
+                Text('Successfully signed out', style: TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: EdgeInsets.all(16),
+          ),
         );
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.login,
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error logging out: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_rounded, color: AppColors.white, size: 20),
+                SizedBox(width: 12),
+                Expanded(child: Text('Error signing out: $e')),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+        );
       }
     }
   }
 
-  Widget _buildGreetingSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        gradient: AppColors.primaryGradient,
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: AppColors.white,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(25),
-          bottomRight: Radius.circular(25),
+          topRight: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
       ),
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      elevation: 16,
+      shadowColor: AppColors.shadowMedium,
+      child: Column(
+        children: [
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              gradient: AppColors.blackGradient,
+              borderRadius: BorderRadius.only(topRight: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Hey ${_userName.split(' ').first}! 👋',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
                         color: AppColors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadowLight,
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 36,
+                        backgroundColor: AppColors.primaryBlue,
+                        child: Text(
+                          _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                          style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Ready for your next gig?',
+                    SizedBox(height: 16),
+                    Text(
+                      _userName,
                       style: TextStyle(
-                        fontSize: 16,
                         color: AppColors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        'Job Seeker',
+                        style: TextStyle(
+                          color: AppColors.neonBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                IconButton(
-                  onPressed: _logout,
-                  icon: const Icon(Icons.logout, color: AppColors.white),
-                  tooltip: 'Logout',
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              children: [
+                _buildDrawerItem(
+                  icon: Icons.person_outline_rounded,
+                  title: 'My Profile',
+                  onTap: () => Navigator.pop(context),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.work_outline_rounded,
+                  title: 'My Applications',
+                  onTap: () => Navigator.pop(context),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.bookmark_outline_rounded,
+                  title: 'Saved Jobs',
+                  onTap: () => Navigator.pop(context),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.payment_rounded,
+                  title: 'Payment History',
+                  onTap: () => Navigator.pop(context),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.analytics_outlined,
+                  title: 'Analytics',
+                  onTap: () => Navigator.pop(context),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.settings_outlined,
+                  title: 'Settings',
+                  onTap: () => Navigator.pop(context),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.help_outline_rounded,
+                  title: 'Help & Support',
+                  onTap: () => Navigator.pop(context),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Divider(color: AppColors.dividerColor, thickness: 1),
+                ),
+                _buildDrawerItem(
+                  icon: Icons.logout_rounded,
+                  title: 'Sign Out',
+                  iconColor: AppColors.error,
+                  textColor: AppColors.error,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showLogoutDialog();
+                  },
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? iconColor,
+    Color? textColor,
+  }) {
     return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _filterOptions.length,
-        itemBuilder: (context, index) {
-          final filter = _filterOptions[index];
-          final isSelected = _selectedFilter == filter;
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: ListTile(
+        leading: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: (iconColor ?? AppColors.primaryBlue).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor ?? AppColors.primaryBlue,
+            size: 20,
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: textColor ?? AppColors.black,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
+    );
+  }
 
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(filter),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedFilter = filter;
-                });
-              },
-              backgroundColor: AppColors.lightGrey,
-              selectedColor: AppColors.lightBlue,
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.primaryBlue : AppColors.grey,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+  Widget _buildNotificationDropdown() {
+    final unreadCount = _notifications.where((n) => !n['isRead']).length;
+    
+    return PopupMenuButton<int>(
+      icon: Stack(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.notifications_outlined,
+              color: AppColors.white,
+              size: 22,
+            ),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: 2,
+              top: 2,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.error.withOpacity(0.4),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
-          );
-        },
+        ],
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      offset: Offset(-100, 50),
+      elevation: 20,
+      shadowColor: AppColors.shadowMedium,
+      itemBuilder: (context) {
+        return [
+          PopupMenuItem<int>(
+            value: -1,
+            enabled: false,
+            child: Container(
+              width: 320,
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Notifications',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.black,
+                    ),
+                  ),
+                  if (unreadCount > 0)
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        backgroundColor: AppColors.lightBlue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text(
+                        'Mark all read',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.primaryBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          ..._notifications.map((notification) {
+            return PopupMenuItem<int>(
+              value: notification['id'],
+              child: Container(
+                width: 320,
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        notification['icon'],
+                        color: AppColors.primaryBlue,
+                        size: 18,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  notification['title'],
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: notification['isRead'] 
+                                        ? FontWeight.w500 
+                                        : FontWeight.bold,
+                                    color: AppColors.black,
+                                  ),
+                                ),
+                              ),
+                              if (!notification['isRead'])
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryBlue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            notification['message'],
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.secondaryText,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            notification['time'],
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.hintText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ];
+      },
     );
   }
 
-  Widget _buildJobCard(Map<String, dynamic> job) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          // Navigate to job detail screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Opening ${job['title']} details')),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
+  Widget _buildModernHeader() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blueShadow,
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.lightBlue,
-                    child: Icon(job['logo'], color: AppColors.primaryBlue),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          job['title'],
-                          style: const TextStyle(
+                          'Welcome back,',
+                          style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.black,
+                            color: AppColors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
+                        SizedBox(height: 4),
                         Text(
-                          job['employer'],
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.grey,
+                          _userName.split(' ').first,
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.white,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.white.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.trending_up_rounded, 
+                                   color: AppColors.neonBlue, size: 16),
+                              SizedBox(width: 6),
+                              Text(
+                                '${_jobListings.length} new opportunities',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  Row(
                     children: [
-                      Text(
-                        '₹${job['hourlyRate']}/hour',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.success,
-                        ),
-                      ),
-                      Text(
-                        '${job['distance']} km away',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.grey,
+                      _buildNotificationDropdown(),
+                      SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.menu_rounded, color: AppColors.white, size: 22),
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children:
-                    job['badges'].map<Widget>((badge) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.lightBlue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          badge,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.primaryBlue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Duration: ${job['duration']}',
-                    style: const TextStyle(fontSize: 14, color: AppColors.grey),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Viewing ${job['title']} details'),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('View Details'),
                   ),
                 ],
               ),
@@ -338,75 +744,531 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  Widget _buildJobsList() {
-    return Expanded(
+  Widget _buildFilterChips() {
+    return Container(
+      height: 70,
+      padding: EdgeInsets.symmetric(vertical: 12),
       child: ListView.builder(
-        padding: const EdgeInsets.only(top: 8, bottom: 16),
-        itemCount: _jobListings.length,
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _filterOptions.length,
         itemBuilder: (context, index) {
-          return _buildJobCard(_jobListings[index]);
+          final filter = _filterOptions[index];
+          final isSelected = _selectedFilter == filter;
+
+          return Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedFilter = filter),
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 200),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: isSelected ? AppColors.primaryGradient : null,
+                  color: isSelected ? null : AppColors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: isSelected ? Colors.transparent : AppColors.dividerColor,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected 
+                          ? AppColors.blueShadow.withOpacity(0.3)
+                          : AppColors.shadowLight,
+                      blurRadius: isSelected ? 8 : 4,
+                      offset: Offset(0, isSelected ? 4 : 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.white : AppColors.secondaryText,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          );
         },
       ),
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
+  Widget _buildJobCard(Map<String, dynamic> job) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Card(
+        elevation: 8,
+        shadowColor: AppColors.shadowLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: InkWell(
+          onTap: () {
+            // Navigate to job detail screen
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.white,
+                  AppColors.white.withOpacity(0.95),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              job['color'].withOpacity(0.1),
+                              job['color'].withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: job['color'].withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          job['logo'],
+                          color: job['color'],
+                          size: 24,
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              job['title'],
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.black,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              job['employer'],
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.secondaryText,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.star_rounded, 
+                                     color: AppColors.warning, size: 16),
+                                SizedBox(width: 4),
+                                Text(
+                                  '${job['rating']}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.black,
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Icon(Icons.people_outline_rounded, 
+                                     color: AppColors.hintText, size: 16),
+                                SizedBox(width: 4),
+                                Text(
+                                  '${job['applications']} applied',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.hintText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.success,
+                                  AppColors.success.withOpacity(0.8),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.success.withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              '₹${job['hourlyRate']}/hr',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.location_on_rounded, 
+                                   size: 14, color: AppColors.hintText),
+                              SizedBox(width: 4),
+                              Text(
+                                '${job['distance']} km',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.hintText,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: job['badges'].map<Widget>((badge) {
+                      final isUrgent = badge.toLowerCase() == 'urgent';
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: isUrgent
+                              ? LinearGradient(
+                                  colors: [AppColors.error, AppColors.error.withOpacity(0.8)],
+                                )
+                              : LinearGradient(
+                                  colors: [
+                                    job['color'].withOpacity(0.1),
+                                    job['color'].withOpacity(0.05),
+                                  ],
+                                ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isUrgent 
+                                ? AppColors.error.withOpacity(0.3)
+                                : job['color'].withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          badge,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isUrgent ? AppColors.white : job['color'],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.access_time_rounded, 
+                               size: 16, color: AppColors.hintText),
+                          SizedBox(width: 6),
+                          Text(
+                            job['duration'],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.secondaryText,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Icon(Icons.work_outline_rounded, 
+                               size: 16, color: AppColors.hintText),
+                          SizedBox(width: 6),
+                          Text(
+                            job['type'],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.secondaryText,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.blueShadow.withOpacity(0.3),
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Navigate to job details
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: AppColors.white,
+                            shadowColor: Colors.transparent,
+                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Apply Now',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.arrow_forward_rounded, size: 16),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-        // Handle navigation based on index
-        switch (index) {
-          case 0:
-            // Already on Jobs screen
-            break;
-          case 1:
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Navigating to My Gigs')),
-            );
-            break;
-          case 2:
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Navigating to Chat')));
-            break;
-          case 3:
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Navigating to Profile')),
-            );
-            break;
-        }
-      },
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: AppColors.grey,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
-        BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'My Gigs'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
+  Widget _buildJobsScreen() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Column(
+        children: [
+          _buildModernHeader(),
+          _buildFilterChips(),
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.only(top: 8, bottom: 20),
+              itemCount: _jobListings.length,
+              itemBuilder: (context, index) {
+                return _buildJobCard(_jobListings[index]);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurrentScreen() {
+    switch (_currentIndex) {
+      case 0:
+        return _buildJobsScreen();
+      case 1:
+        return MyGigsScreen();
+      case 2:
+        return ChatScreen();
+      case 3:
+        return ProfileScreen();
+      default:
+        return _buildJobsScreen();
+    }
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowMedium,
+            blurRadius: 20,
+            offset: Offset(0, -8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.white,
+          selectedItemColor: AppColors.primaryBlue,
+          unselectedItemColor: AppColors.hintText,
+          selectedLabelStyle: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 11,
+          ),
+          elevation: 0,
+          items: [
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _currentIndex == 0 
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _currentIndex == 0 ? Icons.work_rounded : Icons.work_outline_rounded,
+                  size: 24,
+                ),
+              ),
+              label: 'Jobs',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _currentIndex == 1 
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _currentIndex == 1 ? Icons.assignment_rounded : Icons.assignment_outlined,
+                  size: 24,
+                ),
+              ),
+              label: 'My Gigs',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _currentIndex == 2 
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _currentIndex == 2 ? Icons.chat_bubble_rounded : Icons.chat_bubble_outline_rounded,
+                  size: 24,
+                ),
+              ),
+              label: 'Chat',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _currentIndex == 3 
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _currentIndex == 3 ? Icons.person_rounded : Icons.person_outline_rounded,
+                  size: 24,
+                ),
+              ),
+              label: 'Profile',
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: AppColors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.blueShadow,
+                      blurRadius: 20,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: CircularProgressIndicator(
+                  color: AppColors.white,
+                  strokeWidth: 3,
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Loading your opportunities...',
+                style: TextStyle(
+                  color: AppColors.secondaryText,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.white,
-      body: Column(
-        children: [
-          _buildGreetingSection(),
-          _buildFilterChips(),
-          _buildJobsList(),
-        ],
-      ),
+      key: _scaffoldKey,
+      backgroundColor: AppColors.backgroundColor,
+      endDrawer: _buildDrawer(),
+      body: _buildCurrentScreen(),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
