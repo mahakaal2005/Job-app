@@ -5,6 +5,7 @@ import 'package:get_work_app/screens/login_signup/login_screen.dart';
 import 'package:get_work_app/screens/login_signup/signup_screen.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
+import 'package:get_work_app/screens/main/employye/emp_profile.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
 import 'package:get_work_app/services/auth_wrapper.dart';
@@ -14,9 +15,12 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String signup = '/signup';
-  static const String home = '/home'; // This will be handled by AuthWrapper
+  static const String home = '/home';
   static const String userHome = '/user-home';
   static const String employeeHome = '/employee-home';
+  static const String employerProfile = '/employer-profile';
+  static const String jobsManagement = '/jobs-management';
+  static const String messages = '/messages';
   static const String studentOnboarding = '/student-onboarding';
   static const String employeeOnboarding = '/employee-onboarding';
 
@@ -46,7 +50,30 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const UserHomeScreen());
 
       case employeeHome:
-        return MaterialPageRoute(builder: (_) => const EmployerHomeScreen());
+        return MaterialPageRoute(builder: (_) => const EmployerDashboardScreen());
+
+      case employerProfile:
+        return MaterialPageRoute(builder: (_) => const EmpProfile());
+
+      case jobsManagement:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Jobs Management')),
+            body: const Center(
+              child: Text('Jobs Management Screen'),
+            ),
+          ),
+        );
+
+      case messages:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Messages')),
+            body: const Center(
+              child: Text('Messages Screen'),
+            ),
+          ),
+        );
 
       case studentOnboarding:
         return MaterialPageRoute(

@@ -116,6 +116,15 @@ class AuthService {
     }
   }
 
+  static Future<String?> getCurrentUserId() async {
+    try {
+      if (currentUser == null) return null;
+      return currentUser!.uid;
+    } catch (e) {
+      throw Exception('Failed to get current user ID: ${e.toString()}');
+    }
+  }
+
   // Alias for getUserRole() for consistency
   static Future<String?> getCurrentUserRole() async {
     return await getUserRole();

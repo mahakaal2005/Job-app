@@ -1,7 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class EmpProfile extends StatelessWidget {
+class EmpProfile extends StatefulWidget {
   const EmpProfile({super.key});
+
+  @override
+  State<EmpProfile> createState() => _EmpProfileState();
+}
+
+class _EmpProfileState extends State<EmpProfile> {
+  Map<String, dynamic>? userData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('employees')
+            .doc(currentUser.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          setState(() {
+            userData = userDoc.data() as Map<String, dynamic>?;
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  await FirebaseAuth.instance.signOut();
+                  // Navigate to login screen - replace with your login route
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/login', // Replace with your login route
+                    (Route<dynamic> route) => false,
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error logging out: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildProfileOption({
     required IconData icon,
@@ -30,13 +109,12 @@ class EmpProfile extends StatelessWidget {
           title,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
         ),
-        subtitle:
-            subtitle != null
-                ? Text(
-                  subtitle,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                )
-                : null,
+        subtitle: subtitle != null
+            ? Text(
+                subtitle,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              )
+            : null,
         trailing: const Icon(
           Icons.arrow_forward_ios,
           size: 16,
@@ -56,7 +134,7 @@ class EmpProfile extends StatelessWidget {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -71,7 +149,7 @@ class EmpProfile extends StatelessWidget {
         child: Column(
           children: [
             Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               value,
               style: TextStyle(
@@ -93,6 +171,10 @@ class EmpProfile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fullName = userData?['fullName'] ?? 'Employee';
+    final employeeInfo = userData?['employeeInfo'] as Map<String, dynamic>?;
+    final jobTitle = employeeInfo?['jobTitle'] ?? 'Position';
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: CustomScrollView(
@@ -111,12 +193,12 @@ class EmpProfile extends StatelessWidget {
                     end: Alignment.bottomCenter,
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(height: 40),
-                      CircleAvatar(
+                      const SizedBox(height: 30),
+                      const CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.white,
                         child: Icon(
@@ -125,23 +207,24 @@ class EmpProfile extends StatelessWidget {
                           color: Color(0xFF1E88E5),
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
-                        'Pratyush Kumar',
-                        style: TextStyle(
+                        fullName,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'Full Stack Developer',
-                        style: TextStyle(
+                        jobTitle,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
+                      
                     ],
                   ),
                 ),
@@ -271,23 +354,15 @@ class EmpProfile extends StatelessWidget {
                   icon: Icons.logout,
                   title: 'Logout',
                   subtitle: 'Sign out of your account',
-                  onTap: () {
-                    // Handle logout logic here
-                  },
+                  onTap: _handleLogout,
                   iconColor: Colors.red,
                 ),
+                const SizedBox(height: 100), // Extra space for bottom padding
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Handle floating action button press
-        },
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

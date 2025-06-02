@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ChatsScreen extends StatelessWidget {
-  const ChatsScreen({super.key});
+class EmpChats extends StatelessWidget {
+  const EmpChats({super.key});
 
   Widget _buildChatTile({
     required String name,

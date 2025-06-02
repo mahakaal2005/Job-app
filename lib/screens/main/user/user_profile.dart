@@ -1,8 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,6 +21,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditing = false;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isUploadingImage = false;
+  bool _isUploadingResume = false;
   Map<String, dynamic> _userData = {};
 
   // Track expanded sections
@@ -45,37 +53,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _portfolioController = TextEditingController();
   final _twitterController = TextEditingController();
 
-  List<String> _skills = [];
-  List<String> _preferredSlots = [];
-  String _selectedGender = 'Male';
-  String _selectedEducation = 'Bachelor\'s Degree';
-  String _selectedAvailability = 'Full-time';
-  DateTime? _dateOfBirth;
-
-  final List<String> _genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+  // Dropdown options
+  final List<String> _genderOptions = ['Male', 'Female', 'Other'];
   final List<String> _educationOptions = [
     'High School',
     'Bachelor\'s Degree',
     'Master\'s Degree',
     'PhD',
-    'Diploma',
-    'Certificate',
     'Other',
   ];
   final List<String> _availabilityOptions = [
     'Full-time',
     'Part-time',
     'Freelance',
-    'Contract',
-    'Internship',
+    'Unavailable',
   ];
   final List<String> _timeSlots = [
-    'Morning (6AM-12PM)',
-    'Afternoon (12PM-6PM)',
-    'Evening (6PM-12AM)',
-    'Night (12AM-6AM)',
-    'Flexible',
+    'Morning (9AM-12PM)',
+    'Afternoon (12PM-5PM)',
+    'Evening (5PM-9PM)',
+    'Night (9PM-12AM)',
   ];
+
+  List<String> _skills = [];
+  List<String> _preferredSlots = [];
+  String _selectedGender = 'Male';
+  String _selectedEducation = 'Bachelor\'s Degree';
+  String _selectedAvailability = 'Full-time';
+  DateTime? _dateOfBirth;
+  File? _selectedImage;
+  File? _selectedResume;
 
   @override
   void initState() {
@@ -108,12 +115,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+        final collectionName =
+            role == 'employee' ? 'employees' : 'users_specific';
 
-        final doc = await FirebaseFirestore.instance
-            .collection(collectionName)
-            .doc(user.uid)
-            .get();
+        final doc =
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .get();
 
         if (doc.exists && mounted) {
           setState(() {
@@ -154,12 +163,124 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _preferredSlots = List<String>.from(_userData['preferredSlots'] ?? []);
     _selectedGender = _userData['gender'] ?? 'Male';
     _selectedEducation = _userData['educationLevel'] ?? 'Bachelor\'s Degree';
-    _selectedAvailability = _userData['availability'] is String
-        ? _userData['availability']
-        : _userData['availability']?['type'] ?? 'Full-time';
+    _selectedAvailability =
+        _userData['availability'] is String
+            ? _userData['availability']
+            : _userData['availability']?['type'] ?? 'Full-time';
 
     if (_userData['dateOfBirth'] != null) {
       _dateOfBirth = (_userData['dateOfBirth'] as Timestamp).toDate();
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+        _isUploadingImage = true;
+      });
+
+      try {
+        final url = await _uploadToCloudinary(_selectedImage!);
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final role = await AuthService.getUserRole();
+          final collectionName =
+              role == 'employee' ? 'employees' : 'users_specific';
+
+          await FirebaseFirestore.instance
+              .collection(collectionName)
+              .doc(user.uid)
+              .update({
+                'profileImageUrl': url,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+
+          setState(() {
+            _userData['profileImageUrl'] = url;
+            _isUploadingImage = false;
+          });
+
+          _showSuccessSnackBar('Profile picture updated successfully!');
+        }
+      } catch (e) {
+        setState(() => _isUploadingImage = false);
+        _showErrorSnackBar('Error uploading image: $e');
+      }
+    }
+  }
+
+  Future<void> _uploadResume() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedResume = File(pickedFile.path);
+        _isUploadingResume = true;
+      });
+
+      try {
+        final url = await _uploadToCloudinary(_selectedResume!);
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final role = await AuthService.getUserRole();
+          final collectionName =
+              role == 'employee' ? 'employees' : 'users_specific';
+
+          await FirebaseFirestore.instance
+              .collection(collectionName)
+              .doc(user.uid)
+              .update({
+                'resumeUrl': url,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+
+          setState(() {
+            _userData['resumeUrl'] = url;
+            _isUploadingResume = false;
+          });
+
+          _showSuccessSnackBar('Resume updated successfully!');
+        }
+      } catch (e) {
+        setState(() => _isUploadingResume = false);
+        _showErrorSnackBar('Error uploading resume: $e');
+      }
+    }
+  }
+
+  Future<String> _uploadToCloudinary(File file) async {
+    const cloudName = 'dteigt5oc';
+    const uploadPreset = 'get_work';
+
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload?upload_preset=$uploadPreset',
+    );
+
+    final request = http.MultipartRequest('POST', uri)
+      ..files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          filename: path.basename(file.path),
+        ),
+      );
+
+    final response = await request.send();
+    final responseData = await response.stream.toBytes();
+    final result = String.fromCharCodes(responseData);
+    final jsonResponse = json.decode(result);
+
+    if (response.statusCode == 200) {
+      return jsonResponse['secure_url'];
+    } else {
+      throw Exception('Failed to upload file to Cloudinary');
     }
   }
 
@@ -172,7 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+        final collectionName =
+            role == 'employee' ? 'employees' : 'users_specific';
 
         final updatedData = {
           'fullName': _fullNameController.text.trim(),
@@ -208,6 +330,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             .collection(collectionName)
             .doc(user.uid)
             .update(updatedData);
+
+        // Upload image if selected
+        if (_selectedImage != null) {
+          await _uploadImage();
+        }
+
+        // Upload resume if selected
+        if (_selectedResume != null) {
+          await _uploadResume();
+        }
 
         if (mounted) {
           setState(() {
@@ -273,6 +405,118 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildResumeField() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Resume',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.hintText,
+            ),
+          ),
+          SizedBox(height: 8),
+          GestureDetector(
+            onTap: _isEditing ? _uploadResume : null,
+            child: Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color:
+                      _isEditing
+                          ? AppColors.primaryBlue
+                          : AppColors.dividerColor,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.insert_drive_file_rounded,
+                    color:
+                        _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+                    size: 24,
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _userData['resumeUrl'] != null
+                              ? 'Resume uploaded'
+                              : 'No resume uploaded',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.black,
+                          ),
+                        ),
+                        if (_userData['resumeUrl'] != null)
+                          Text(
+                            'Tap to change',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.hintText,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (_isUploadingResume)
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primaryBlue,
+                      ),
+                    )
+                  else if (_userData['resumeUrl'] != null)
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.success,
+                      size: 20,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (_userData['resumeUrl'] != null && !_isEditing)
+            Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: TextButton(
+                onPressed: () async {
+                  // Open resume URL in browser
+                  final Uri resumeUri = Uri.parse(_userData['resumeUrl']);
+if (await canLaunchUrl(resumeUri)) {
+  await launchUrl(resumeUri, mode: LaunchMode.externalApplication);
+} else {
+  // Handle the error
+  print('Could not launch resume URL');
+}
+
+                  
+                },
+                child: Text(
+                  'View Resume',
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfileHeader() {
     String availabilityText = 'Available';
     if (_userData['availability'] is String) {
@@ -283,7 +527,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        gradient:
+            _isEditing
+                ? LinearGradient(
+                  colors: [
+                    AppColors.primaryBlue.withOpacity(0.9),
+                    AppColors.neonBlue.withOpacity(0.9),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+                : AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
@@ -325,19 +579,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           setState(() => _isEditing = true);
                         }
                       },
-                      icon: _isSaving
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
+                      icon:
+                          _isSaving
+                              ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Icon(
+                                _isEditing
+                                    ? Icons.save_rounded
+                                    : Icons.edit_rounded,
                                 color: AppColors.white,
-                                strokeWidth: 2,
                               ),
-                            )
-                          : Icon(
-                              _isEditing ? Icons.save_rounded : Icons.edit_rounded,
-                              color: AppColors.white,
-                            ),
                     ),
                   ),
                 ],
@@ -345,37 +602,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(height: 24),
               Stack(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.shadowMedium,
-                          blurRadius: 16,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(                      
-                      radius: 50,
-                      backgroundColor: AppColors.neonBlue,
-                      backgroundImage:
-                          _userData['profileImageUrl'] != null
-                              ? NetworkImage(_userData['profileImageUrl'])
-                              : null,
-                      child:
-                          _userData['profileImageUrl'] == null
-                              ? Text(
-                                  (_userData['fullName'] ?? 'U')[0].toUpperCase(),
+                  GestureDetector(
+                    onTap: _isEditing ? _uploadImage : null,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadowMedium,
+                            blurRadius: 16,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppColors.neonBlue,
+                        backgroundImage:
+                            _selectedImage != null
+                                ? FileImage(_selectedImage!)
+                                : _userData['profileImageUrl'] != null
+                                ? NetworkImage(_userData['profileImageUrl'])
+                                : null,
+                        child:
+                            _isUploadingImage
+                                ? CircularProgressIndicator(
+                                  color: AppColors.white,
+                                )
+                                : _selectedImage == null &&
+                                    _userData['profileImageUrl'] == null
+                                ? Text(
+                                  (_userData['fullName'] ?? 'U')[0]
+                                      .toUpperCase(),
                                   style: TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.white,
                                   ),
                                 )
-                              : null,
+                                : null,
+                      ),
                     ),
                   ),
                   if (_isEditing)
@@ -460,7 +728,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: 'Weekly Hours',
             color: AppColors.primaryBlue,
           ),
-          Container(width: 1, height:40, color: AppColors.dividerColor),
+          Container(width: 1, height: 40, color: AppColors.dividerColor),
           _buildStatItem(
             icon: Icons.star_rounded,
             value: '4.8',
@@ -522,7 +790,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
+            color:
+                _isEditing
+                    ? AppColors.blueShadow.withOpacity(0.2)
+                    : AppColors.shadowLight,
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -541,10 +812,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.1),
+                color:
+                    _isEditing
+                        ? AppColors.primaryBlue.withOpacity(0.2)
+                        : AppColors.softGrey,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primaryBlue, size: 24),
+              child: Icon(
+                icon,
+                color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+                size: 24,
+              ),
             ),
             SizedBox(width: 16),
             Text(
@@ -594,14 +872,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _isEditing 
-                  ? AppColors.primaryBlue.withOpacity(0.1)
-                  : AppColors.softGrey,
+              color:
+                  _isEditing
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : AppColors.softGrey,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, 
-                color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
-                size: 20),
+            child: Icon(
+              icon,
+              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+              size: 20,
+            ),
           ),
           labelStyle: TextStyle(
             color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
@@ -650,14 +931,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _isEditing 
-                  ? AppColors.primaryBlue.withOpacity(0.1)
-                  : AppColors.softGrey,
+              color:
+                  _isEditing
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : AppColors.softGrey,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, 
-                color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
-                size: 20),
+            child: Icon(
+              icon,
+              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+              size: 20,
+            ),
           ),
           labelStyle: TextStyle(
             color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
@@ -678,12 +962,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
           ),
         ),
-        items: options.map((String option) {
-          return DropdownMenuItem<String>(
-            value: option,
-            child: Text(option),
-          );
-        }).toList(),
+        items:
+            options.map((String option) {
+              return DropdownMenuItem<String>(
+                value: option,
+                child: Text(option),
+              );
+            }).toList(),
       ),
     );
   }
@@ -741,45 +1026,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _skills.map((skill) {
-            return Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: AppColors.blueGradient,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.blueShadow.withOpacity(0.3),
-                    blurRadius: 6,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    skill,
-                    style: TextStyle(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (_isEditing) ...[
-                    SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => setState(() => _skills.remove(skill)),
-                      child: Icon(
-                        Icons.close_rounded,
-                        color: AppColors.white,
-                        size: 16,
+          children:
+              _skills.map((skill) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient:
+                        _isEditing
+                            ? AppColors.blueGradient
+                            : LinearGradient(
+                              colors: [AppColors.softGrey, AppColors.softGrey],
+                            ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            _isEditing
+                                ? AppColors.blueShadow.withOpacity(0.3)
+                                : Colors.transparent,
+                        blurRadius: 6,
+                        offset: Offset(0, 3),
                       ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          }).toList(),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        skill,
+                        style: TextStyle(
+                          color: _isEditing ? AppColors.white : AppColors.black,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (_isEditing) ...[
+                        SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => setState(() => _skills.remove(skill)),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: AppColors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -912,29 +1206,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _timeSlots.map((slot) {
-            final isSelected = _preferredSlots.contains(slot);
-            return FilterChip(
-              label: Text(slot),
-              selected: isSelected,
-              onSelected: _isEditing
-                  ? (selected) {
-                      setState(() {
-                        if (selected) {
-                          _preferredSlots.add(slot);
-                        } else {
-                          _preferredSlots.remove(slot);
-                        }
-                      });
-                    }
-                  : null,
-              selectedColor: AppColors.primaryBlue,
-              checkmarkColor: AppColors.white,
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.white : AppColors.black,
-              ),
-            );
-          }).toList(),
+          children:
+              _timeSlots.map((slot) {
+                final isSelected = _preferredSlots.contains(slot);
+                return FilterChip(
+                  label: Text(slot),
+                  selected: isSelected,
+                  onSelected:
+                      _isEditing
+                          ? (selected) {
+                            setState(() {
+                              if (selected) {
+                                _preferredSlots.add(slot);
+                              } else {
+                                _preferredSlots.remove(slot);
+                              }
+                            });
+                          }
+                          : null,
+                  selectedColor: AppColors.primaryBlue,
+                  checkmarkColor: AppColors.white,
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.white : AppColors.black,
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -987,7 +1283,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor:
+          _isEditing
+              ? AppColors.lightBlue.withOpacity(0.1)
+              : AppColors.backgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -1050,7 +1349,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   label: 'College/University',
                   icon: Icons.account_balance_rounded,
                 ),
-              ],
+                _buildResumeField(), // Added resume field here
+              ], // This is the correct closing bracket for the children of _buildSectionCard
             ),
 
             // Skills Section
@@ -1064,8 +1364,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Address Section
             _buildAddressSection(),
-
-            // Save/Cancel Buttons when editing
             if (_isEditing)
               Padding(
                 padding: EdgeInsets.all(20),
@@ -1076,6 +1374,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onPressed: () {
                           setState(() {
                             _isEditing = false;
+                            _selectedImage = null;
                             _populateControllers(); // Reset changes
                           });
                         },
@@ -1107,29 +1406,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: _isSaving
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: AppColors.white,
-                                  strokeWidth: 2,
+                        child:
+                            _isSaving
+                                ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : Text(
+                                  'Save Changes',
+                                  style: TextStyle(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                              )
-                            : Text(
-                                'Save Changes',
-                                style: TextStyle(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
                       ),
                     ),
                   ],
                 ),
               ),
-          ],
+          ], // This is the correct closing bracket for the Column children
         ),
       ),
     );
