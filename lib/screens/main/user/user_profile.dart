@@ -909,69 +909,70 @@ if (await canLaunchUrl(resumeUri)) {
   }
 
   Widget _buildDropdown({
-    required String value,
-    required List<String> options,
-    required String label,
-    required IconData icon,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        onChanged: _isEditing ? onChanged : null,
-        style: TextStyle(
-          fontSize: 16,
-          color: AppColors.black,
-          fontWeight: FontWeight.w500,
-        ),
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Container(
-            margin: EdgeInsets.all(12),
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color:
-                  _isEditing
-                      ? AppColors.primaryBlue.withOpacity(0.1)
-                      : AppColors.softGrey,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
-              size: 20,
-            ),
-          ),
-          labelStyle: TextStyle(
-            color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
-            fontWeight: FontWeight.w600,
-          ),
-          filled: true,
-          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.dividerColor),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
-          ),
-        ),
-        items:
-            options.map((String option) {
-              return DropdownMenuItem<String>(
-                value: option,
-                child: Text(option),
-              );
-            }).toList(),
+  required String value,
+  required List<String> options,
+  required String label,
+  required IconData icon,
+  required Function(String?) onChanged,
+}) {
+  // Ensure the current value exists in options, if not use the first option
+  final String dropdownValue = options.contains(value) ? value : options.first;
+
+  return Container(
+    margin: EdgeInsets.only(bottom: 16),
+    child: DropdownButtonFormField<String>(
+      value: dropdownValue,
+      onChanged: _isEditing ? onChanged : null,
+      style: TextStyle(
+        fontSize: 16,
+        color: AppColors.black,
+        fontWeight: FontWeight.w500,
       ),
-    );
-  }
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Container(
+          margin: EdgeInsets.all(12),
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _isEditing
+                ? AppColors.primaryBlue.withOpacity(0.1)
+                : AppColors.softGrey,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+            size: 20,
+          ),
+        ),
+        labelStyle: TextStyle(
+          color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+          fontWeight: FontWeight.w600,
+        ),
+        filled: true,
+        fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: AppColors.dividerColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
+        ),
+      ),
+      items: options.map((String option) {
+        return DropdownMenuItem<String>(
+          value: option,
+          child: Text(option),
+        );
+      }).toList(),
+    ),
+  );
+}
 
   Widget _buildSkillsSection() {
     return _buildSectionCard(

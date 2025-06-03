@@ -148,101 +148,113 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
   }
 
   Future<void> _submitOnboarding() async {
-    if (!_formKey.currentState!.validate()) {
-      _showSnackBar('Please fill in all required fields', isError: true);
+  if (!_formKey.currentState!.validate()) {
+    _showSnackBar('Please fill in all required fields', isError: true);
+    return;
+  }
+
+  // Additional validation for company documents
+  if (_companyLogo == null) {
+    _showSnackBar('Company logo is required', isError: true);
+    return;
+  }
+
+  if (_businessLicense == null) {
+    _showSnackBar('Business license is required', isError: true);
+    return;
+  }
+
+  if (_employeeIdCard == null) {
+    _showSnackBar('Employee ID card is required', isError: true);
+    return;
+  }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    // Upload files to Cloudinary
+    String? companyLogoUrl = await CloudinaryService.uploadImage(_companyLogo!);
+    String? businessLicenseUrl = await CloudinaryService.uploadDocument(_businessLicense!);
+    String? employeeIdCardUrl = await CloudinaryService.uploadImage(_employeeIdCard!);
+    
+    // Upload additional company documents if any
+    List<String> companyDocumentUrls = [];
+    if (_companyDocuments.isNotEmpty) {
+      List<String?> uploadedUrls = await CloudinaryService.uploadMultipleFiles(_companyDocuments);
+      companyDocumentUrls = uploadedUrls.whereType<String>().toList();
+    }
+
+    // Check if all required files were uploaded successfully
+    if (companyLogoUrl == null || businessLicenseUrl == null || employeeIdCardUrl == null) {
+      _showSnackBar('Failed to upload one or more required documents', isError: true);
       return;
     }
 
-    // Additional validation for company documents
-    if (_companyLogo == null) {
-      _showSnackBar('Company logo is required', isError: true);
-      return;
-    }
+    // Prepare onboarding data with Cloudinary URLs
+    Map<String, dynamic> onboardingData = {
+      // Company Information (all required)
+      'companyInfo': {
+        'companyName': _companyNameController.text.trim(),
+        'companyEmail': _companyEmailController.text.trim(),
+        'companyPhone': _companyPhoneController.text.trim(),
+        'companyAddress': _companyAddressController.text.trim(),
+        'companyWebsite': _companyWebsiteController.text.trim(),
+        'companyDescription': _companyDescriptionController.text.trim(),
+        'establishedYear': _establishedYearController.text.trim(),
+        'employeeCount': _employeeCountController.text.trim(),
+        'industry': _selectedIndustry,
+        'companySize': _selectedCompanySize,
+        'companyLogo': companyLogoUrl,
+        'businessLicense': businessLicenseUrl,
+        'companyDocuments': companyDocumentUrls,
+      },
+      // Employee Information
+      'employeeInfo': {
+        'jobTitle': _jobTitleController.text.trim(),
+        'department': _departmentController.text.trim(),
+        'employeeId': _employeeIdController.text.trim(),
+        'workLocation': _workLocationController.text.trim(),
+        'employmentType': _selectedEmploymentType,
+        'managerName': _managerNameController.text.trim(),
+        'managerEmail': _managerEmailController.text.trim(),
+        'employeeIdCard': employeeIdCardUrl,
+      },
+      'onboardingCompleted': true,
+      'onboardingCompletedAt': DateTime.now().toIso8601String(),
+      'updatedAt': DateTime.now().toIso8601String(),
+    };
 
-    if (_businessLicense == null) {
-      _showSnackBar('Business license is required', isError: true);
-      return;
-    }
+    // Save to Firestore using AuthService
+    await AuthService.completeUserOnboarding(onboardingData);
 
-    if (_employeeIdCard == null) {
-      _showSnackBar('Employee ID card is required', isError: true);
-      return;
-    }
+    _showSnackBar('Employee onboarding completed successfully!');
 
-    setState(() {
-      _isLoading = true;
-    });
+    // Small delay to show success message
+    await Future.delayed(const Duration(milliseconds: 1000));
 
-    try {
-      // For now, we'll store file paths locally or you can implement your file upload service
-      String? companyLogoUrl = _companyLogo!.path;
-      String? businessLicenseUrl = _businessLicense!.path;
-      String? employeeIdCardUrl = _employeeIdCard!.path;
-      List<String> companyDocumentUrls = _companyDocuments.map((doc) => doc.path).toList();
-
-      // Prepare onboarding data
-      Map<String, dynamic> onboardingData = {
-        // Company Information (all required)
-        'companyInfo': {
-          'companyName': _companyNameController.text.trim(),
-          'companyEmail': _companyEmailController.text.trim(),
-          'companyPhone': _companyPhoneController.text.trim(),
-          'companyAddress': _companyAddressController.text.trim(),
-          'companyWebsite': _companyWebsiteController.text.trim(),
-          'companyDescription': _companyDescriptionController.text.trim(),
-          'establishedYear': _establishedYearController.text.trim(),
-          'employeeCount': _employeeCountController.text.trim(),
-          'industry': _selectedIndustry,
-          'companySize': _selectedCompanySize,
-          'companyLogo': companyLogoUrl,
-          'businessLicense': businessLicenseUrl,
-          'companyDocuments': companyDocumentUrls,
-        },
-        // Employee Information
-        'employeeInfo': {
-          'jobTitle': _jobTitleController.text.trim(),
-          'department': _departmentController.text.trim(),
-          'employeeId': _employeeIdController.text.trim(),
-          'workLocation': _workLocationController.text.trim(),
-          'employmentType': _selectedEmploymentType,
-          'managerName': _managerNameController.text.trim(),
-          'managerEmail': _managerEmailController.text.trim(),
-          'employeeIdCard': employeeIdCardUrl,
-        },
-        'onboardingCompleted': true,
-        'onboardingCompletedAt': DateTime.now().toIso8601String(),
-        'updatedAt': DateTime.now().toIso8601String(),
-      };
-
-      // Save to Firestore using AuthService
-      await AuthService.completeUserOnboarding(onboardingData);
-
-      _showSnackBar('Employee onboarding completed successfully!');
-
-      // Small delay to show success message
-      await Future.delayed(const Duration(milliseconds: 1000));
-
-      // Navigate to employee home via AuthWrapper
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.home,
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      _showSnackBar(
-        'Failed to complete onboarding: ${e.toString()}',
-        isError: true,
+    // Navigate to employee home via AuthWrapper
+    if (mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.home,
+        (route) => false,
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    }
+  } catch (e) {
+    _showSnackBar(
+      'Failed to complete onboarding: ${e.toString()}',
+      isError: true,
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
 
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
