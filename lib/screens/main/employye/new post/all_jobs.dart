@@ -1,98 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/job_provider.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_details_Screen.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:provider/provider.dart';
 
 class AllJobListingsScreen extends StatefulWidget {
   const AllJobListingsScreen({
     Key? key,
     this.initialJobs,
-    this.onStatusChanged, // Add this parameter
+    this.onStatusChanged,
   }) : super(key: key);
   
   final List<Job>? initialJobs;
-  final Function(String, bool)? onStatusChanged; // Add this
+  final Function(String, bool)? onStatusChanged;
 
   @override
+  
   State<AllJobListingsScreen> createState() => _AllJobListingsScreenState();
 }
 
 class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
-  List<Job> _jobs = [];
-  bool _isLoading = true;
   String _selectedFilter = 'all';
 
   @override
-void initState() {
+  void initState() {
   super.initState();
-  if (widget.initialJobs != null) {
-    _jobs = widget.initialJobs!;
-    _isLoading = false;
-  } else {
-    _loadJobs();
-  }
-}
-
-  Future<void> _loadJobs() async {
-    try {
-      final jobs = await JobService.getCompanyJobs();
-      if (mounted) {
-        setState(() {
-          _jobs = jobs;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showSnackBar('Failed to load jobs: ${e.toString()}', isError: true);
-      }
-    }
-  }
-
-void _updateJobStatus(String jobId, bool isActive) {
-  setState(() {
-    _jobs = _jobs.map((job) {
-      if (job.id == jobId) {
-        return job.copyWith(isActive: isActive);
-      }
-      return job;
-    }).toList();
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Provider.of<JobProvider>(context, listen: false).loadJobs();
   });
-  
-  // Notify parent widget if needed (for RecentJobsCard)
-  if (widget.onStatusChanged != null) {
-    widget.onStatusChanged!(jobId, isActive);
-  }
 }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.success,
-        duration: Duration(seconds: isError ? 4 : 2),
-      ),
-    );
-  }
-
-  List<Job> get _filteredJobs {
-    switch (_selectedFilter) {
-      case 'active':
-        return _jobs.where((job) => job.isActive).toList();
-      case 'inactive':
-        return _jobs.where((job) => !job.isActive).toList();
-      default:
-        return _jobs;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -119,62 +57,80 @@ void _updateJobStatus(String jobId, bool isActive) {
           ),
         ],
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-              ),
-            )
-          : Column(
-              children: [
-                // Filter Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Filter: ',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryText,
-                        ),
+      body: Consumer<JobProvider>(
+        builder: (context, jobProvider, child) {
+          // Apply filters based on _selectedFilter
+          List<Job> filteredJobs = _applyFilters(jobProvider.jobs);
+          
+          return Column(
+            children: [
+              // Filter Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Text(
+                      'Filter: ',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryText,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            _buildFilterChip('All', 'all'),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Active', 'active'),
-                            const SizedBox(width: 8),
-                            _buildFilterChip('Inactive', 'inactive'),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          _buildFilterChip('All', 'all'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Active', 'active'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('Inactive', 'inactive'),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                
-                // Jobs List
-                Expanded(
-                  child: _filteredJobs.isEmpty
+              ),
+              
+              // Jobs List
+              Expanded(
+                child: jobProvider.isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                      ),
+                    )
+                  : filteredJobs.isEmpty
                       ? _buildEmptyState()
                       : RefreshIndicator(
-                          onRefresh: _loadJobs,
+                          onRefresh: () => jobProvider.loadJobs(),
                           child: ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: _filteredJobs.length,
+                            itemCount: filteredJobs.length,
                             itemBuilder: (context, index) {
-                              final job = _filteredJobs[index];
-                              return _buildJobCard(job);
+                              final job = filteredJobs[index];
+                              return _buildJobCard(context, job, jobProvider);
                             },
                           ),
                         ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          );
+        },
+      ),
     );
+  }
+
+  List<Job> _applyFilters(List<Job> jobs) {
+    switch (_selectedFilter) {
+      case 'active':
+        return jobs.where((job) => job.isActive).toList();
+      case 'inactive':
+        return jobs.where((job) => !job.isActive).toList();
+      default:
+        return jobs;
+    }
   }
 
   Widget _buildFilterChip(String label, String value) {
@@ -206,7 +162,7 @@ void _updateJobStatus(String jobId, bool isActive) {
     );
   }
 
-  Widget _buildJobCard(Job job) {
+  Widget _buildJobCard(BuildContext context, Job job, JobProvider jobProvider) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -224,15 +180,21 @@ void _updateJobStatus(String jobId, bool isActive) {
       child: InkWell(
         onTap: () {
           Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => JobDetailsScreen(
-      job: job,
-      onStatusChanged: _updateJobStatus,
-    ),
-  ),
-);
-
+            context,
+            MaterialPageRoute(
+              builder: (context) => JobDetailsScreen(
+                job: job,
+                onStatusChanged: (jobId, isActive) {
+                  // Update the job status in the provider
+                  jobProvider.updateJobStatus(jobId, isActive);
+                  // Call the parent callback if it exists
+                  if (widget.onStatusChanged != null) {
+                    widget.onStatusChanged!(jobId, isActive);
+                  }
+                },
+              ),
+            ),
+          );
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,7 +373,11 @@ void _updateJobStatus(String jobId, bool isActive) {
           ),
           const SizedBox(height: 8),
           Text(
-            'You haven\'t posted any jobs yet.\nTap the + button to create your first job listing.',
+            _selectedFilter == 'all'
+                ? 'You haven\'t posted any jobs yet.\nTap the + button to create your first job listing.'
+                : _selectedFilter == 'active'
+                    ? 'No active jobs found.'
+                    : 'No inactive jobs found.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,

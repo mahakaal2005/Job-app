@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/job_provider.dart';
 import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
 import 'package:get_work_app/screens/main/employye/emp_profile.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
@@ -8,6 +9,7 @@ import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/screens/main/employye/emp_chats.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:provider/provider.dart';
 
 class EmployerDashboardScreen extends StatefulWidget {
   const EmployerDashboardScreen({Key? key}) : super(key: key);
@@ -29,6 +31,9 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
     super.initState();
     _loadUserData();
     _loadJobs(); // Added call to load jobs
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<JobProvider>(context, listen: false).loadJobs();
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -74,12 +79,13 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   // Added missing _handleStatusChange method
   void _handleStatusChange(String jobId, bool newStatus) {
     setState(() {
-      _jobs = _jobs.map((job) {
-        if (job.id == jobId) {
-          return job.copyWith(isActive: newStatus);
-        }
-        return job;
-      }).toList();
+      _jobs =
+          _jobs.map((job) {
+            if (job.id == jobId) {
+              return job.copyWith(isActive: newStatus);
+            }
+            return job;
+          }).toList();
     });
   }
 
@@ -169,10 +175,7 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          DashboardPage(
-            jobs: _jobs,
-            onStatusChanged: _handleStatusChange,
-          ),
+          DashboardPage(jobs: _jobs, onStatusChanged: _handleStatusChange),
           const EmpChats(),
           const EmpAnalytics(),
           const EmpProfile(),
@@ -638,25 +641,26 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(width: 12),
               Builder(
-                builder: (context) => GestureDetector(
-                  onTap: () => Scaffold.of(context).openEndDrawer(),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.whiteText.withOpacity(0.2),
-                        width: 1,
+                builder:
+                    (context) => GestureDetector(
+                      onTap: () => Scaffold.of(context).openEndDrawer(),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.glassWhite,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.whiteText.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.menu,
+                          color: AppColors.whiteText,
+                          size: 24,
+                        ),
                       ),
                     ),
-                    child: Icon(
-                      Icons.menu,
-                      color: AppColors.whiteText,
-                      size: 24,
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -671,109 +675,110 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return _isLoading
         ? Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-            ),
-          )
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+          ),
+        )
         : Column(
-            children: [
-              _buildTopBar(userName),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RecentJobsCard(
-                        jobs: widget.jobs,
-                        onSeeAllPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutes.allJobListings,
-                            arguments: widget.jobs,
-                          );
-                        },
-                        onStatusChanged: widget.onStatusChanged,
-                      ),
-                      const SizedBox(height: 24),
-                      GridView.count(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        childAspectRatio: 1.2,
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              AppRoutes.createJobOpening,
-                            ),
-                            child: _buildDashboardCard(
-                              title: 'Create Job',
-                              subtitle: 'Post new opening',
-                              icon: Icons.work_outline,
-                              color: AppColors.success,
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.success.withOpacity(0.1),
-                                  AppColors.successLight,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+          children: [
+            _buildTopBar(userName),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RecentJobsCard(
+                      jobs: widget.jobs,
+                      onSeeAllPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.allJobListings,
+                          arguments: widget.jobs,
+                        );
+                      },
+                      onStatusChanged: widget.onStatusChanged,
+                    ),
+                    const SizedBox(height: 24),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: 1.2,
+                      children: [
+                        GestureDetector(
+                          onTap:
+                              () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.createJobOpening,
                               ),
-                            ),
-                          ),
-                          _buildDashboardCard(
-                            title: 'Messages',
-                            subtitle: '12 unread',
-                            icon: Icons.chat,
-                            color: AppColors.warning,
+                          child: _buildDashboardCard(
+                            title: 'Create Job',
+                            subtitle: 'Post new opening',
+                            icon: Icons.work_outline,
+                            color: AppColors.success,
                             gradient: LinearGradient(
                               colors: [
-                                AppColors.warning.withOpacity(0.1),
-                                AppColors.warningLight,
+                                AppColors.success.withOpacity(0.1),
+                                AppColors.successLight,
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                           ),
-                          _buildDashboardCard(
-                            title: 'Reports',
-                            subtitle: 'View analytics',
-                            icon: Icons.analytics,
-                            color: AppColors.primaryBlue,
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primaryBlue.withOpacity(0.1),
-                                AppColors.lightBlue,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Messages',
+                          subtitle: '12 unread',
+                          icon: Icons.chat,
+                          color: AppColors.warning,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.warning.withOpacity(0.1),
+                              AppColors.warningLight,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          _buildDashboardCard(
-                            title: 'Settings',
-                            subtitle: 'Manage account',
-                            icon: Icons.settings,
-                            color: AppColors.grey,
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.grey.withOpacity(0.1),
-                                AppColors.lightGrey,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Reports',
+                          subtitle: 'View analytics',
+                          icon: Icons.analytics,
+                          color: AppColors.primaryBlue,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primaryBlue.withOpacity(0.1),
+                              AppColors.lightBlue,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Settings',
+                          subtitle: 'Manage account',
+                          icon: Icons.settings,
+                          color: AppColors.grey,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.grey.withOpacity(0.1),
+                              AppColors.lightGrey,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
-          );
+            ),
+          ],
+        );
   }
 
   Widget _buildDashboardCard({

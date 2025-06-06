@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/job_provider.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:provider/provider.dart';
 
 class JobDetailsScreen extends StatefulWidget {
   final Job job;
@@ -31,7 +33,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     setState(() => _isLoading = true);
     
     try {
-      await JobService.toggleJobStatus(_job.id, !_job.isActive);
+      await Provider.of<JobProvider>(context, listen: false)
+          .updateJobStatus(_job.id, !_job.isActive);
       
       setState(() {
         _job = _job.copyWith(isActive: !_job.isActive);

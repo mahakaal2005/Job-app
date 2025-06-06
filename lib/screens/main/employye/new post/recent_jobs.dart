@@ -1,10 +1,12 @@
 // recent_jobs_card.dart
 import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/job_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_details_Screen.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:provider/provider.dart';
 
 class RecentJobsCard extends StatelessWidget {
   final List<Job> jobs;
@@ -19,7 +21,11 @@ class RecentJobsCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  
   Widget build(BuildContext context) {
+        final jobProvider = Provider.of<JobProvider>(context);
+    final recentJobs = jobProvider.jobs.take(3).toList();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -69,22 +75,21 @@ class RecentJobsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          if (jobs.isEmpty)
+                    if (jobProvider.jobs.isEmpty)
             _buildEmptyState()
           else
             Column(
-              children:
-                  jobs
-                      .take(3)
-                      .map((job) => _buildJobItem(context, job))
-                      .toList(),
+              children: recentJobs
+                  .map((job) => _buildJobItem(context, job, jobProvider))
+                  .toList(),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildJobItem(BuildContext context, Job job) {
+
+  Widget _buildJobItem(BuildContext context, Job job, JobProvider jobProvider) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/job_provider.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:provider/provider.dart';
 
 class CreateJobScreen extends StatefulWidget {
   const CreateJobScreen({Key? key}) : super(key: key);
@@ -32,14 +34,14 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     'Part-time',
     'Contract',
     'Internship',
-    'Remote'
+    'Remote',
   ];
 
   final List<String> _experienceLevels = [
     'Entry Level',
     'Mid Level',
     'Senior Level',
-    'Executive Level'
+    'Executive Level',
   ];
 
   @override
@@ -103,30 +105,31 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 width: double.maxFinite,
                 height: 400,
                 child: ListView(
-                  children: allSkills.map((skill) {
-                    final isSelected = tempSelected.contains(skill);
-                    return CheckboxListTile(
-                      value: isSelected,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          if (value == true) {
-                            tempSelected.add(skill);
-                          } else {
-                            tempSelected.remove(skill);
-                          }
-                        });
-                      },
-                      title: Text(
-                        skill,
-                        style: TextStyle(
-                          color: AppColors.primaryText,
-                          fontSize: 14,
-                        ),
-                      ),
-                      activeColor: AppColors.primaryBlue,
-                      checkColor: AppColors.whiteText,
-                    );
-                  }).toList(),
+                  children:
+                      allSkills.map((skill) {
+                        final isSelected = tempSelected.contains(skill);
+                        return CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (value) {
+                            setDialogState(() {
+                              if (value == true) {
+                                tempSelected.add(skill);
+                              } else {
+                                tempSelected.remove(skill);
+                              }
+                            });
+                          },
+                          title: Text(
+                            skill,
+                            style: TextStyle(
+                              color: AppColors.primaryText,
+                              fontSize: 14,
+                            ),
+                          ),
+                          activeColor: AppColors.primaryBlue,
+                          checkColor: AppColors.whiteText,
+                        );
+                      }).toList(),
                 ),
               ),
               actions: [
@@ -160,17 +163,17 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
 
   Future<void> _createJob() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_selectedSkills.isEmpty) {
       _showSnackBar('Please select at least one skill', isError: true);
       return;
     }
-    
+
     if (_responsibilities.isEmpty) {
       _showSnackBar('Please add at least one responsibility', isError: true);
       return;
     }
-    
+
     if (_requirements.isEmpty) {
       _showSnackBar('Please add at least one requirement', isError: true);
       return;
@@ -198,9 +201,12 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         benefits: [],
+        applicantsCount: 0,
+        isActive: true,
+        viewCount: 0,
       );
 
-      await JobService.createJob(job);
+      await Provider.of<JobProvider>(context, listen: false).addJob(job);
       _showSnackBar('Job created successfully!');
       Navigator.pop(context, true);
     } catch (e) {
@@ -322,17 +328,20 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 ),
                 elevation: 3,
               ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteText),
-                    )
-                  : const Text(
-                      'Create Job',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+              child:
+                  _isLoading
+                      ? const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.whiteText,
+                        ),
+                      )
+                      : const Text(
+                        'Create Job',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
             ),
           ],
         ),
@@ -445,15 +454,16 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               contentPadding: const EdgeInsets.all(16),
             ),
             dropdownColor: AppColors.cardBackground,
-            items: items.map((item) {
-              return DropdownMenuItem(
-                value: item,
-                child: Text(
-                  item,
-                  style: TextStyle(color: AppColors.primaryText),
-                ),
-              );
-            }).toList(),
+            items:
+                items.map((item) {
+                  return DropdownMenuItem(
+                    value: item,
+                    child: Text(
+                      item,
+                      style: TextStyle(color: AppColors.primaryText),
+                    ),
+                  );
+                }).toList(),
           ),
         ),
       ],
@@ -502,9 +512,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       ? 'Select Required Skills'
                       : '${_selectedSkills.length} skills selected',
                   style: TextStyle(
-                    color: _selectedSkills.isEmpty
-                        ? AppColors.hintText
-                        : AppColors.primaryText,
+                    color:
+                        _selectedSkills.isEmpty
+                            ? AppColors.hintText
+                            : AppColors.primaryText,
                     fontSize: 16,
                   ),
                 ),
@@ -517,44 +528,48 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _selectedSkills.map((skill) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.primaryBlue.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      skill,
-                      style: TextStyle(
-                        color: AppColors.primaryBlue,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+            children:
+                _selectedSkills.map((skill) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primaryBlue.withOpacity(0.3),
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedSkills.remove(skill);
-                        });
-                      },
-                      child: Icon(
-                        Icons.close,
-                        size: 16,
-                        color: AppColors.primaryBlue,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          skill,
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedSkills.remove(skill);
+                            });
+                          },
+                          child: Icon(
+                            Icons.close,
+                            size: 16,
+                            color: AppColors.primaryBlue,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ],
       ],
@@ -644,10 +659,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               decoration: BoxDecoration(
                 color: AppColors.surfaceColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.dividerColor,
-                  width: 1,
-                ),
+                border: Border.all(color: AppColors.dividerColor, width: 1),
               ),
               child: Row(
                 children: [
