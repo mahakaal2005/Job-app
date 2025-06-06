@@ -77,13 +77,7 @@ class MyApp extends StatelessWidget {
             color: AppColors.grey.withOpacity(0.7),
           ),
         ),
-        cardTheme: CardTheme(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.symmetric(vertical: 4),
-        ),
+        
         chipTheme: ChipThemeData(
           backgroundColor: AppColors.grey.withOpacity(0.1),
           selectedColor: AppColors.primaryBlue.withOpacity(0.2),

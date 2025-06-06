@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
 import 'package:get_work_app/screens/main/employye/emp_profile.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/recent_jobs.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/screens/main/employye/emp_chats.dart';
 import 'package:get_work_app/utils/app_colors.dart';
@@ -19,18 +22,13 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
-
-  final List<Widget> _pages = [
-    DashboardPage(),
-    const EmpChats(),
-    const EmpAnalytics(),
-    const EmpProfile(),
-  ];
+  List<Job> _jobs = []; // Added missing _jobs variable
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadJobs(); // Added call to load jobs
   }
 
   Future<void> _loadUserData() async {
@@ -56,6 +54,33 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
         );
       }
     }
+  }
+
+  Future<void> _loadJobs() async {
+    try {
+      final jobs = await JobService.getCompanyJobs();
+      if (mounted) {
+        setState(() {
+          _jobs = jobs;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Failed to load jobs: ${e.toString()}', isError: true);
+      }
+    }
+  }
+
+  // Added missing _handleStatusChange method
+  void _handleStatusChange(String jobId, bool newStatus) {
+    setState(() {
+      _jobs = _jobs.map((job) {
+        if (job.id == jobId) {
+          return job.copyWith(isActive: newStatus);
+        }
+        return job;
+      }).toList();
+    });
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -141,134 +166,20 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          DashboardPage(
+            jobs: _jobs,
+            onStatusChanged: _handleStatusChange,
+          ),
+          const EmpChats(),
+          const EmpAnalytics(),
+          const EmpProfile(),
+        ],
+      ),
       bottomNavigationBar: _buildBottomNavigationBar(),
       endDrawer: _buildEndDrawer(),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top,
-        left: 20,
-        right: 20,
-        bottom: 20,
-      ),
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.blueShadow,
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Top row with greeting and icons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome back,',
-                    style: TextStyle(
-                      color: AppColors.whiteText.withOpacity(0.9),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _userData?['fullName'] ?? 'User',
-                    style: const TextStyle(
-                      color: AppColors.whiteText,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  // Notification icon with badge
-                  Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.whiteText.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.notifications_outlined,
-                          color: AppColors.whiteText,
-                          size: 24,
-                        ),
-                      ),
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '2',
-                            style: TextStyle(
-                              color: AppColors.whiteText,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 12),
-                  // Menu button
-                  Builder(
-                    builder:
-                        (context) => GestureDetector(
-                          onTap: () => Scaffold.of(context).openEndDrawer(),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.glassWhite,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.whiteText.withOpacity(0.2),
-                                width: 1,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.menu,
-                              color: AppColors.whiteText,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -336,7 +247,6 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
       width: MediaQuery.of(context).size.width * 0.8,
       child: Column(
         children: [
-          // Header with company logo and user info
           Container(
             width: double.infinity,
             padding: EdgeInsets.only(
@@ -349,7 +259,6 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Company Logo
                 Container(
                   width: 80,
                   height: 80,
@@ -379,7 +288,6 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                           : _buildDefaultCompanyLogo(),
                 ),
                 const SizedBox(height: 20),
-                // User name
                 Text(
                   _userData?['fullName'] ?? 'User',
                   style: const TextStyle(
@@ -389,7 +297,6 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                // Company name
                 Text(
                   _companyInfo?['companyName'] ?? 'Company Name',
                   style: TextStyle(
@@ -401,7 +308,6 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
               ],
             ),
           ),
-          // Menu items
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -460,11 +366,18 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                     color: AppColors.dividerColor,
                   ),
                   _buildDrawerItem(
+                    icon: Icons.work_outline,
+                    title: 'Create Job Opening',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, AppRoutes.createJobOpening);
+                    },
+                  ),
+                  _buildDrawerItem(
                     icon: Icons.settings,
                     title: 'Settings',
                     onTap: () {
                       Navigator.pop(context);
-                      // Navigate to settings
                     },
                   ),
                   _buildDrawerItem(
@@ -472,14 +385,12 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                     title: 'Help & Support',
                     onTap: () {
                       Navigator.pop(context);
-                      // Navigate to help
                     },
                   ),
                 ],
               ),
             ),
           ),
-          // Logout button
           Container(
             padding: const EdgeInsets.all(20),
             child: SizedBox(
@@ -572,7 +483,14 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
 }
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({Key? key}) : super(key: key);
+  final List<Job> jobs;
+  final Function(String, bool) onStatusChanged;
+
+  const DashboardPage({
+    Key? key,
+    required this.jobs,
+    required this.onStatusChanged,
+  }) : super(key: key);
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -606,60 +524,74 @@ class _DashboardPageState extends State<DashboardPage> {
         setState(() {
           _isLoading = false;
         });
+        _showSnackBar(
+          'Failed to load user data: ${e.toString()}',
+          isError: true,
+        );
       }
     }
   }
 
-Widget _buildTopBar(String userName) {
-  return Container(
-    padding: EdgeInsets.only(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 20,
-      right: 20,
-      bottom: 20,
-    ),
-    decoration: BoxDecoration(
-      gradient: AppColors.primaryGradient,
-      borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(24),
-        bottomRight: Radius.circular(24),
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? AppColors.error : AppColors.primaryBlue,
+        duration: Duration(seconds: isError ? 4 : 2),
       ),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.blueShadow,
-          blurRadius: 15,
-          offset: const Offset(0, 5),
+    );
+  }
+
+  Widget _buildTopBar(String userName) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 20,
+        right: 20,
+        bottom: 20,
+      ),
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
-      ],
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome back,',
-              style: TextStyle(
-                color: AppColors.whiteText.withOpacity(0.9),
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blueShadow,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome back,',
+                style: TextStyle(
+                  color: AppColors.whiteText.withOpacity(0.9),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              userName, // Use the passed userName
-              style: const TextStyle(
-                color: AppColors.whiteText,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: 4),
+              Text(
+                userName,
+                style: const TextStyle(
+                  color: AppColors.whiteText,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
           Row(
             children: [
-              // Notification icon with badge
               Stack(
                 children: [
                   Container(
@@ -705,28 +637,26 @@ Widget _buildTopBar(String userName) {
                 ],
               ),
               const SizedBox(width: 12),
-              // Menu button
               Builder(
-                builder:
-                    (context) => GestureDetector(
-                      onTap: () => Scaffold.of(context).openEndDrawer(),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.whiteText.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.menu,
-                          color: AppColors.whiteText,
-                          size: 24,
-                        ),
+                builder: (context) => GestureDetector(
+                  onTap: () => Scaffold.of(context).openEndDrawer(),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.glassWhite,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.whiteText.withOpacity(0.2),
+                        width: 1,
                       ),
                     ),
+                    child: Icon(
+                      Icons.menu,
+                      color: AppColors.whiteText,
+                      size: 24,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -737,258 +667,113 @@ Widget _buildTopBar(String userName) {
 
   @override
   Widget build(BuildContext context) {
-      final userName = _userData?['fullName'] ?? 'User';
-  final companyName = _companyInfo?['companyName'] ?? 'Company Name';
+    final userName = _userData?['fullName'] ?? 'User';
 
-    return Column(
-      children: [
-        _buildTopBar(userName),
-        // Dashboard Content
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Stats Overview
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadowLight,
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
+    return _isLoading
+        ? Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+            ),
+          )
+        : Column(
+            children: [
+              _buildTopBar(userName),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Company Overview',
-                        style: TextStyle(
-                          color: AppColors.primaryText,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      RecentJobsCard(
+                        jobs: widget.jobs,
+                        onSeeAllPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.allJobListings,
+                            arguments: widget.jobs,
+                          );
+                        },
+                        onStatusChanged: widget.onStatusChanged,
                       ),
-                      const SizedBox(height: 20),
-                      Row(
+                      const SizedBox(height: 24),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        childAspectRatio: 1.2,
                         children: [
-                          Expanded(
-                            child: _buildStatItem(
-                              'Total Employees',
-                              '24',
-                              Icons.people,
-                              AppColors.primaryBlue,
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.createJobOpening,
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildStatItem(
-                              'Active Projects',
-                              '8',
-                              Icons.work,
-                              AppColors.success,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Quick Actions Grid
-                GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.2,
-                  children: [
-                    _buildDashboardCard(
-                      title: 'Messages',
-                      subtitle: '12 unread',
-                      icon: Icons.chat,
-                      color: AppColors.warning,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.warning.withOpacity(0.1),
-                          AppColors.warningLight,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    _buildDashboardCard(
-                      title: 'Tasks',
-                      subtitle: '5 pending',
-                      icon: Icons.task,
-                      color: AppColors.success,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.success.withOpacity(0.1),
-                          AppColors.successLight,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    _buildDashboardCard(
-                      title: 'Reports',
-                      subtitle: 'View analytics',
-                      icon: Icons.analytics,
-                      color: AppColors.primaryBlue,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryBlue.withOpacity(0.1),
-                          AppColors.lightBlue,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    _buildDashboardCard(
-                      title: 'Settings',
-                      subtitle: 'Manage account',
-                      icon: Icons.settings,
-                      color: AppColors.grey,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.grey.withOpacity(0.1),
-                          AppColors.lightGrey,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Recent Activity
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadowLight,
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Recent Activity',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryText,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              'View All',
-                              style: TextStyle(
-                                color: AppColors.primaryBlue,
-                                fontWeight: FontWeight.w600,
+                            child: _buildDashboardCard(
+                              title: 'Create Job',
+                              subtitle: 'Post new opening',
+                              icon: Icons.work_outline,
+                              color: AppColors.success,
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.success.withOpacity(0.1),
+                                  AppColors.successLight,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                             ),
                           ),
+                          _buildDashboardCard(
+                            title: 'Messages',
+                            subtitle: '12 unread',
+                            icon: Icons.chat,
+                            color: AppColors.warning,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.warning.withOpacity(0.1),
+                                AppColors.warningLight,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          _buildDashboardCard(
+                            title: 'Reports',
+                            subtitle: 'View analytics',
+                            icon: Icons.analytics,
+                            color: AppColors.primaryBlue,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primaryBlue.withOpacity(0.1),
+                                AppColors.lightBlue,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          _buildDashboardCard(
+                            title: 'Settings',
+                            subtitle: 'Manage account',
+                            icon: Icons.settings,
+                            color: AppColors.grey,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.grey.withOpacity(0.1),
+                                AppColors.lightGrey,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
                         ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildActivityItem(
-                        'New employee John joined the team',
-                        '2 hours ago',
-                        Icons.person_add,
-                        AppColors.success,
-                      ),
-                      _buildActivityItem(
-                        'Project Alpha milestone completed',
-                        '1 day ago',
-                        Icons.check_circle,
-                        AppColors.primaryBlue,
-                      ),
-                      _buildActivityItem(
-                        'Monthly report generated',
-                        '2 days ago',
-                        Icons.description,
-                        AppColors.warning,
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            title,
-            style: TextStyle(
-              color: AppColors.secondaryText,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
+              ),
+            ],
+          );
   }
 
   Widget _buildDashboardCard({
@@ -1045,60 +830,6 @@ Widget _buildTopBar(String userName) {
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItem(
-    String title,
-    String time,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.dividerColor, width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.hintText,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),

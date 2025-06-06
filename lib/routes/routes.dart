@@ -6,6 +6,9 @@ import 'package:get_work_app/screens/login_signup/signup_screen.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
 import 'package:get_work_app/screens/main/employye/emp_profile.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/all_jobs.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/new_job_screen.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
 import 'package:get_work_app/services/auth_wrapper.dart';
@@ -23,6 +26,8 @@ class AppRoutes {
   static const String messages = '/messages';
   static const String studentOnboarding = '/student-onboarding';
   static const String employeeOnboarding = '/employee-onboarding';
+  static const String createJobOpening = '/create-job-opening';
+  static const String allJobListings = '/all-job-listings';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -43,8 +48,21 @@ class AppRoutes {
           builder: (_) => const OnboardingScreen(),
           settings: settings,
         );
+      case createJobOpening:
+        return MaterialPageRoute(
+          builder: (_) => const CreateJobScreen(),
+          settings: settings,
+        );
       case home:
         return MaterialPageRoute(builder: (_) => const AuthWrapper());
+case AppRoutes.allJobListings:
+  final args = settings.arguments as Map<String, dynamic>?;
+  return MaterialPageRoute(
+    builder: (_) => AllJobListingsScreen(
+      initialJobs: args?['initialJobs'] as List<Job>?,
+      onStatusChanged: args?['onStatusChanged'] as Function(String, bool)?,
+    ),
+  );
 
       case userHome:
         return MaterialPageRoute(builder: (_) => const UserHomeScreen());
