@@ -24,13 +24,13 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
-  List<Job> _jobs = []; // Added missing _jobs variable
+  List<Job> _jobs = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _loadJobs(); // Added call to load jobs
+    _loadJobs();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<JobProvider>(context, listen: false).loadJobs();
     });
@@ -76,16 +76,14 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
     }
   }
 
-  // Added missing _handleStatusChange method
   void _handleStatusChange(String jobId, bool newStatus) {
     setState(() {
-      _jobs =
-          _jobs.map((job) {
-            if (job.id == jobId) {
-              return job.copyWith(isActive: newStatus);
-            }
-            return job;
-          }).toList();
+      _jobs = _jobs.map((job) {
+        if (job.id == jobId) {
+          return job.copyWith(isActive: newStatus);
+        }
+        return job;
+      }).toList();
     });
   }
 
@@ -159,6 +157,9 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     if (_isLoading) {
       return Scaffold(
         backgroundColor: AppColors.backgroundColor,
@@ -182,7 +183,7 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      endDrawer: _buildEndDrawer(),
+      endDrawer: _buildEndDrawer(screenHeight, screenWidth),
     );
   }
 
@@ -244,41 +245,41 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
     );
   }
 
-  Widget _buildEndDrawer() {
+  Widget _buildEndDrawer(double screenHeight, double screenWidth) {
     return Drawer(
       backgroundColor: AppColors.cardBackground,
-      width: MediaQuery.of(context).size.width * 0.8,
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 20,
-              left: 24,
-              right: 24,
-              bottom: 32,
-            ),
-            decoration: BoxDecoration(gradient: AppColors.primaryGradient),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.whiteText,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadowMedium,
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child:
-                      _companyInfo?['companyLogo'] != null
-                          ? ClipRRect(
+      width: screenWidth * 0.75, // Reduced from 0.8 to prevent overflow
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(
+                top: 20,
+                left: 24,
+                right: 24,
+                bottom: 32,
+              ),
+              decoration: BoxDecoration(gradient: AppColors.primaryGradient),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.whiteText,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.shadowMedium,
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: _companyInfo?['companyLogo'] != null
+                        ? ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: Image.network(
                               _companyInfo!['companyLogo'],
@@ -288,142 +289,146 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                               },
                             ),
                           )
-                          : _buildDefaultCompanyLogo(),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  _userData?['fullName'] ?? 'User',
-                  style: const TextStyle(
-                    color: AppColors.whiteText,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                        : _buildDefaultCompanyLogo(),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _companyInfo?['companyName'] ?? 'Company Name',
-                  style: TextStyle(
-                    color: AppColors.whiteText.withOpacity(0.8),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                children: [
-                  _buildDrawerItem(
-                    icon: Icons.dashboard,
-                    title: 'Dashboard',
-                    isSelected: _selectedIndex == 0,
-                    onTap: () {
-                      Navigator.pop(context);
-                      setState(() {
-                        _selectedIndex = 0;
-                      });
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.chat,
-                    title: 'Messages',
-                    isSelected: _selectedIndex == 1,
-                    onTap: () {
-                      Navigator.pop(context);
-                      setState(() {
-                        _selectedIndex = 1;
-                      });
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.analytics,
-                    title: 'Analytics',
-                    isSelected: _selectedIndex == 2,
-                    onTap: () {
-                      Navigator.pop(context);
-                      setState(() {
-                        _selectedIndex = 2;
-                      });
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.person,
-                    title: 'Profile',
-                    isSelected: _selectedIndex == 3,
-                    onTap: () {
-                      Navigator.pop(context);
-                      setState(() {
-                        _selectedIndex = 3;
-                      });
-                    },
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 20,
+                  const SizedBox(height: 20),
+                  Text(
+                    _userData?['fullName'] ?? 'User',
+                    style: const TextStyle(
+                      color: AppColors.whiteText,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
-                    height: 1,
-                    color: AppColors.dividerColor,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  _buildDrawerItem(
-                    icon: Icons.work_outline,
-                    title: 'Create Job Opening',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, AppRoutes.createJobOpening);
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.settings,
-                    title: 'Settings',
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.help_outline,
-                    title: 'Help & Support',
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
+                  const SizedBox(height: 4),
+                  Text(
+                    _companyInfo?['companyName'] ?? 'Company Name',
+                    style: TextStyle(
+                      color: AppColors.whiteText.withOpacity(0.8),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showLogoutDialog();
-                },
-                icon: const Icon(Icons.logout, color: AppColors.whiteText),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(
-                    color: AppColors.whiteText,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 3,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildDrawerItem(
+                      icon: Icons.dashboard,
+                      title: 'Dashboard',
+                      isSelected: _selectedIndex == 0,
+                      onTap: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _selectedIndex = 0;
+                        });
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.chat,
+                      title: 'Messages',
+                      isSelected: _selectedIndex == 1,
+                      onTap: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _selectedIndex = 1;
+                        });
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.analytics,
+                      title: 'Analytics',
+                      isSelected: _selectedIndex == 2,
+                      onTap: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _selectedIndex = 2;
+                        });
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.person,
+                      title: 'Profile',
+                      isSelected: _selectedIndex == 3,
+                      onTap: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _selectedIndex = 3;
+                        });
+                      },
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 20,
+                      ),
+                      height: 1,
+                      color: AppColors.dividerColor,
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.work_outline,
+                      title: 'Create Job Opening',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, AppRoutes.createJobOpening);
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.settings,
+                      title: 'Settings',
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.help_outline,
+                      title: 'Help & Support',
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-        ],
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showLogoutDialog();
+                  },
+                  icon: const Icon(Icons.logout, color: AppColors.whiteText),
+                  label: const Text(
+                    'Logout',
+                    style: TextStyle(
+                      color: AppColors.whiteText,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 3,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -571,27 +576,31 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome back,',
-                style: TextStyle(
-                  color: AppColors.whiteText.withOpacity(0.9),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome back,',
+                  style: TextStyle(
+                    color: AppColors.whiteText.withOpacity(0.9),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                userName,
-                style: const TextStyle(
-                  color: AppColors.whiteText,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 4),
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    color: AppColors.whiteText,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Row(
             children: [
@@ -641,26 +650,25 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(width: 12),
               Builder(
-                builder:
-                    (context) => GestureDetector(
-                      onTap: () => Scaffold.of(context).openEndDrawer(),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.whiteText.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.menu,
-                          color: AppColors.whiteText,
-                          size: 24,
-                        ),
+                builder: (context) => GestureDetector(
+                  onTap: () => Scaffold.of(context).openEndDrawer(),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.glassWhite,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.whiteText.withOpacity(0.2),
+                        width: 1,
                       ),
                     ),
+                    child: Icon(
+                      Icons.menu,
+                      color: AppColors.whiteText,
+                      size: 24,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -672,113 +680,113 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final userName = _userData?['fullName'] ?? 'User';
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return _isLoading
         ? Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-          ),
-        )
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+            ),
+          )
         : Column(
-          children: [
-            _buildTopBar(userName),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RecentJobsCard(
-                      jobs: widget.jobs,
-                      onSeeAllPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.allJobListings,
-                          arguments: widget.jobs,
-                        );
-                      },
-                      onStatusChanged: widget.onStatusChanged,
-                    ),
-                    const SizedBox(height: 24),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      childAspectRatio: 1.2,
-                      children: [
-                        GestureDetector(
-                          onTap:
-                              () => Navigator.pushNamed(
-                                context,
-                                AppRoutes.createJobOpening,
+            children: [
+              _buildTopBar(userName),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RecentJobsCard(
+                        jobs: widget.jobs,
+                        onSeeAllPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.allJobListings,
+                            arguments: widget.jobs,
+                          );
+                        },
+                        onStatusChanged: widget.onStatusChanged,
+                      ),
+                      const SizedBox(height: 24),
+                      GridView.count(
+                        crossAxisCount: screenWidth < 600 ? 2 : 4,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        childAspectRatio: screenWidth < 600 ? 1.2 : 1.0,
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.createJobOpening,
+                            ),
+                            child: _buildDashboardCard(
+                              title: 'Create Job',
+                              subtitle: 'Post new opening',
+                              icon: Icons.work_outline,
+                              color: AppColors.success,
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.success.withOpacity(0.1),
+                                  AppColors.successLight,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                          child: _buildDashboardCard(
-                            title: 'Create Job',
-                            subtitle: 'Post new opening',
-                            icon: Icons.work_outline,
-                            color: AppColors.success,
+                            ),
+                          ),
+                          _buildDashboardCard(
+                            title: 'Messages',
+                            subtitle: '12 unread',
+                            icon: Icons.chat,
+                            color: AppColors.warning,
                             gradient: LinearGradient(
                               colors: [
-                                AppColors.success.withOpacity(0.1),
-                                AppColors.successLight,
+                                AppColors.warning.withOpacity(0.1),
+                                AppColors.warningLight,
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                           ),
-                        ),
-                        _buildDashboardCard(
-                          title: 'Messages',
-                          subtitle: '12 unread',
-                          icon: Icons.chat,
-                          color: AppColors.warning,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.warning.withOpacity(0.1),
-                              AppColors.warningLight,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                          _buildDashboardCard(
+                            title: 'Reports',
+                            subtitle: 'View analytics',
+                            icon: Icons.analytics,
+                            color: AppColors.primaryBlue,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primaryBlue.withOpacity(0.1),
+                                AppColors.lightBlue,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                           ),
-                        ),
-                        _buildDashboardCard(
-                          title: 'Reports',
-                          subtitle: 'View analytics',
-                          icon: Icons.analytics,
-                          color: AppColors.primaryBlue,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primaryBlue.withOpacity(0.1),
-                              AppColors.lightBlue,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                          _buildDashboardCard(
+                            title: 'Settings',
+                            subtitle: 'Manage account',
+                            icon: Icons.settings,
+                            color: AppColors.grey,
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.grey.withOpacity(0.1),
+                                AppColors.lightGrey,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                           ),
-                        ),
-                        _buildDashboardCard(
-                          title: 'Settings',
-                          subtitle: 'Manage account',
-                          icon: Icons.settings,
-                          color: AppColors.grey,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.grey.withOpacity(0.1),
-                              AppColors.lightGrey,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
   }
 
   Widget _buildDashboardCard({

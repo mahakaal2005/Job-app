@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/user/jobs/all_jobs_Screen.dart';
+import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
+import 'package:get_work_app/screens/main/user/jobs/job_detail.dart';
 import 'package:get_work_app/screens/main/user/user_chats.dart';
 import 'package:get_work_app/screens/main/user/user_my_gigs.dart';
 import 'package:get_work_app/screens/main/user/user_profile.dart';
@@ -13,7 +17,8 @@ class UserHomeScreen extends StatefulWidget {
   State<UserHomeScreen> createState() => _UserHomeScreenState();
 }
 
-class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStateMixin {
+class _UserHomeScreenState extends State<UserHomeScreen>
+    with TickerProviderStateMixin {
   String _userName = '';
   bool _isLoading = true;
   int _currentIndex = 0;
@@ -23,64 +28,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
   late Animation<double> _fadeAnimation;
 
   // Enhanced job data with better visuals
-  final List<Map<String, dynamic>> _jobListings = [
-    {
-      'id': 1,
-      'title': 'Senior Data Analyst',
-      'employer': 'TechCorp Solutions',
-      'logo': Icons.analytics_outlined,
-      'hourlyRate': 1500,
-      'distance': 2.3,
-      'badges': ['Remote', 'Full-time', 'Urgent'],
-      'type': 'full-time',
-      'duration': '8 hours',
-      'color': AppColors.primaryBlue,
-      'rating': 4.8,
-      'applications': 12,
-    },
-    {
-      'id': 2,
-      'title': 'UI/UX Designer',
-      'employer': 'Creative Studio',
-      'logo': Icons.design_services_outlined,
-      'hourlyRate': 1200,
-      'distance': 1.8,
-      'badges': ['Design', 'Creative', 'Portfolio'],
-      'type': 'contract',
-      'duration': '6 hours',
-      'color': AppColors.neonBlue,
-      'rating': 4.9,
-      'applications': 8,
-    },
-    {
-      'id': 3,
-      'title': 'Content Strategist',
-      'employer': 'Digital Agency',
-      'logo': Icons.edit_outlined,
-      'hourlyRate': 1800,
-      'distance': 3.1,
-      'badges': ['Writing', 'Strategy', 'Remote'],
-      'type': 'freelance',
-      'duration': '4 hours',
-      'color': AppColors.darkBlue,
-      'rating': 4.7,
-      'applications': 15,
-    },
-    {
-      'id': 4,
-      'title': 'Mobile Developer',
-      'employer': 'StartupTech',
-      'logo': Icons.phone_android_outlined,
-      'hourlyRate': 2000,
-      'distance': 0.8,
-      'badges': ['Flutter', 'React Native', 'Full-time'],
-      'type': 'permanent',
-      'duration': '8 hours',
-      'color': AppColors.accentBlue,
-      'rating': 4.6,
-      'applications': 25,
-    },
-  ];
+  List<Job> _jobs = [];
+  bool _isLoadingJobs = false;
 
   final List<String> _filterOptions = [
     'All',
@@ -132,6 +81,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _loadUserData();
+    _loadJobs();
     _animationController.forward();
   }
 
@@ -160,13 +110,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
     }
   }
 
+  Future<void> _loadJobs() async {
+    setState(() => _isLoadingJobs = true);
+    try {
+      final jobs = await AllJobsService.getAllJobs(limit: 10);
+      setState(() {
+        _jobs = jobs;
+        _isLoadingJobs = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingJobs = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading jobs: $e')));
+    }
+  }
+
   Future<void> _showLogoutDialog() async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           backgroundColor: AppColors.white,
           elevation: 20,
           shadowColor: AppColors.shadowMedium,
@@ -178,7 +146,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                   color: AppColors.errorLight,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.logout_rounded, color: AppColors.error, size: 24),
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.error,
+                  size: 24,
+                ),
               ),
               SizedBox(width: 12),
               Text(
@@ -206,7 +178,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
             TextButton(
               style: TextButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: Text(
                 'Cancel',
@@ -223,15 +197,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                 backgroundColor: AppColors.error,
                 foregroundColor: AppColors.white,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               child: Text(
                 'Sign Out',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -258,19 +231,32 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                     color: AppColors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.check_circle_rounded, color: AppColors.white, size: 20),
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.white,
+                    size: 20,
+                  ),
                 ),
                 SizedBox(width: 12),
-                Text('Successfully signed out', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  'Successfully signed out',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ],
             ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             margin: EdgeInsets.all(16),
           ),
         );
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -285,7 +271,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
         );
       }
@@ -306,7 +294,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
       child: Column(
         children: [
           Container(
-            height: MediaQuery.of(context).size.height * 0.25, // Responsive height
+            height:
+                MediaQuery.of(context).size.height * 0.25, // Responsive height
             decoration: BoxDecoration(
               gradient: AppColors.blackGradient,
               borderRadius: BorderRadius.only(topRight: Radius.circular(24)),
@@ -330,13 +319,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         ],
                       ),
                       child: CircleAvatar(
-                        radius: MediaQuery.of(context).size.width * 0.09, // Responsive size
+                        radius:
+                            MediaQuery.of(context).size.width *
+                            0.09, // Responsive size
                         backgroundColor: AppColors.primaryBlue,
                         child: Text(
-                          _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                          _userName.isNotEmpty
+                              ? _userName[0].toUpperCase()
+                              : 'U',
                           style: TextStyle(
                             color: AppColors.white,
-                            fontSize: MediaQuery.of(context).size.width * 0.07, // Responsive
+                            fontSize:
+                                MediaQuery.of(context).size.width *
+                                0.07, // Responsive
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -349,7 +344,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         _userName,
                         style: TextStyle(
                           color: AppColors.white,
-                          fontSize: MediaQuery.of(context).size.width * 0.05, // Responsive
+                          fontSize:
+                              MediaQuery.of(context).size.width *
+                              0.05, // Responsive
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 1,
@@ -358,17 +355,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                     ),
                     SizedBox(height: 4),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryBlue.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3)),
+                        border: Border.all(
+                          color: AppColors.primaryBlue.withOpacity(0.3),
+                        ),
                       ),
                       child: Text(
                         'Job Seeker',
                         style: TextStyle(
                           color: AppColors.neonBlue,
-                          fontSize: MediaQuery.of(context).size.width * 0.03, // Responsive
+                          fontSize:
+                              MediaQuery.of(context).size.width *
+                              0.03, // Responsive
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -478,7 +482,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
 
   Widget _buildNotificationDropdown() {
     final unreadCount = _notifications.where((n) => !n['isRead']).length;
-    
+
     return PopupMenuButton<int>(
       icon: Stack(
         children: [
@@ -515,7 +519,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                   '$unreadCount',
                   style: TextStyle(
                     color: AppColors.white,
-                    fontSize: MediaQuery.of(context).size.width * 0.025, // Responsive
+                    fontSize:
+                        MediaQuery.of(context).size.width * 0.025, // Responsive
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -533,7 +538,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
             value: -1,
             enabled: false,
             child: Container(
-              width: MediaQuery.of(context).size.width * 0.8, // Responsive width
+              width:
+                  MediaQuery.of(context).size.width * 0.8, // Responsive width
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -541,7 +547,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                   Text(
                     'Notifications',
                     style: TextStyle(
-                      fontSize: MediaQuery.of(context).size.width * 0.045, // Responsive
+                      fontSize:
+                          MediaQuery.of(context).size.width *
+                          0.045, // Responsive
                       fontWeight: FontWeight.bold,
                       color: AppColors.black,
                     ),
@@ -550,14 +558,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         backgroundColor: AppColors.lightBlue,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       child: Text(
                         'Mark all read',
                         style: TextStyle(
-                          fontSize: MediaQuery.of(context).size.width * 0.03, // Responsive
+                          fontSize:
+                              MediaQuery.of(context).size.width *
+                              0.03, // Responsive
                           color: AppColors.primaryBlue,
                           fontWeight: FontWeight.w600,
                         ),
@@ -571,7 +586,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
             return PopupMenuItem<int>(
               value: notification['id'],
               child: Container(
-                width: MediaQuery.of(context).size.width * 0.8, // Responsive width
+                width:
+                    MediaQuery.of(context).size.width * 0.8, // Responsive width
                 padding: EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   children: [
@@ -584,7 +600,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                       child: Icon(
                         notification['icon'],
                         color: AppColors.primaryBlue,
-                        size: MediaQuery.of(context).size.width * 0.045, // Responsive
+                        size:
+                            MediaQuery.of(context).size.width *
+                            0.045, // Responsive
                       ),
                     ),
                     SizedBox(width: 12),
@@ -598,18 +616,25 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                                 child: Text(
                                   notification['title'],
                                   style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                    fontWeight: notification['isRead'] 
-                                        ? FontWeight.w500 
-                                        : FontWeight.bold,
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.035, // Responsive
+                                    fontWeight:
+                                        notification['isRead']
+                                            ? FontWeight.w500
+                                            : FontWeight.bold,
                                     color: AppColors.black,
                                   ),
                                 ),
                               ),
                               if (!notification['isRead'])
                                 Container(
-                                  width: MediaQuery.of(context).size.width * 0.02, // Responsive
-                                  height: MediaQuery.of(context).size.width * 0.02, // Responsive
+                                  width:
+                                      MediaQuery.of(context).size.width *
+                                      0.02, // Responsive
+                                  height:
+                                      MediaQuery.of(context).size.width *
+                                      0.02, // Responsive
                                   decoration: BoxDecoration(
                                     color: AppColors.primaryBlue,
                                     shape: BoxShape.circle,
@@ -621,7 +646,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                           Text(
                             notification['message'],
                             style: TextStyle(
-                              fontSize: MediaQuery.of(context).size.width * 0.032, // Responsive
+                              fontSize:
+                                  MediaQuery.of(context).size.width *
+                                  0.032, // Responsive
                               color: AppColors.secondaryText,
                               height: 1.3,
                             ),
@@ -632,7 +659,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                           Text(
                             notification['time'],
                             style: TextStyle(
-                              fontSize: MediaQuery.of(context).size.width * 0.03, // Responsive
+                              fontSize:
+                                  MediaQuery.of(context).size.width *
+                                  0.03, // Responsive
                               color: AppColors.hintText,
                               fontWeight: FontWeight.w500,
                             ),
@@ -674,6 +703,29 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
           ),
           child: Column(
             children: [
+              SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AllJobsScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: Text(
+                  'View All Jobs',
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -684,7 +736,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width * 0.04, // Responsive
+                            fontSize:
+                                MediaQuery.of(context).size.width *
+                                0.04, // Responsive
                             color: AppColors.white.withOpacity(0.9),
                             fontWeight: FontWeight.w500,
                           ),
@@ -693,7 +747,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                         Text(
                           _userName.split(' ').first,
                           style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width * 0.07, // Responsive
+                            fontSize:
+                                MediaQuery.of(context).size.width *
+                                0.07, // Responsive
                             fontWeight: FontWeight.bold,
                             color: AppColors.white,
                           ),
@@ -701,7 +757,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 8),
-                        
                       ],
                     ),
                   ),
@@ -718,9 +773,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            Icons.menu_rounded, 
-                            color: AppColors.white, 
-                            size: MediaQuery.of(context).size.width * 0.06, // Responsive
+                            Icons.menu_rounded,
+                            color: AppColors.white,
+                            size:
+                                MediaQuery.of(context).size.width *
+                                0.06, // Responsive
                           ),
                         ),
                       ),
@@ -737,39 +794,49 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
 
   Widget _buildFilterChips() {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.07, 
+      height: MediaQuery.of(context).size.height * 0.07,
       padding: EdgeInsets.symmetric(vertical: 12),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.04), 
+        padding: EdgeInsets.symmetric(
+          horizontal: MediaQuery.of(context).size.width * 0.04,
+        ),
         itemCount: _filterOptions.length,
         itemBuilder: (context, index) {
           final filter = _filterOptions[index];
           final isSelected = _selectedFilter == filter;
 
           return Padding(
-            padding: EdgeInsets.only(right: MediaQuery.of(context).size.width * 0.03), // Responsive
+            padding: EdgeInsets.only(
+              right: MediaQuery.of(context).size.width * 0.03,
+            ), // Responsive
             child: GestureDetector(
               onTap: () => setState(() => _selectedFilter = filter),
               child: AnimatedContainer(
                 duration: Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.04, // Responsive
-                  vertical: MediaQuery.of(context).size.height * 0.01, // Responsive
+                  horizontal:
+                      MediaQuery.of(context).size.width * 0.04, // Responsive
+                  vertical:
+                      MediaQuery.of(context).size.height * 0.01, // Responsive
                 ),
                 decoration: BoxDecoration(
                   gradient: isSelected ? AppColors.primaryGradient : null,
                   color: isSelected ? null : AppColors.white,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected ? Colors.transparent : AppColors.dividerColor,
+                    color:
+                        isSelected
+                            ? Colors.transparent
+                            : AppColors.dividerColor,
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: isSelected 
-                          ? AppColors.blueShadow.withOpacity(0.3)
-                          : AppColors.shadowLight,
+                      color:
+                          isSelected
+                              ? AppColors.blueShadow.withOpacity(0.3)
+                              : AppColors.shadowLight,
                       blurRadius: isSelected ? 8 : 4,
                       offset: Offset(0, isSelected ? 4 : 2),
                     ),
@@ -778,9 +845,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
                 child: Text(
                   filter,
                   style: TextStyle(
-                    color: isSelected ? AppColors.white : AppColors.secondaryText,
+                    color:
+                        isSelected ? AppColors.white : AppColors.secondaryText,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
+                    fontSize:
+                        MediaQuery.of(context).size.width * 0.035, // Responsive
                   ),
                 ),
               ),
@@ -791,309 +860,97 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
     );
   }
 
-  Widget _buildJobCard(Map<String, dynamic> job) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: MediaQuery.of(context).size.width * 0.04, // Responsive
-        vertical: 8,
-      ),
-      child: Card(
-        elevation: 8,
-        shadowColor: AppColors.shadowLight,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: InkWell(
-          onTap: () {
-            // Navigate to job detail screen
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.white,
-                  AppColors.white.withOpacity(0.95),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04), // Responsive
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildJobCard(Job job) {
+    return Card(
+      margin: EdgeInsets.all(8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => JobDetailScreen(job: job)),
+          );
+        },
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              job['color'].withOpacity(0.1),
-                              job['color'].withOpacity(0.05),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: job['color'].withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          job['logo'],
-                          color: job['color'],
-                          size: MediaQuery.of(context).size.width * 0.06, // Responsive
+                  if (job.companyLogo.isNotEmpty)
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundImage: NetworkImage(job.companyLogo),
+                    )
+                  else
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+                      child: Text(
+                        job.companyName[0],
+                        style: TextStyle(
+                          color: AppColors.primaryBlue,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.03), // Responsive
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              job['title'],
-                              style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.045, // Responsive
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.black,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              job['employer'],
-                              style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                color: AppColors.secondaryText,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(Icons.star_rounded, 
-                                     color: AppColors.warning, 
-                                     size: MediaQuery.of(context).size.width * 0.04), // Responsive
-                                SizedBox(width: 4),
-                                Text(
-                                  '${job['rating']}',
-                                  style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.black,
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Icon(Icons.people_outline_rounded, 
-                                     color: AppColors.hintText, 
-                                     size: MediaQuery.of(context).size.width * 0.04), // Responsive
-                                SizedBox(width: 4),
-                                Text(
-                                  '${job['applications']} applied',
-                                  style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                    color: AppColors.hintText,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: MediaQuery.of(context).size.width * 0.03, // Responsive
-                              vertical: MediaQuery.of(context).size.height * 0.01, // Responsive
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.success,
-                                  AppColors.success.withOpacity(0.8),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.success.withOpacity(0.3),
-                                  blurRadius: 6,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              '₹${job['hourlyRate']}/hr',
-                              style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.location_on_rounded, 
-                                   size: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                   color: AppColors.hintText),
-                              SizedBox(width: 4),
-                              Text(
-                                '${job['distance']} km',
-                                style: TextStyle(
-                                  fontSize: MediaQuery.of(context).size.width * 0.032, // Responsive
-                                  color: AppColors.hintText,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: job['badges'].map<Widget>((badge) {
-                      final isUrgent = badge.toLowerCase() == 'urgent';
-                      return Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: MediaQuery.of(context).size.width * 0.03, // Responsive
-                          vertical: MediaQuery.of(context).size.height * 0.01, // Responsive
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: isUrgent
-                              ? LinearGradient(
-                                  colors: [AppColors.error, AppColors.error.withOpacity(0.8)],
-                                )
-                              : LinearGradient(
-                                  colors: [
-                                    job['color'].withOpacity(0.1),
-                                    job['color'].withOpacity(0.05),
-                                  ],
-                                ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isUrgent 
-                                ? AppColors.error.withOpacity(0.3)
-                                : job['color'].withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          badge,
+                    ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          job.title,
                           style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width * 0.032, // Responsive
-                            color: isUrgent ? AppColors.white : job['color'],
-                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      );
-                    }).toList(),
+                        Text(
+                          job.companyName,
+                          style: TextStyle(color: AppColors.secondaryText),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Row(
-                          children: [
-                            Icon(Icons.access_time_rounded, 
-                                 size: MediaQuery.of(context).size.width * 0.04, // Responsive
-                                 color: AppColors.hintText),
-                            SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                job['duration'],
-                                style: TextStyle(
-                                  fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                  color: AppColors.secondaryText,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Icon(Icons.work_outline_rounded, 
-                                 size: MediaQuery.of(context).size.width * 0.04, // Responsive
-                                 color: AppColors.hintText),
-                            SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                job['type'],
-                                style: TextStyle(
-                                  fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                  color: AppColors.secondaryText,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '₹${job.salaryRange}/hr',
+                      style: TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.blueShadow.withOpacity(0.3),
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Navigate to job details
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            foregroundColor: AppColors.white,
-                            shadowColor: Colors.transparent,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: MediaQuery.of(context).size.width * 0.04, // Responsive
-                              vertical: MediaQuery.of(context).size.height * 0.015, // Responsive
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Apply Now',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: MediaQuery.of(context).size.width * 0.035, // Responsive
-                                ),
-                              ),
-                              SizedBox(width: 6),
-                              Icon(Icons.arrow_forward_rounded, 
-                                   size: MediaQuery.of(context).size.width * 0.04), // Responsive
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
+              SizedBox(height: 12),
+              Text(
+                job.description.length > 100
+                    ? '${job.description.substring(0, 100)}...'
+                    : job.description,
+                style: TextStyle(color: AppColors.secondaryText),
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  if (job.employmentType.isNotEmpty)
+                    Chip(
+                      label: Text(job.employmentType),
+                      backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -1108,13 +965,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
           _buildModernHeader(),
           _buildFilterChips(),
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.only(top: 8, bottom: 20),
-              itemCount: _jobListings.length,
-              itemBuilder: (context, index) {
-                return _buildJobCard(_jobListings[index]);
-              },
-            ),
+            child:
+                _isLoadingJobs
+                    ? Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                      padding: EdgeInsets.only(top: 8, bottom: 20),
+                      itemCount: _jobs.length,
+                      itemBuilder: (context, index) {
+                        return _buildJobCard(_jobs[index]);
+                      },
+                    ),
           ),
         ],
       ),
@@ -1182,13 +1042,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
               icon: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _currentIndex == 0 
-                      ? AppColors.primaryBlue.withOpacity(0.1)
-                      : Colors.transparent,
+                  color:
+                      _currentIndex == 0
+                          ? AppColors.primaryBlue.withOpacity(0.1)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  _currentIndex == 0 ? Icons.work_rounded : Icons.work_outline_rounded,
+                  _currentIndex == 0
+                      ? Icons.work_rounded
+                      : Icons.work_outline_rounded,
                   size: 24,
                 ),
               ),
@@ -1198,13 +1061,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
               icon: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _currentIndex == 1 
-                      ? AppColors.primaryBlue.withOpacity(0.1)
-                      : Colors.transparent,
+                  color:
+                      _currentIndex == 1
+                          ? AppColors.primaryBlue.withOpacity(0.1)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  _currentIndex == 1 ? Icons.assignment_rounded : Icons.assignment_outlined,
+                  _currentIndex == 1
+                      ? Icons.assignment_rounded
+                      : Icons.assignment_outlined,
                   size: 24,
                 ),
               ),
@@ -1214,13 +1080,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
               icon: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _currentIndex == 2 
-                      ? AppColors.primaryBlue.withOpacity(0.1)
-                      : Colors.transparent,
+                  color:
+                      _currentIndex == 2
+                          ? AppColors.primaryBlue.withOpacity(0.1)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  _currentIndex == 2 ? Icons.chat_bubble_rounded : Icons.chat_bubble_outline_rounded,
+                  _currentIndex == 2
+                      ? Icons.chat_bubble_rounded
+                      : Icons.chat_bubble_outline_rounded,
                   size: 24,
                 ),
               ),
@@ -1230,13 +1099,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> with TickerProviderStat
               icon: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _currentIndex == 3 
-                      ? AppColors.primaryBlue.withOpacity(0.1)
-                      : Colors.transparent,
+                  color:
+                      _currentIndex == 3
+                          ? AppColors.primaryBlue.withOpacity(0.1)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  _currentIndex == 3 ? Icons.person_rounded : Icons.person_outline_rounded,
+                  _currentIndex == 3
+                      ? Icons.person_rounded
+                      : Icons.person_outline_rounded,
                   size: 24,
                 ),
               ),
