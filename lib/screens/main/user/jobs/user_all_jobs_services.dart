@@ -11,10 +11,7 @@ class AllJobsService {
     try {
       Query query = _firestore
           .collectionGroup('jobPostings')
-          .where(
-            'isActive',
-            isEqualTo: true,
-          ) 
+          .where('isActive', isEqualTo: true)
           .orderBy('createdAt', descending: true)
           .limit(limit);
 
@@ -25,7 +22,9 @@ class AllJobsService {
       final querySnapshot = await query.get();
 
       return querySnapshot.docs.map((doc) {
-        return Job.fromJson(doc.data() as Map<String, dynamic>);
+        return Job.fromJson(doc.data() as Map<String, dynamic>).copyWith(
+          id: doc.id, // Make sure to include the document ID
+        );
       }).toList();
     } catch (e) {
       throw Exception('Failed to fetch jobs: $e');

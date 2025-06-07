@@ -56,9 +56,7 @@ class AuthService {
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      throw FirebaseAuthException(
-        code: e.code,
-      );
+      throw FirebaseAuthException(code: e.code);
     } catch (e) {
       throw Exception('An unexpected error occurred: ${e.toString()}');
     }
@@ -76,9 +74,7 @@ class AuthService {
       );
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      throw FirebaseAuthException(
-        code: e.code,
-      );
+      throw FirebaseAuthException(code: e.code);
     } catch (e) {
       throw Exception('An unexpected error occurred: ${e.toString()}');
     }
@@ -138,7 +134,8 @@ class AuthService {
           await _firestore.collection('employees').doc(uid).get();
 
       if (employeeDoc.exists) {
-        Map<String, dynamic> employeeData = employeeDoc.data() as Map<String, dynamic>;
+        Map<String, dynamic> employeeData =
+            employeeDoc.data() as Map<String, dynamic>;
         return employeeData['onboardingCompleted'] ?? false;
       }
 
@@ -178,25 +175,26 @@ class AuthService {
         throw Exception('User role not found');
       }
 
-      String collectionName = userRole == 'employee' ? 'employees' : 'users_specific';
+      String collectionName =
+          userRole == 'employee' ? 'employees' : 'users_specific';
 
       // Get current user data
       DocumentSnapshot userDoc =
-          await _firestore.collection(collectionName).doc(currentUser!.uid).get();
+          await _firestore
+              .collection(collectionName)
+              .doc(currentUser!.uid)
+              .get();
 
       if (!userDoc.exists) {
         throw Exception('User document not found');
       }
 
       // Update user document with onboarding data
-      await _firestore
-          .collection(collectionName)
-          .doc(currentUser!.uid)
-          .update({
-            ...onboardingData,
-            'onboardingCompleted': true,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await _firestore.collection(collectionName).doc(currentUser!.uid).update({
+        ...onboardingData,
+        'onboardingCompleted': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       throw Exception('Failed to complete onboarding: ${e.toString()}');
     }
@@ -225,17 +223,16 @@ class AuthService {
       }
 
       // Update employee document with onboarding data
-      await _firestore
-          .collection('employees')
-          .doc(currentUser!.uid)
-          .update({
-            ...employeeOnboardingData,
-            'onboardingCompleted': true,
-            'onboardingCompletedAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await _firestore.collection('employees').doc(currentUser!.uid).update({
+        ...employeeOnboardingData,
+        'onboardingCompleted': true,
+        'onboardingCompletedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      throw Exception('Failed to complete employee onboarding: ${e.toString()}');
+      throw Exception(
+        'Failed to complete employee onboarding: ${e.toString()}',
+      );
     }
   }
 
@@ -284,7 +281,9 @@ class AuthService {
   }
 
   // Update employee company information
-  static Future<void> updateEmployeeCompanyInfo(Map<String, dynamic> companyInfo) async {
+  static Future<void> updateEmployeeCompanyInfo(
+    Map<String, dynamic> companyInfo,
+  ) async {
     try {
       if (currentUser == null) {
         throw Exception('No user is currently logged in');
@@ -295,20 +294,19 @@ class AuthService {
         throw Exception('User is not an employee');
       }
 
-      await _firestore
-          .collection('employees')
-          .doc(currentUser!.uid)
-          .update({
-            'companyInfo': companyInfo,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await _firestore.collection('employees').doc(currentUser!.uid).update({
+        'companyInfo': companyInfo,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       throw Exception('Failed to update company info: ${e.toString()}');
     }
   }
 
   // Update employee work information
-  static Future<void> updateEmployeeWorkInfo(Map<String, dynamic> workInfo) async {
+  static Future<void> updateEmployeeWorkInfo(
+    Map<String, dynamic> workInfo,
+  ) async {
     try {
       if (currentUser == null) {
         throw Exception('No user is currently logged in');
@@ -319,26 +317,26 @@ class AuthService {
         throw Exception('User is not an employee');
       }
 
-      await _firestore
-          .collection('employees')
-          .doc(currentUser!.uid)
-          .update({
-            'employeeInfo': workInfo,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+      await _firestore.collection('employees').doc(currentUser!.uid).update({
+        'employeeInfo': workInfo,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       throw Exception('Failed to update work info: ${e.toString()}');
     }
   }
 
   // Get employees by company (for company admin features)
-  static Future<List<Map<String, dynamic>>> getEmployeesByCompany(String companyName) async {
+  static Future<List<Map<String, dynamic>>> getEmployeesByCompany(
+    String companyName,
+  ) async {
     try {
-      QuerySnapshot snapshot = await _firestore
-          .collection('employees')
-          .where('companyInfo.companyName', isEqualTo: companyName)
-          .where('isActive', isEqualTo: true)
-          .get();
+      QuerySnapshot snapshot =
+          await _firestore
+              .collection('employees')
+              .where('companyInfo.companyName', isEqualTo: companyName)
+              .where('isActive', isEqualTo: true)
+              .get();
 
       return snapshot.docs
           .map((doc) => doc.data() as Map<String, dynamic>)
@@ -435,10 +433,7 @@ class AuthService {
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
-      throw FirebaseAuthException(
-        code: e.code,
-        
-      );
+      throw FirebaseAuthException(code: e.code);
     } catch (e) {
       throw Exception('Failed to send reset email: ${e.toString()}');
     }
@@ -483,21 +478,26 @@ class AuthService {
   }
 
   static Future<Map<String, dynamic>> getProfileData() async {
-  try {
-    if (currentUser == null) throw Exception('No user logged in');
-    
-    final role = await getUserRole();
-    final collectionName = role == 'employee' ? 'employees' : 'users_specific';
-    
-    final doc = await _firestore.collection(collectionName).doc(currentUser!.uid).get();
-    
-    if (!doc.exists) throw Exception('User document not found');
-    
-    return doc.data() as Map<String, dynamic>;
-  } catch (e) {
-    throw Exception('Failed to get profile data: ${e.toString()}');
+    try {
+      if (currentUser == null) throw Exception('No user logged in');
+
+      final role = await getUserRole();
+      final collectionName =
+          role == 'employee' ? 'employees' : 'users_specific';
+
+      final doc =
+          await _firestore
+              .collection(collectionName)
+              .doc(currentUser!.uid)
+              .get();
+
+      if (!doc.exists) throw Exception('User document not found');
+
+      return doc.data() as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Failed to get profile data: ${e.toString()}');
+    }
   }
-}
 
   // Get user data from role-specific collection
   static Future<Map<String, dynamic>?> getUserData() async {
