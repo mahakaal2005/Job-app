@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_detail.dart';
 import 'package:get_work_app/screens/main/user/saved_jobs_screen.dart';
@@ -9,8 +10,8 @@ import 'package:get_work_app/screens/main/user/user_chats.dart';
 import 'package:get_work_app/screens/main/user/user_my_gigs.dart';
 import 'package:get_work_app/screens/main/user/user_profile.dart';
 import 'package:get_work_app/services/auth_services.dart';
-import 'package:get_work_app/services/bookmark_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:provider/provider.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -21,7 +22,6 @@ class UserHomeScreen extends StatefulWidget {
 
 class _UserHomeScreenState extends State<UserHomeScreen>
     with TickerProviderStateMixin {
-  final BookmarkService _bookmarkService = BookmarkService();
   String? _userId;
   String _userName = '';
   bool _isLoading = true;
@@ -39,10 +39,6 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   final int _jobsPerPage = 10;
   DocumentSnapshot<Map<String, dynamic>>? _lastDocument;
   final ScrollController _scrollController = ScrollController();
-
-  // Bookmarked jobs
-  Set<String> _bookmarkedJobs = <String>{};
-  bool _isLoadingBookmarks = false;
 
   final List<String> _filterOptions = [
     'All',
@@ -97,7 +93,6 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     _scrollController.addListener(_scrollListener);
     _loadUserData();
     _loadJobs();
-    _loadBookmarkedJobs();
     _animationController.forward();
   }
 
@@ -124,16 +119,9 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       if (userData != null && mounted) {
         setState(() {
           _userName = userData['fullName'] ?? 'User';
-          _isLoading = false;
-        });
-      }
-      if (userData != null && mounted) {
-        setState(() {
-          _userName = userData['fullName'] ?? 'User';
           _userId = userData['uid'];
           _isLoading = false;
         });
-        _loadBookmarkedJobs();
       }
     } catch (e) {
       if (mounted) {
@@ -146,22 +134,13 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   }
 
   Future<void> _loadBookmarkedJobs() async {
-    if (_isLoadingBookmarks || _userId == null) return;
+    if (_userId == null) return;
 
-    setState(() => _isLoadingBookmarks = true);
-    try {
-      _bookmarkedJobs = await BookmarkService().getUserBookmarks(_userId!);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading bookmarks: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingBookmarks = false);
-      }
-    }
+    final bookmarkProvider = Provider.of<BookmarkProvider>(
+      context,
+      listen: false,
+    );
+
   }
 
   Future<void> _loadJobs() async {
@@ -180,7 +159,6 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       );
 
       if (mounted) {
-        // Get the last document snapshot if jobs are not empty
         DocumentSnapshot<Map<String, dynamic>>? newLastDoc;
         if (jobs.isNotEmpty) {
           newLastDoc =
@@ -219,7 +197,6 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       );
 
       if (mounted) {
-        // Get the last document snapshot if new jobs are not empty
         DocumentSnapshot<Map<String, dynamic>>? newLastDoc;
         if (newJobs.isNotEmpty) {
           newLastDoc =
@@ -251,71 +228,39 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   }
 
   Future<void> _toggleBookmark(String jobId) async {
-    if (_userId == null) return;
+    final bookmarkProvider = Provider.of<BookmarkProvider>(
+      context,
+      listen: false,
+    );
+    bookmarkProvider.toggleBookmark(jobId);
 
-    try {
-      // Update local state immediately for responsive UI
-      setState(() {
-        if (_bookmarkedJobs.contains(jobId)) {
-          _bookmarkedJobs.remove(jobId);
-        } else {
-          _bookmarkedJobs.add(jobId);
-        }
-      });
-
-      // Sync with Firestore
-      await BookmarkService().toggleBookmark(_userId!, jobId);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(
-                  _bookmarkedJobs.contains(jobId)
-                      ? Icons.bookmark
-                      : Icons.bookmark_border,
-                  color: AppColors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _bookmarkedJobs.contains(jobId)
-                      ? 'Job bookmarked'
-                      : 'Bookmark removed',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              bookmarkProvider.isBookmarked(jobId)
+                  ? Icons.bookmark
+                  : Icons.bookmark_border,
+              color: AppColors.white,
+              size: 20,
             ),
-            backgroundColor: AppColors.primaryBlue,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+            const SizedBox(width: 12),
+            Text(
+              bookmarkProvider.isBookmarked(jobId)
+                  ? 'Job bookmarked'
+                  : 'Bookmark removed',
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      // Revert local state if Firestore update fails
-      setState(() {
-        if (_bookmarkedJobs.contains(jobId)) {
-          _bookmarkedJobs.remove(jobId);
-        } else {
-          _bookmarkedJobs.add(jobId);
-        }
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update bookmark: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
+          ],
+        ),
+        backgroundColor: AppColors.primaryBlue,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   String _formatSalary(String salary) {
@@ -346,6 +291,87 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     } catch (e) {
       return 'Recently';
     }
+  }
+
+  Widget _buildCompanyInitial(String companyName) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Center(
+        child: Text(
+          companyName.isNotEmpty ? companyName[0].toUpperCase() : 'C',
+          style: const TextStyle(
+            color: AppColors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? iconColor,
+    Color? textColor,
+    String? badge,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: (iconColor ?? AppColors.primaryBlue).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor ?? AppColors.primaryBlue,
+            size: MediaQuery.of(context).size.width * 0.05,
+          ),
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: textColor ?? AppColors.black,
+                  fontSize: MediaQuery.of(context).size.width * 0.04,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (badge != null && badge != '0')
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  badge,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
+    );
   }
 
   Widget _buildDrawer() {
@@ -461,18 +487,14 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                 _buildDrawerItem(
                   icon: Icons.bookmark_outline_rounded,
                   title: 'Saved Jobs',
-                  badge: _bookmarkedJobs.length.toString(),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => SavedJobsScreen(
-      bookmarkedJobIds: _bookmarkedJobs,
-      onBookmarkToggled: (jobId) => _toggleBookmark(jobId),
-    ),
-  ),
-);
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SavedJobsScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildDrawerItem(
@@ -609,66 +631,6 @@ class _UserHomeScreenState extends State<UserHomeScreen>
           ],
         );
       },
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color? iconColor,
-    Color? textColor,
-    String? badge,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: (iconColor ?? AppColors.primaryBlue).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: iconColor ?? AppColors.primaryBlue,
-            size: MediaQuery.of(context).size.width * 0.05,
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  color: textColor ?? AppColors.black,
-                  fontSize: MediaQuery.of(context).size.width * 0.04,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            if (badge != null && badge != '0')
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryBlue,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  badge,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      ),
     );
   }
 
@@ -1017,424 +979,421 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   }
 
   Widget _buildEnhancedJobCard(Job job) {
-    final isBookmarked = _bookmarkedJobs.contains(job.id);
+    return Consumer<BookmarkProvider>(
+      builder: (context, bookmarkProvider, child) {
+        final isBookmarked = bookmarkProvider.isBookmarked(job.id);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 8,
-        shadowColor: AppColors.blueShadow.withOpacity(0.15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) => JobDetailScreen(
-                      job: job,
-                      isBookmarked: _bookmarkedJobs.contains(job.id),
-                      onBookmarkToggled: (jobId) => _toggleBookmark(jobId),
-                    ),
-              ),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with Company Logo, Info, and Bookmark
-                Row(
-                  children: [
-                    // Company Logo with Status Indicator
-                    Stack(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: AppColors.lightGrey,
-                              width: 2,
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child:
-                                job.companyLogo.isNotEmpty
-                                    ? Image.network(
-                                      job.companyLogo,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return _buildCompanyInitial(
-                                          job.companyName,
-                                        );
-                                      },
-                                    )
-                                    : _buildCompanyInitial(job.companyName),
-                          ),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Card(
+            elevation: 8,
+            shadowColor: AppColors.blueShadow.withOpacity(0.15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => JobDetailScreen(
+                          job: job,
+                          isBookmarked: isBookmarked,
+                          onBookmarkToggled:
+                              (jobId) => bookmarkProvider.toggleBookmark(jobId),
                         ),
-                        if (job.isActive)
-                          Positioned(
-                            right: -2,
-                            top: -2,
-                            child: Container(
-                              width: 16,
-                              height: 16,
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header with Company Logo, Info, and Bookmark
+                    Row(
+                      children: [
+                        // Company Logo with Status Indicator
+                        Stack(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
                               decoration: BoxDecoration(
-                                color: AppColors.success,
-                                shape: BoxShape.circle,
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: AppColors.white,
+                                  color: AppColors.lightGrey,
                                   width: 2,
                                 ),
                               ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 16),
-                    // Company Info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            job.title,
-                            style: TextStyle(
-                              fontSize:
-                                  MediaQuery.of(context).size.width * 0.045,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.black,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.business_rounded,
-                                size: 16,
-                                color: AppColors.primaryBlue,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child:
+                                    job.companyLogo.isNotEmpty
+                                        ? Image.network(
+                                          job.companyLogo,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return _buildCompanyInitial(
+                                              job.companyName,
+                                            );
+                                          },
+                                        )
+                                        : _buildCompanyInitial(job.companyName),
                               ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  job.companyName,
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width *
-                                        0.038,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primaryBlue,
+                            ),
+                            if (job.isActive)
+                              Positioned(
+                                right: -2,
+                                top: -2,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.white,
+                                      width: 2,
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
+                          ],
+                        ),
+                        const SizedBox(width: 16),
+                        // Company Info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.location_on_rounded,
-                                size: 14,
-                                color: AppColors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  job.location,
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width *
-                                        0.032,
-                                    color: AppColors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Icon(
-                                Icons.access_time_rounded,
-                                size: 14,
-                                color: AppColors.grey,
-                              ),
-                              const SizedBox(width: 4),
                               Text(
-                                _getTimeAgo(job.createdAt.toIso8601String()),
+                                job.title,
                                 style: TextStyle(
                                   fontSize:
-                                      MediaQuery.of(context).size.width * 0.032,
-                                  color: AppColors.grey,
-                                  fontWeight: FontWeight.w500,
+                                      MediaQuery.of(context).size.width * 0.045,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.black,
+                                  height: 1.2,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.business_rounded,
+                                    size: 16,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      job.companyName,
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.038,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primaryBlue,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_rounded,
+                                    size: 14,
+                                    color: AppColors.grey,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      job.location,
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.032,
+                                        color: AppColors.grey,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    Icons.access_time_rounded,
+                                    size: 14,
+                                    color: AppColors.grey,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _getTimeAgo(
+                                      job.createdAt.toIso8601String(),
+                                    ),
+                                    style: TextStyle(
+                                      fontSize:
+                                          MediaQuery.of(context).size.width *
+                                          0.032,
+                                      color: AppColors.grey,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    // Bookmark Button
-                    Container(
-                      decoration: BoxDecoration(
-                        color:
-                            isBookmarked
-                                ? AppColors.primaryBlue.withOpacity(0.1)
-                                : AppColors.lightGrey.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        onPressed: () => _toggleBookmark(job.id),
-                        icon: Icon(
-                          isBookmarked
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          color:
+                        ),
+                        // Bookmark Button
+                        Container(
+                          decoration: BoxDecoration(
+                            color:
+                                isBookmarked
+                                    ? AppColors.primaryBlue.withOpacity(0.1)
+                                    : AppColors.lightGrey.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            onPressed:
+                                () => bookmarkProvider.toggleBookmark(job.id),
+                            icon: Icon(
                               isBookmarked
-                                  ? AppColors.primaryBlue
-                                  : AppColors.grey,
-                          size: 24,
+                                  ? Icons.bookmark_rounded
+                                  : Icons.bookmark_border_rounded,
+                              color:
+                                  isBookmarked
+                                      ? AppColors.primaryBlue
+                                      : AppColors.grey,
+                              size: 24,
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(
+                              minWidth: 40,
+                              minHeight: 40,
+                            ),
+                          ),
                         ),
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Job Description
-                Text(
-                  job.description.length > 120
-                      ? '${job.description.substring(0, 120)}...'
-                      : job.description,
-                  style: TextStyle(
-                    fontSize: MediaQuery.of(context).size.width * 0.035,
-                    color: AppColors.secondaryText,
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 16),
-                // Skills Tags
-                if (job.requiredSkills.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ...job.requiredSkills
-                          .take(3)
-                          .map(
-                            (skill) => Container(
+                    const SizedBox(height: 16),
+                    // Job Description
+                    Text(
+                      job.description.length > 120
+                          ? '${job.description.substring(0, 120)}...'
+                          : job.description,
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                        color: AppColors.secondaryText,
+                        height: 1.4,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 16),
+                    // Skills Tags
+                    if (job.requiredSkills.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ...job.requiredSkills
+                              .take(3)
+                              .map(
+                                (skill) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.lightBlue,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: AppColors.primaryBlue.withOpacity(
+                                        0.2,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    skill,
+                                    style: TextStyle(
+                                      fontSize:
+                                          MediaQuery.of(context).size.width *
+                                          0.03,
+                                      color: AppColors.primaryBlue,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          if (job.requiredSkills.length > 3)
+                            Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.lightBlue,
+                                color: AppColors.softGrey,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: AppColors.primaryBlue.withOpacity(0.2),
-                                ),
                               ),
                               child: Text(
-                                skill,
+                                '+${job.requiredSkills.length - 3} more',
                                 style: TextStyle(
                                   fontSize:
                                       MediaQuery.of(context).size.width * 0.03,
-                                  color: AppColors.primaryBlue,
+                                  color: AppColors.grey,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                          ),
-                      if (job.requiredSkills.length > 3)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.softGrey,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '+${job.requiredSkills.length - 3} more',
-                            style: TextStyle(
-                              fontSize:
-                                  MediaQuery.of(context).size.width * 0.03,
-                              color: AppColors.grey,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 16),
+                    // Footer with Salary and Apply Button
+                    Container(
+                      padding: const EdgeInsets.only(top: 16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: AppColors.lightGrey, width: 1),
                         ),
-                    ],
-                  ),
-                const SizedBox(height: 16),
-                // Footer with Salary and Apply Button
-                Container(
-                  padding: const EdgeInsets.only(top: 16),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: AppColors.lightGrey, width: 1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      // Salary and Employment Type
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                      ),
+                      child: Row(
+                        children: [
+                          // Salary and Employment Type
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  Icons.currency_rupee_rounded,
-                                  size: 18,
-                                  color: AppColors.success,
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.currency_rupee_rounded,
+                                      size: 18,
+                                      color: AppColors.success,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _formatSalary(job.salaryRange),
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.042,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.success,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '/year',
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.032,
+                                        color: AppColors.grey,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _formatSalary(job.salaryRange),
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width *
-                                        0.042,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.success,
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '/year',
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width *
-                                        0.032,
-                                    color: AppColors.grey,
-                                    fontWeight: FontWeight.w500,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryBlue.withOpacity(
+                                      0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppColors.primaryBlue.withOpacity(
+                                        0.2,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    job.employmentType,
+                                    style: TextStyle(
+                                      fontSize:
+                                          MediaQuery.of(context).size.width *
+                                          0.03,
+                                      color: AppColors.primaryBlue,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            Container(
+                          ),
+                          // Apply Button
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => JobDetailScreen(
+                                        job: job,
+                                        isBookmarked: isBookmarked,
+                                        onBookmarkToggled:
+                                            (jobId) => bookmarkProvider
+                                                .toggleBookmark(jobId),
+                                      ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryBlue,
+                              foregroundColor: AppColors.white,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                                horizontal: 24,
+                                vertical: 12,
                               ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryBlue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.primaryBlue.withOpacity(0.2),
-                                ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Text(
-                                job.employmentType,
-                                style: TextStyle(
-                                  fontSize:
-                                      MediaQuery.of(context).size.width * 0.03,
-                                  color: AppColors.primaryBlue,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              elevation: 4,
+                              shadowColor: AppColors.blueShadow,
                             ),
-                          ],
-                        ),
-                      ),
-                      // Apply Button
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => JobDetailScreen(
-                                    job: job,
-                                    isBookmarked: _bookmarkedJobs.contains(
-                                      job.id,
-                                    ),
-                                    onBookmarkToggled:
-                                        (jobId) => _toggleBookmark(jobId),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Apply Now',
+                                  style: TextStyle(
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.035,
+                                    fontWeight: FontWeight.bold,
                                   ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(Icons.arrow_forward_rounded, size: 18),
+                              ],
                             ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryBlue,
-                          foregroundColor: AppColors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 4,
-                          shadowColor: AppColors.blueShadow,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Apply Now',
-                              style: TextStyle(
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.035,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(Icons.arrow_forward_rounded, size: 18),
-                          ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompanyInitial(String companyName) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Center(
-        child: Text(
-          companyName.isNotEmpty ? companyName[0].toUpperCase() : 'C',
-          style: const TextStyle(
-            color: AppColors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
