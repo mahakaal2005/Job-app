@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/job_provider.dart';
+import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
 import 'package:get_work_app/screens/main/employye/emp_profile.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';

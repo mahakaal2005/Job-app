@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/job_provider.dart';
+import 'package:get_work_app/provider/emp_job_provider.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/edi_jobs_scre.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
@@ -8,11 +9,15 @@ import 'package:provider/provider.dart';
 class JobDetailsScreen extends StatefulWidget {
   final Job job;
   final Function(String, bool) onStatusChanged;
+  final Function(String)? onJobDeleted;
+  final Function(Job)? onJobUpdated;
 
   const JobDetailsScreen({
     Key? key,
     required this.job,
     required this.onStatusChanged,
+    this.onJobDeleted,
+    this.onJobUpdated,
   }) : super(key: key);
 
   @override
@@ -40,7 +45,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         _job = _job.copyWith(isActive: !_job.isActive);
       });
       
-      widget.onStatusChanged!(_job.id, _job.isActive);
+      widget.onStatusChanged(_job.id, _job.isActive);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -64,6 +69,105 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     }
   }
 
+  Future<void> _editJob() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditJobScreen(job: _job),
+      ),
+    );
+
+    if (result != null && result is Job) {
+      setState(() {
+        _job = result;
+      });
+      if (widget.onJobUpdated != null) {
+        widget.onJobUpdated!(result);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Job updated successfully'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteJob() async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: AppColors.cardBackground,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Text(
+        'Delete Job',
+        style: TextStyle(
+          color: AppColors.primaryText,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      content: Text(
+        'Are you sure you want to delete this job posting? This action cannot be undone.',
+        style: TextStyle(color: AppColors.secondaryText),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: AppColors.secondaryText),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.error,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: const Text(
+            'Delete',
+            style: TextStyle(color: AppColors.whiteText),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    setState(() => _isLoading = true);
+
+    try {
+      await Provider.of<JobProvider>(context, listen: false).deleteJob(_job.id);
+      
+      // Notify parent screens about the deletion
+      if (widget.onJobDeleted != null) {
+        widget.onJobDeleted!(_job.id);
+      }
+
+      Navigator.pop(context); // Close the details screen
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Job deleted successfully'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete job: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -84,58 +188,70 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           ),
         ),
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppColors.whiteText),
-            onSelected: (value) {
-              switch (value) {
-                case 'toggle_status':
-                  _toggleJobStatus();
-                  break;
-                case 'edit':
-                  // Navigate to edit job screen
-                  break;
-                case 'delete':
-                  // Show delete confirmation
-                  break;
-              }
-            },
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    value: 'toggle_status',
-                    child: Row(
-                      children: [
-                        Icon(
-                          _job.isActive ? Icons.pause : Icons.play_arrow,
-                          color: AppColors.primaryText,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(_job.isActive ? 'Deactivate' : 'Activate'),
-                      ],
-                    ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteText),
+                ),
+              ),
+            )
+          else
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: AppColors.whiteText),
+              onSelected: (value) {
+                switch (value) {
+                  case 'toggle_status':
+                    _toggleJobStatus();
+                    break;
+                  case 'edit':
+                    _editJob();
+                    break;
+                  case 'delete':
+                    _deleteJob();
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'toggle_status',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _job.isActive ? Icons.pause : Icons.play_arrow,
+                        color: AppColors.primaryText,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(_job.isActive ? 'Deactivate' : 'Activate'),
+                    ],
                   ),
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, color: AppColors.primaryText),
-                        SizedBox(width: 8),
-                        Text('Edit'),
-                      ],
-                    ),
+                ),
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, color: AppColors.primaryText),
+                      SizedBox(width: 8),
+                      Text('Edit'),
+                    ],
                   ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, color: AppColors.error),
-                        SizedBox(width: 8),
-                        Text('Delete'),
-                      ],
-                    ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, color: AppColors.error),
+                      SizedBox(width: 8),
+                      Text('Delete'),
+                    ],
                   ),
-                ],
-          ),
+                ),
+              ],
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -143,7 +259,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Job Header Card
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -192,10 +307,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color:
-                              _job.isActive
-                                  ? AppColors.success
-                                  : AppColors.error,
+                          color: _job.isActive
+                              ? AppColors.success
+                              : AppColors.error,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -247,7 +361,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            // Statistics Row
             Row(
               children: [
                 Expanded(
@@ -272,7 +385,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            // Job Description
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -312,7 +424,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            // Requirements
             if (_job.requirements.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(24),
@@ -377,7 +488,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            // Salary & Benefits
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -459,7 +569,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            // Posted Date
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

@@ -4,7 +4,7 @@ import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
-import 'package:get_work_app/screens/main/user/jobs/job_detail.dart';
+import 'package:get_work_app/screens/main/user/jobs/user_job_detail.dart';
 import 'package:get_work_app/screens/main/user/saved_jobs_screen.dart';
 import 'package:get_work_app/screens/main/user/user_chats.dart';
 import 'package:get_work_app/screens/main/user/user_my_gigs.dart';

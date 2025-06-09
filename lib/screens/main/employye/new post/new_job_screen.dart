@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/job_provider.dart';
+import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
@@ -21,13 +21,16 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   final _salaryController = TextEditingController();
   final _responsibilityController = TextEditingController();
   final _requirementController = TextEditingController();
+  final _skillSearchController = TextEditingController();
 
   String _selectedEmploymentType = 'Full-time';
   String _selectedExperienceLevel = 'Entry Level';
   List<String> _selectedSkills = [];
   List<String> _responsibilities = [];
   List<String> _requirements = [];
+  List<String> _filteredSkills = [];
   bool _isLoading = false;
+  bool _showSkillSuggestions = false;
 
   final List<String> _employmentTypes = [
     'Full-time',
@@ -45,6 +48,12 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _filteredSkills = List.from(allSkills);
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
@@ -52,7 +61,41 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     _salaryController.dispose();
     _responsibilityController.dispose();
     _requirementController.dispose();
+    _skillSearchController.dispose();
     super.dispose();
+  }
+
+  void _filterSkills(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredSkills = List.from(allSkills);
+        _showSkillSuggestions = false;
+      } else {
+        _filteredSkills = allSkills
+            .where((skill) =>
+                skill.toLowerCase().contains(query.toLowerCase()) &&
+                !_selectedSkills.contains(skill))
+            .toList();
+        _showSkillSuggestions = _filteredSkills.isNotEmpty;
+      }
+    });
+  }
+
+  void _addSkill(String skill) {
+    if (!_selectedSkills.contains(skill)) {
+      setState(() {
+        _selectedSkills.add(skill);
+        _skillSearchController.clear();
+        _showSkillSuggestions = false;
+        _filteredSkills.clear();
+      });
+    }
+  }
+
+  void _removeSkill(String skill) {
+    setState(() {
+      _selectedSkills.remove(skill);
+    });
   }
 
   void _addResponsibility() {
@@ -83,82 +126,6 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     setState(() {
       _requirements.removeAt(index);
     });
-  }
-
-  void _showSkillsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        List<String> tempSelected = List.from(_selectedSkills);
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: AppColors.cardBackground,
-              title: Text(
-                'Select Skills',
-                style: TextStyle(
-                  color: AppColors.primaryText,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 400,
-                child: ListView(
-                  children:
-                      allSkills.map((skill) {
-                        final isSelected = tempSelected.contains(skill);
-                        return CheckboxListTile(
-                          value: isSelected,
-                          onChanged: (value) {
-                            setDialogState(() {
-                              if (value == true) {
-                                tempSelected.add(skill);
-                              } else {
-                                tempSelected.remove(skill);
-                              }
-                            });
-                          },
-                          title: Text(
-                            skill,
-                            style: TextStyle(
-                              color: AppColors.primaryText,
-                              fontSize: 14,
-                            ),
-                          ),
-                          activeColor: AppColors.primaryBlue,
-                          checkColor: AppColors.whiteText,
-                        );
-                      }).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(color: AppColors.grey),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedSkills = tempSelected;
-                    });
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: AppColors.whiteText,
-                  ),
-                  child: const Text('Done'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
   }
 
   Future<void> _createJob() async {
@@ -247,105 +214,283 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         ),
         elevation: 0,
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            _buildInputField(
-              'Job Title *',
-              _titleController,
-              'Enter job title',
-              Icons.work,
-            ),
-            const SizedBox(height: 20),
-            _buildInputField(
-              'Job Description *',
-              _descriptionController,
-              'Describe the job role',
-              Icons.description,
-              maxLines: 4,
-            ),
-            const SizedBox(height: 20),
-            _buildInputField(
-              'Location *',
-              _locationController,
-              'Enter job location',
-              Icons.location_on,
-            ),
-            const SizedBox(height: 20),
-            _buildDropdown(
-              'Employment Type *',
-              _selectedEmploymentType,
-              _employmentTypes,
-              (value) => setState(() => _selectedEmploymentType = value!),
-              Icons.work_outline,
-            ),
-            const SizedBox(height: 20),
-            _buildDropdown(
-              'Experience Level *',
-              _selectedExperienceLevel,
-              _experienceLevels,
-              (value) => setState(() => _selectedExperienceLevel = value!),
-              Icons.trending_up,
-            ),
-            const SizedBox(height: 20),
-            _buildInputField(
-              'Salary Range *',
-              _salaryController,
-              'e.g., ₹50,000 - ₹80,000',
-              Icons.currency_rupee,
-            ),
-            const SizedBox(height: 20),
-            _buildSkillsSection(),
-            const SizedBox(height: 20),
-            _buildListSection(
-              'Responsibilities *',
-              _responsibilities,
-              _responsibilityController,
-              _addResponsibility,
-              _removeResponsibility,
-              'Add responsibility',
-            ),
-            const SizedBox(height: 20),
-            _buildListSection(
-              'Requirements *',
-              _requirements,
-              _requirementController,
-              _addRequirement,
-              _removeRequirement,
-              'Add requirement',
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _createJob,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
-                foregroundColor: AppColors.whiteText,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 3,
+      body: GestureDetector(
+        onTap: () {
+          // Hide skill suggestions when tapping outside
+          setState(() {
+            _showSkillSuggestions = false;
+          });
+          FocusScope.of(context).unfocus();
+        },
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              _buildInputField(
+                'Job Title *',
+                _titleController,
+                'Enter job title',
+                Icons.work,
               ),
-              child:
-                  _isLoading
-                      ? const CircularProgressIndicator(
+              const SizedBox(height: 20),
+              _buildInputField(
+                'Job Description *',
+                _descriptionController,
+                'Describe the job role',
+                Icons.description,
+                maxLines: 4,
+              ),
+              const SizedBox(height: 20),
+              _buildInputField(
+                'Location *',
+                _locationController,
+                'Enter job location',
+                Icons.location_on,
+              ),
+              const SizedBox(height: 20),
+              _buildDropdown(
+                'Employment Type *',
+                _selectedEmploymentType,
+                _employmentTypes,
+                (value) => setState(() => _selectedEmploymentType = value!),
+                Icons.work_outline,
+              ),
+              const SizedBox(height: 20),
+              _buildDropdown(
+                'Experience Level *',
+                _selectedExperienceLevel,
+                _experienceLevels,
+                (value) => setState(() => _selectedExperienceLevel = value!),
+                Icons.trending_up,
+              ),
+              const SizedBox(height: 20),
+              _buildInputField(
+                'Salary Range *',
+                _salaryController,
+                'e.g., ₹50,000 - ₹80,000',
+                Icons.currency_rupee,
+              ),
+              const SizedBox(height: 20),
+              _buildSearchableSkillsSection(),
+              const SizedBox(height: 20),
+              _buildListSection(
+                'Responsibilities *',
+                _responsibilities,
+                _responsibilityController,
+                _addResponsibility,
+                _removeResponsibility,
+                'Add responsibility',
+              ),
+              const SizedBox(height: 20),
+              _buildListSection(
+                'Requirements *',
+                _requirements,
+                _requirementController,
+                _addRequirement,
+                _removeRequirement,
+                'Add requirement',
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _createJob,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: AppColors.whiteText,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 3,
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
                           AppColors.whiteText,
                         ),
                       )
-                      : const Text(
+                    : const Text(
                         'Create Job',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSearchableSkillsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Required Skills *',
+          style: TextStyle(
+            color: AppColors.primaryText,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        
+        // Search Input Field
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadowLight,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: _skillSearchController,
+            style: TextStyle(color: AppColors.primaryText),
+            onChanged: _filterSkills,
+            onTap: () {
+              if (_skillSearchController.text.isNotEmpty) {
+                _filterSkills(_skillSearchController.text);
+              }
+            },
+            decoration: InputDecoration(
+              hintText: 'Search and add skills...',
+              hintStyle: TextStyle(color: AppColors.hintText),
+              prefixIcon: Icon(Icons.search, color: AppColors.primaryBlue),
+              suffixIcon: _skillSearchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear, color: AppColors.grey),
+                      onPressed: () {
+                        _skillSearchController.clear();
+                        setState(() {
+                          _showSkillSuggestions = false;
+                          _filteredSkills.clear();
+                        });
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: AppColors.cardBackground,
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
+        ),
+
+        // Skill Suggestions Dropdown
+        if (_showSkillSuggestions && _filteredSkills.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _filteredSkills.length > 5 ? 5 : _filteredSkills.length,
+              itemBuilder: (context, index) {
+                final skill = _filteredSkills[index];
+                return ListTile(
+                  dense: true,
+                  title: Text(
+                    skill,
+                    style: TextStyle(
+                      color: AppColors.primaryText,
+                      fontSize: 14,
+                    ),
+                  ),
+                  leading: Icon(
+                    Icons.add_circle_outline,
+                    color: AppColors.primaryBlue,
+                    size: 20,
+                  ),
+                  onTap: () => _addSkill(skill),
+                  hoverColor: AppColors.primaryBlue.withOpacity(0.1),
+                );
+              },
+            ),
+          ),
+
+        // Selected Skills Display
+        if (_selectedSkills.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Selected Skills (${_selectedSkills.length})',
+            style: TextStyle(
+              color: AppColors.primaryText,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _selectedSkills.map((skill) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primaryBlue.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      skill,
+                      style: TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () => _removeSkill(skill),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          size: 14,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 
@@ -454,124 +599,17 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               contentPadding: const EdgeInsets.all(16),
             ),
             dropdownColor: AppColors.cardBackground,
-            items:
-                items.map((item) {
-                  return DropdownMenuItem(
-                    value: item,
-                    child: Text(
-                      item,
-                      style: TextStyle(color: AppColors.primaryText),
-                    ),
-                  );
-                }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkillsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Required Skills *',
-          style: TextStyle(
-            color: AppColors.primaryText,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: _showSkillsDialog,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.primaryBlue.withOpacity(0.3),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadowLight,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+            items: items.map((item) {
+              return DropdownMenuItem(
+                value: item,
+                child: Text(
+                  item,
+                  style: TextStyle(color: AppColors.primaryText),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.add, color: AppColors.primaryBlue),
-                const SizedBox(width: 12),
-                Text(
-                  _selectedSkills.isEmpty
-                      ? 'Select Required Skills'
-                      : '${_selectedSkills.length} skills selected',
-                  style: TextStyle(
-                    color:
-                        _selectedSkills.isEmpty
-                            ? AppColors.hintText
-                            : AppColors.primaryText,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
         ),
-        if (_selectedSkills.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                _selectedSkills.map((skill) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.primaryBlue.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          skill,
-                          style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedSkills.remove(skill);
-                            });
-                          },
-                          child: Icon(
-                            Icons.close,
-                            size: 16,
-                            color: AppColors.primaryBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-          ),
-        ],
       ],
     );
   }

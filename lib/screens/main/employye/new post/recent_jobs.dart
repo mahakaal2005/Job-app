@@ -1,8 +1,8 @@
 // recent_jobs_card.dart
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/job_provider.dart';
+import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job_details_Screen.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/emp_job_details_Screen.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';

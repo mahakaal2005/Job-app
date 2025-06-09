@@ -53,13 +53,15 @@ class Job {
       requiredSkills: List<String>.from(json['requiredSkills'] ?? []),
       responsibilities: List<String>.from(json['responsibilities'] ?? []),
       requirements: List<String>.from(json['requirements'] ?? []),
+      benefits: List<String>.from(json['benefits'] ?? []),
       companyName: json['companyName'] ?? '',
       companyLogo: json['companyLogo'] ?? '',
       employerId: json['employerId'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       isActive: json['isActive'] ?? true,
-      benefits: List<String>.from(json['benefits'] ?? []), // Add this line
+      applicantsCount: json['applicantsCount'] ?? 0,
+      viewCount: json['viewCount'] ?? 0,
     );
   }
 
@@ -75,12 +77,15 @@ class Job {
       'requiredSkills': requiredSkills,
       'responsibilities': responsibilities,
       'requirements': requirements,
+      'benefits': benefits,
       'companyName': companyName,
       'companyLogo': companyLogo,
       'employerId': employerId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'isActive': isActive,
+      'applicantsCount': applicantsCount,
+      'viewCount': viewCount,
     };
   }
 
@@ -102,6 +107,8 @@ class Job {
     DateTime? updatedAt,
     bool? isActive,
     List<String>? benefits,
+    int? applicantsCount,
+    int? viewCount,
   }) {
     return Job(
       id: id ?? this.id,
@@ -121,6 +128,8 @@ class Job {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      applicantsCount: applicantsCount ?? this.applicantsCount,
+      viewCount: viewCount ?? this.viewCount,
     );
   }
 }

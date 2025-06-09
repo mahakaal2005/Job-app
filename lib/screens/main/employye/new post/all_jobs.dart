@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/job_provider.dart';
+import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job_details_Screen.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/emp_job_details_Screen.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:provider/provider.dart';
 
 class AllJobListingsScreen extends StatefulWidget {
-  const AllJobListingsScreen({
-    Key? key,
-    this.initialJobs,
-    this.onStatusChanged,
-  }) : super(key: key);
-  
+  const AllJobListingsScreen({Key? key, this.initialJobs, this.onStatusChanged})
+    : super(key: key);
+
   final List<Job>? initialJobs;
   final Function(String, bool)? onStatusChanged;
 
   @override
-  
   State<AllJobListingsScreen> createState() => _AllJobListingsScreenState();
 }
 
@@ -26,11 +22,12 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
 
   @override
   void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    Provider.of<JobProvider>(context, listen: false).loadJobs();
-  });
-}
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<JobProvider>(context, listen: false).loadJobs();
+    });
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -61,7 +58,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
         builder: (context, jobProvider, child) {
           // Apply filters based on _selectedFilter
           List<Job> filteredJobs = _applyFilters(jobProvider.jobs);
-          
+
           return Column(
             children: [
               // Filter Section
@@ -92,18 +89,21 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                   ],
                 ),
               ),
-              
+
               // Jobs List
               Expanded(
-                child: jobProvider.isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-                      ),
-                    )
-                  : filteredJobs.isEmpty
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
+                child:
+                    jobProvider.isLoading
+                        ? Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primaryBlue,
+                            ),
+                          ),
+                        )
+                        : filteredJobs.isEmpty
+                        ? _buildEmptyState()
+                        : RefreshIndicator(
                           onRefresh: () => jobProvider.loadJobs(),
                           child: ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -178,21 +178,25 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
         ],
       ),
       child: InkWell(
+        // In your _buildJobCard method, update the JobDetailsScreen navigation:
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => JobDetailsScreen(
-                job: job,
-                onStatusChanged: (jobId, isActive) {
-                  // Update the job status in the provider
-                  jobProvider.updateJobStatus(jobId, isActive);
-                  // Call the parent callback if it exists
-                  if (widget.onStatusChanged != null) {
-                    widget.onStatusChanged!(jobId, isActive);
-                  }
-                },
-              ),
+              builder:
+                  (context) => JobDetailsScreen(
+                    job: job,
+                    onStatusChanged: (jobId, isActive) {
+                      jobProvider.updateJobStatus(jobId, isActive);
+                      if (widget.onStatusChanged != null) {
+                        widget.onStatusChanged!(jobId, isActive);
+                      }
+                    },
+                    onJobDeleted: (jobId) {
+                      // This will trigger a rebuild when a job is deleted
+                      jobProvider.loadJobs();
+                    },
+                  ),
             ),
           );
         },
@@ -231,9 +235,10 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: job.isActive 
-                        ? AppColors.success.withOpacity(0.1)
-                        : AppColors.error.withOpacity(0.1),
+                    color:
+                        job.isActive
+                            ? AppColors.success.withOpacity(0.1)
+                            : AppColors.error.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: job.isActive ? AppColors.success : AppColors.error,
@@ -254,8 +259,11 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.location_on, 
-                     color: AppColors.secondaryText, size: 16),
+                Icon(
+                  Icons.location_on,
+                  color: AppColors.secondaryText,
+                  size: 16,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   job.location,
@@ -265,8 +273,11 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.work_outline, 
-                     color: AppColors.secondaryText, size: 16),
+                Icon(
+                  Icons.work_outline,
+                  color: AppColors.secondaryText,
+                  size: 16,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   job.employmentType,
@@ -376,8 +387,8 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
             _selectedFilter == 'all'
                 ? 'You haven\'t posted any jobs yet.\nTap the + button to create your first job listing.'
                 : _selectedFilter == 'active'
-                    ? 'No active jobs found.'
-                    : 'No inactive jobs found.',
+                ? 'No active jobs found.'
+                : 'No inactive jobs found.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -424,8 +435,18 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
       return '${difference.inDays} days ago';
     } else {
       final months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return '${months[date.month - 1]} ${date.day}';
     }
