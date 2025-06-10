@@ -21,8 +21,21 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
   final _experienceController = TextEditingController();
   final _firestore = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
-
+  Map<String, dynamic>? _userData;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userData = await AuthService.getUserData();
+    setState(() {
+      _userData = userData;
+    });
+  }
 
   Future<void> _submitApplication() async {
     if (!_formKey.currentState!.validate()) return;
@@ -112,7 +125,6 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -126,27 +138,62 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
       ),
       child: Column(
         children: [
+          // Banner Image
           Container(
-            width: 40,
-            height: 4,
+            height: 120,
             decoration: BoxDecoration(
-              color: AppColors.mutedText.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              image: DecorationImage(
+                image: NetworkImage(
+                  widget.job.companyLogo ??
+                      'https://via.placeholder.com/800x200?text=Company+Banner',
+                ),
+                fit: BoxFit.cover,
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primaryBlue.withOpacity(0.8),
+                  AppColors.royalBlue.withOpacity(0.6),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Apply for ${widget.job.title}',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryText,
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.mutedText.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Apply for ${widget.job.title}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryText,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'at ${widget.job.companyName}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: AppColors.mutedText,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'at ${widget.job.companyName}',
-            style: const TextStyle(fontSize: 16, color: AppColors.mutedText),
           ),
         ],
       ),
@@ -162,6 +209,8 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildResumePreview(),
+            const SizedBox(height: 20),
             _buildApplicationFormCard(),
             const SizedBox(height: 20),
             _buildSubmitButton(),
@@ -172,15 +221,185 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
     );
   }
 
+  Widget _buildResumePreview() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primaryBlue.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.description_outlined,
+                  color: AppColors.primaryBlue,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Resume Preview',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryText,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_userData != null) ...[
+            _buildProfileSection(),
+            const Divider(height: 32),
+            _buildResumeDetails(),
+          ] else
+            const Center(child: CircularProgressIndicator()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundImage: NetworkImage(
+            _userData?['profileImageUrl'] ?? 'https://via.placeholder.com/60',
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _userData?['fullName'] ?? '',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryText,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _userData?['email'] ?? '',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.mutedText.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _userData?['phone'] ?? '',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.mutedText.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResumeDetails() {
+    // Convert the skills data from List<dynamic> to List<String>
+    final List<String> skills =
+        (_userData?['skills'] as List<dynamic>?)
+            ?.map((skill) => skill.toString())
+            .toList() ??
+        [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Skills',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryText,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children:
+              skills.map((skill) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.royalBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    skill,
+                    style: const TextStyle(
+                      color: AppColors.royalBlue,
+                      fontSize: 14,
+                    ),
+                  ),
+                );
+              }).toList(),
+        ),
+        if (_userData?['resumeUrl'] != null) ...[
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () {
+              // Add resume preview functionality
+            },
+            icon: const Icon(Icons.remove_red_eye_outlined),
+            label: const Text('Preview Full Resume'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryBlue,
+              side: const BorderSide(color: AppColors.primaryBlue),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildApplicationFormCard() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.mutedText.withOpacity(0.1),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
+            color: AppColors.shadowLight.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -276,9 +495,19 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
   }
 
   Widget _buildSubmitButton() {
-    return SizedBox(
+    return Container(
       width: double.infinity,
       height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryBlue.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         onPressed: !_isSubmitting ? _submitApplication : null,
         style: ElevatedButton.styleFrom(
@@ -286,7 +515,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
-          elevation: 8,
+          elevation: 0,
         ),
         child:
             _isSubmitting
