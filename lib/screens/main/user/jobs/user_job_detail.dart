@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/user/jobs/job_application_form.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:intl/intl.dart';
 
@@ -27,6 +30,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   late Animation<double> _fadeAnimation;
   bool _isScrolled = false;
   late bool _isBookmarked;
+  String _companyDescription = '';
 
   @override
   void initState() {
@@ -50,6 +54,35 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     });
 
     _animationController.forward();
+    _fetchCompanyDescription();
+  }
+
+  Future<void> _fetchCompanyDescription() async {
+    try {
+      final companyDoc =
+          await FirebaseFirestore.instance
+              .collection('employees')
+              .doc(widget.job.employerId)
+              .get();
+
+      if (companyDoc.exists) {
+        final companyInfo =
+            companyDoc.data()?['companyInfo'] as Map<String, dynamic>?;
+        setState(() {
+          _companyDescription =
+              companyInfo?['companyDescription'] ??
+              'No company description available.';
+        });
+      } else {
+        setState(() {
+          _companyDescription = 'No company description available.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _companyDescription = 'Failed to load company description.';
+      });
+    }
   }
 
   @override
@@ -253,10 +286,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
           },
         ),
         const SizedBox(width: 8),
-        _buildActionButton(
-          icon: Icons.share_outlined,
-          onPressed: () {},
-        ),
+        _buildActionButton(icon: Icons.share_outlined, onPressed: () {}),
       ],
     );
   }
@@ -573,8 +603,8 @@ class _JobDetailScreenState extends State<JobDetailScreen>
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "We are a leading technology company focused on innovation and excellence. Join our team to work on cutting-edge projects and grow your career.",
+          Text(
+            _companyDescription,
             style: TextStyle(
               fontSize: 15,
               color: AppColors.mutedText,
@@ -665,7 +695,10 @@ class _JobDetailScreenState extends State<JobDetailScreen>
               child: IconButton(
                 icon: Icon(
                   _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                  color: _isBookmarked ? AppColors.whiteText : AppColors.primaryBlue,
+                  color:
+                      _isBookmarked
+                          ? AppColors.whiteText
+                          : AppColors.primaryBlue,
                 ),
                 onPressed: () {
                   setState(() => _isBookmarked = !_isBookmarked);
@@ -718,6 +751,18 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   }
 
   void _showApplyDialog() {
+    // First fetch the user's resume URL from Firestore
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to apply for jobs'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder:
@@ -730,9 +775,39 @@ class _JobDetailScreenState extends State<JobDetailScreen>
               'Apply for Job',
               style: TextStyle(color: AppColors.primaryText),
             ),
-            content: const Text(
-              'Are you sure you want to apply for this position?',
-              style: TextStyle(color: AppColors.secondaryText),
+            content: FutureBuilder<DocumentSnapshot>(
+              future:
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return const Text(
+                    'User data not found',
+                    style: TextStyle(color: AppColors.secondaryText),
+                  );
+                }
+
+                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                final resumeUrl = userData['resumeUrl'] ?? '';
+
+                if (resumeUrl.isEmpty) {
+                  return const Text(
+                    'Please upload a resume in your profile before applying',
+                    style: TextStyle(color: AppColors.secondaryText),
+                  );
+                }
+
+                return Text(
+                  'Ready to apply for ${widget.job.title} at ${widget.job.companyName}?',
+                  style: const TextStyle(color: AppColors.secondaryText),
+                );
+              },
             ),
             actions: [
               TextButton(
@@ -743,9 +818,50 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(context);
-                  // Handle actual application
+                  // Get user data to fetch resume URL
+                  final userDoc =
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .get();
+
+                  if (!userDoc.exists) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('User data not found'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final userData = userDoc.data()!;
+                  final resumeUrl = userData['resumeUrl'] ?? '';
+
+                  if (resumeUrl.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Please upload a resume in your profile first',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => JobApplicationForm(
+                            job: widget.job,
+                            resumeUrl: resumeUrl,
+                          ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
@@ -754,7 +870,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                   ),
                 ),
                 child: const Text(
-                  'Apply',
+                  'Continue',
                   style: TextStyle(color: AppColors.whiteText),
                 ),
               ),

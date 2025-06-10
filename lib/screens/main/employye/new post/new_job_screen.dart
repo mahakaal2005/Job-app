@@ -31,13 +31,13 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   List<String> _filteredSkills = [];
   bool _isLoading = false;
   bool _showSkillSuggestions = false;
+  String _selectedWorkFrom = 'On-site';
 
   final List<String> _employmentTypes = [
     'Full-time',
     'Part-time',
     'Contract',
     'Internship',
-    'Remote',
   ];
 
   final List<String> _experienceLevels = [
@@ -46,6 +46,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     'Senior Level',
     'Executive Level',
   ];
+
+  final List<String> _workFromOptions = ['On-site', 'Remote']; 
 
   @override
   void initState() {
@@ -71,11 +73,14 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         _filteredSkills = List.from(allSkills);
         _showSkillSuggestions = false;
       } else {
-        _filteredSkills = allSkills
-            .where((skill) =>
-                skill.toLowerCase().contains(query.toLowerCase()) &&
-                !_selectedSkills.contains(skill))
-            .toList();
+        _filteredSkills =
+            allSkills
+                .where(
+                  (skill) =>
+                      skill.toLowerCase().contains(query.toLowerCase()) &&
+                      !_selectedSkills.contains(skill),
+                )
+                .toList();
         _showSkillSuggestions = _filteredSkills.isNotEmpty;
       }
     });
@@ -171,6 +176,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         applicantsCount: 0,
         isActive: true,
         viewCount: 0,
+        workFrom: _selectedWorkFrom,
       );
 
       await Provider.of<JobProvider>(context, listen: false).addJob(job);
@@ -258,6 +264,14 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               ),
               const SizedBox(height: 20),
               _buildDropdown(
+                'Work From',
+                _selectedWorkFrom,
+                _workFromOptions,
+                (value) => setState(() => _selectedWorkFrom = value!),
+                Icons.work_outlined,
+              ),
+              const SizedBox(height: 20),
+              _buildDropdown(
                 'Experience Level *',
                 _selectedExperienceLevel,
                 _experienceLevels,
@@ -303,19 +317,20 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   ),
                   elevation: 3,
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.whiteText,
+                child:
+                    _isLoading
+                        ? const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.whiteText,
+                          ),
+                        )
+                        : const Text(
+                          'Create Job',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      )
-                    : const Text(
-                        'Create Job',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
               ),
             ],
           ),
@@ -337,7 +352,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        
+
         // Search Input Field
         Container(
           decoration: BoxDecoration(
@@ -364,18 +379,19 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               hintText: 'Search and add skills...',
               hintStyle: TextStyle(color: AppColors.hintText),
               prefixIcon: Icon(Icons.search, color: AppColors.primaryBlue),
-              suffixIcon: _skillSearchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: AppColors.grey),
-                      onPressed: () {
-                        _skillSearchController.clear();
-                        setState(() {
-                          _showSkillSuggestions = false;
-                          _filteredSkills.clear();
-                        });
-                      },
-                    )
-                  : null,
+              suffixIcon:
+                  _skillSearchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: Icon(Icons.clear, color: AppColors.grey),
+                        onPressed: () {
+                          _skillSearchController.clear();
+                          setState(() {
+                            _showSkillSuggestions = false;
+                            _filteredSkills.clear();
+                          });
+                        },
+                      )
+                      : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -405,7 +421,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             ),
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: _filteredSkills.length > 5 ? 5 : _filteredSkills.length,
+              itemCount:
+                  _filteredSkills.length > 5 ? 5 : _filteredSkills.length,
               itemBuilder: (context, index) {
                 final skill = _filteredSkills[index];
                 return ListTile(
@@ -444,50 +461,51 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _selectedSkills.map((skill) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.primaryBlue.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      skill,
-                      style: TextStyle(
-                        color: AppColors.primaryBlue,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+            children:
+                _selectedSkills.map((skill) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primaryBlue.withOpacity(0.3),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () => _removeSkill(skill),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryBlue.withOpacity(0.2),
-                          shape: BoxShape.circle,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          skill,
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.close,
-                          size: 14,
-                          color: AppColors.primaryBlue,
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => _removeSkill(skill),
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryBlue.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              size: 14,
+                              color: AppColors.primaryBlue,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ],
       ],
@@ -599,15 +617,16 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               contentPadding: const EdgeInsets.all(16),
             ),
             dropdownColor: AppColors.cardBackground,
-            items: items.map((item) {
-              return DropdownMenuItem(
-                value: item,
-                child: Text(
-                  item,
-                  style: TextStyle(color: AppColors.primaryText),
-                ),
-              );
-            }).toList(),
+            items:
+                items.map((item) {
+                  return DropdownMenuItem(
+                    value: item,
+                    child: Text(
+                      item,
+                      style: TextStyle(color: AppColors.primaryText),
+                    ),
+                  );
+                }).toList(),
           ),
         ),
       ],

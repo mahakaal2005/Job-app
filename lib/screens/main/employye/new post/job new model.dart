@@ -18,6 +18,7 @@ class Job {
   final bool isActive;
   final int applicantsCount;
   final int viewCount;
+  final String? workFrom;
 
   Job({
     this.applicantsCount = 0,
@@ -39,6 +40,7 @@ class Job {
     required this.createdAt,
     required this.updatedAt,
     this.isActive = true,
+    required this.workFrom,
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
@@ -62,6 +64,7 @@ class Job {
       isActive: json['isActive'] ?? true,
       applicantsCount: json['applicantsCount'] ?? 0,
       viewCount: json['viewCount'] ?? 0,
+      workFrom: json['workFrom'] ?? '',
     );
   }
 
@@ -86,6 +89,7 @@ class Job {
       'isActive': isActive,
       'applicantsCount': applicantsCount,
       'viewCount': viewCount,
+      'workFrom': workFrom,
     };
   }
 
@@ -109,6 +113,7 @@ class Job {
     List<String>? benefits,
     int? applicantsCount,
     int? viewCount,
+    String? workFrom,
   }) {
     return Job(
       id: id ?? this.id,
@@ -130,6 +135,7 @@ class Job {
       isActive: isActive ?? this.isActive,
       applicantsCount: applicantsCount ?? this.applicantsCount,
       viewCount: viewCount ?? this.viewCount,
+      workFrom: workFrom ?? this.workFrom,
     );
   }
 }
