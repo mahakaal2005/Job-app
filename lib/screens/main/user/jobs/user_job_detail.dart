@@ -668,90 +668,83 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   }
 
   Widget _buildModernBottomBar() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowMedium,
-            blurRadius: 20,
-            offset: const Offset(0, -8),
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: AppColors.cardBackground,
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.shadowMedium,
+          blurRadius: 20,
+          offset: const Offset(0, -8),
+        ),
+      ],
+    ),
+    child: SafeArea(
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: _isBookmarked ? AppColors.primaryBlue : Colors.transparent,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: AppColors.primaryBlue, width: 2),
+            ),
+            child: IconButton(
+              icon: Icon(
+                _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                color: _isBookmarked ? AppColors.whiteText : AppColors.primaryBlue,
+              ),
+              onPressed: () {
+                setState(() => _isBookmarked = !_isBookmarked);
+                widget.onBookmarkToggled(widget.job.id);
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.blueShadow,
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _showApplyDialog,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                ),
+                child: const Text(
+                  'Apply Now',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.whiteText,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color:
-                    _isBookmarked ? AppColors.primaryBlue : Colors.transparent,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: AppColors.primaryBlue, width: 2),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                  color:
-                      _isBookmarked
-                          ? AppColors.whiteText
-                          : AppColors.primaryBlue,
-                ),
-                onPressed: () {
-                  setState(() => _isBookmarked = !_isBookmarked);
-                  widget.onBookmarkToggled(widget.job.id);
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.blueShadow,
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Handle apply logic
-                    _showApplyDialog();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: const Text(
-                    'Apply Now',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.whiteText,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
+
 
   void _showApplyDialog() {
-    // First fetch the user's resume URL from Firestore
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -763,134 +756,19 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       return;
     }
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: AppColors.cardBackground,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Text(
-              'Apply for Job',
-              style: TextStyle(color: AppColors.primaryText),
-            ),
-            content: FutureBuilder<DocumentSnapshot>(
-              future:
-                  FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(user.uid)
-                      .get(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return const Text(
-                    'User data not found',
-                    style: TextStyle(color: AppColors.secondaryText),
-                  );
-                }
-
-                final userData = snapshot.data!.data() as Map<String, dynamic>;
-                final resumeUrl = userData['resumeUrl'] ?? '';
-
-                if (resumeUrl.isEmpty) {
-                  return const Text(
-                    'Please upload a resume in your profile before applying',
-                    style: TextStyle(color: AppColors.secondaryText),
-                  );
-                }
-
-                return Text(
-                  'Ready to apply for ${widget.job.title} at ${widget.job.companyName}?',
-                  style: const TextStyle(color: AppColors.secondaryText),
-                );
-              },
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: AppColors.mutedText),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  // Get user data to fetch resume URL
-                  final userDoc =
-                      await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(user.uid)
-                          .get();
-
-                  if (!userDoc.exists) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('User data not found'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-
-                  final userData = userDoc.data()!;
-                  final resumeUrl = userData['resumeUrl'] ?? '';
-
-                  if (resumeUrl.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Please upload a resume in your profile first',
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => JobApplicationForm(
-                            job: widget.job,
-                            resumeUrl: resumeUrl,
-                          ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(color: AppColors.whiteText),
-                ),
-              ),
-            ],
-          ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => JobApplicationForm(job: widget.job),
     );
   }
 
-  String _formatDate(dynamic date) {
-    DateTime dateTime;
-    if (date is DateTime) {
-      dateTime = date;
-    } else {
-      dateTime = DateTime.parse(date.toString());
-    }
-    return DateFormat('MMM dd, yyyy').format(dateTime);
+  String _formatDate(DateTime date) {
+    return DateFormat('dd MMM yyyy').format(date);
   }
 }
 
-// Custom painter for background pattern
 class BackgroundPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

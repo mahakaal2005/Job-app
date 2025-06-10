@@ -1,53 +1,83 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class JobApplication {
-  final String userId;
+  final String id;
   final String jobId;
-  final String companyId;
-  final DateTime applicationDate;
-  final bool? canRelocate;
-  final String hireReason;
-  final bool availableImmediately;
+  final String jobTitle;
+  final String companyName;
+  final String applicantId;
+  final String applicantName;
+  final String applicantEmail;
+  final String applicantPhone;
+  final String applicantAddress;
+  final List<String> applicantSkills;
+  final String applicantProfileImg;
+  final String applicantGender;
   final String resumeUrl;
+  final String whyJoin;
+  final String yearsOfExperience;
+  final DateTime appliedAt;
   final String status;
 
   JobApplication({
-    required this.userId,
+    required this.id,
     required this.jobId,
-    required this.companyId,
-    required this.applicationDate,
-    this.canRelocate,
-    required this.hireReason,
-    required this.availableImmediately,
+    required this.jobTitle,
+    required this.companyName,
+    required this.applicantId,
+    required this.applicantName,
+    required this.applicantEmail,
+    required this.applicantPhone,
+    required this.applicantAddress,
+    required this.applicantSkills,
+    required this.applicantProfileImg,
+    required this.applicantGender,
     required this.resumeUrl,
-    required this.status,
+    required this.whyJoin,
+    required this.yearsOfExperience,
+    required this.appliedAt,
+    this.status = 'pending',
   });
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
-      'userId': userId,
+      'id': id,
       'jobId': jobId,
-      'companyId': companyId,
-      'applicationDate': applicationDate,
-      'canRelocate': canRelocate,
-      'hireReason': hireReason,
-      'availableImmediately': availableImmediately,
+      'jobTitle': jobTitle,
+      'companyName': companyName,
+      'applicantId': applicantId,
+      'applicantName': applicantName,
+      'applicantEmail': applicantEmail,
+      'applicantPhone': applicantPhone,
+      'applicantAddress': applicantAddress,
+      'applicantSkills': applicantSkills,
+      'applicantProfileImg': applicantProfileImg,
+      'applicantGender': applicantGender,
       'resumeUrl': resumeUrl,
+      'whyJoin': whyJoin,
+      'yearsOfExperience': yearsOfExperience,
+      'appliedAt': appliedAt.toIso8601String(),
       'status': status,
     };
   }
 
-  factory JobApplication.fromMap(Map<String, dynamic> map) {
+  factory JobApplication.fromJson(Map<String, dynamic> json) {
     return JobApplication(
-      userId: map['userId'],
-      jobId: map['jobId'],
-      companyId: map['companyId'],
-      applicationDate: (map['applicationDate'] as Timestamp).toDate(),
-      canRelocate: map['canRelocate'],
-      hireReason: map['hireReason'],
-      availableImmediately: map['availableImmediately'],
-      resumeUrl: map['resumeUrl'],
-      status: map['status'],
+      id: json['id'] ?? '',
+      jobId: json['jobId'] ?? '',
+      jobTitle: json['jobTitle'] ?? '',
+      companyName: json['companyName'] ?? '',
+      applicantId: json['applicantId'] ?? '',
+      applicantName: json['applicantName'] ?? '',
+      applicantEmail: json['applicantEmail'] ?? '',
+      applicantPhone: json['applicantPhone'] ?? '',
+      applicantAddress: json['applicantAddress'] ?? '',
+      applicantSkills: List<String>.from(json['applicantSkills'] ?? []),
+      applicantProfileImg: json['applicantProfileImg'] ?? '',
+      applicantGender: json['applicantGender'] ?? '',
+      resumeUrl: json['resumeUrl'] ?? '',
+      whyJoin: json['whyJoin'] ?? '',
+      yearsOfExperience: json['yearsOfExperience'] ?? '',
+      appliedAt: DateTime.parse(json['appliedAt']),
+      status: json['status'] ?? 'pending',
     );
   }
 }
