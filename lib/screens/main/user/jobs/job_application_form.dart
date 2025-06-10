@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_application_model.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/services/auth_services.dart';
 
 class JobApplicationForm extends StatefulWidget {
   final Job job;
@@ -33,20 +34,26 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
       final applicationId =
           '${user.uid}_${widget.job.id}_${DateTime.now().millisecondsSinceEpoch}';
 
+      // Fetch user profile data
+      final userData = await AuthService.getUserData();
+      if (userData == null) {
+        throw Exception('User profile data not found');
+      }
+
       final application = JobApplication(
         id: applicationId,
         jobId: widget.job.id,
         jobTitle: widget.job.title,
         companyName: widget.job.companyName,
         applicantId: user.uid,
-        applicantName: user.displayName ?? '',
+        applicantName: userData['fullName'] ?? user.displayName ?? '',
         applicantEmail: user.email ?? '',
-        applicantPhone: user.phoneNumber ?? '',
-        applicantAddress: '',
-        applicantSkills: [],
-        applicantProfileImg: user.photoURL ?? '',
-        applicantGender: '',
-        resumeUrl: '',
+        applicantPhone: userData['phone'] ?? user.phoneNumber ?? '',
+        applicantAddress: userData['address'] ?? '',
+        applicantSkills: List<String>.from(userData['skills'] ?? []),
+        applicantProfileImg: userData['profileImageUrl'] ?? user.photoURL ?? '',
+        applicantGender: userData['gender'] ?? '',
+        resumeUrl: userData['resumeUrl'] ?? '',
         whyJoin: _whyJoinController.text.trim(),
         yearsOfExperience: _experienceController.text.trim(),
         appliedAt: DateTime.now(),
