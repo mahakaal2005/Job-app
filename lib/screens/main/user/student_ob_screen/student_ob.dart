@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/services/auth_services.dart';
+import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
@@ -8,6 +9,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'skills_list.dart';
+import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
 
 class StudentOnboardingScreen extends StatefulWidget {
   const StudentOnboardingScreen({super.key});
@@ -46,6 +48,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   List<String> _selectedTimeSlots = [];
   File? _resumeFile;
   String? _resumeFileName;
+  String? _resumePreviewUrl;
   File? _profileImage;
   bool _isUploadingResume = false;
   bool _isUploadingImage = false;
@@ -106,24 +109,27 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   }
 
   void _filterSkills(String query) {
-  setState(() {
-    if (query.isEmpty) {
-      _filteredSkills = [];
-    } else {
-      final queryLower = query.toLowerCase();
-      _filteredSkills = allSkills
-          .where((skill) =>
-              (skill.toLowerCase().contains(queryLower) ||
-                  skill
-                      .toLowerCase()
-                      .split(' ')
-                      .any((word) => word.startsWith(queryLower))) &&
-              !_selectedSkills.contains(skill))
-          .take(10)
-          .toList();
-    }
-  });
-}
+    setState(() {
+      if (query.isEmpty) {
+        _filteredSkills = [];
+      } else {
+        final queryLower = query.toLowerCase();
+        _filteredSkills =
+            allSkills
+                .where(
+                  (skill) =>
+                      (skill.toLowerCase().contains(queryLower) ||
+                          skill
+                              .toLowerCase()
+                              .split(' ')
+                              .any((word) => word.startsWith(queryLower))) &&
+                      !_selectedSkills.contains(skill),
+                )
+                .take(10)
+                .toList();
+      }
+    });
+  }
 
   Future<void> _selectDateOfBirth() async {
     final DateTime? picked = await showDatePicker(
@@ -236,96 +242,44 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'],
+        allowedExtensions: ['pdf'],
       );
 
       if (result != null) {
         setState(() {
-          _resumeFile = File(result.files.single.path!);
-          _resumeFileName = result.files.single.name;
+          _isUploadingResume = true;
         });
+
+        final file = File(result.files.single.path!);
+        final fileName = result.files.single.name;
+
+        // Use PDFService to handle the upload
+        final uploadResult = await PDFService.uploadResumePDF(file);
+
+        if (uploadResult['pdfUrl'] != null) {
+          setState(() {
+            _resumeFile = file;
+            _resumeFileName = fileName;
+            _resumePreviewUrl = uploadResult['previewUrl'];
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Resume uploaded successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          throw Exception('Failed to upload resume');
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error selecting file: $e'),
+          content: Text('Error uploading resume: $e'),
           backgroundColor: Colors.red,
         ),
       );
-    }
-  }
-
-  Future<Map<String, String>?> _uploadImageToCloudinary(File imageFile) async {
-    setState(() {
-      _isUploadingImage = true;
-    });
-
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://api.cloudinary.com/v1_1/dteigt5oc/upload'),
-      );
-
-      request.fields['upload_preset'] = 'get_work';
-      request.fields['resource_type'] = 'image';
-      request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
-      );
-
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = json.decode(responseData);
-
-      if (response.statusCode == 200) {
-        return {
-          'url': jsonResponse['secure_url'],
-          'public_id': jsonResponse['public_id'],
-        };
-      } else {
-        throw Exception('Upload failed: ${jsonResponse['message']}');
-      }
-    } catch (e) {
-      throw Exception('Failed to upload image: $e');
-    } finally {
-      setState(() {
-        _isUploadingImage = false;
-      });
-    }
-  }
-
-  Future<Map<String, String>?> _uploadResumeToCloudinary() async {
-    if (_resumeFile == null) return null;
-
-    setState(() {
-      _isUploadingResume = true;
-    });
-
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://api.cloudinary.com/v1_1/dteigt5oc/upload'),
-      );
-
-      request.fields['upload_preset'] = 'get_work';
-      request.fields['resource_type'] = 'raw';
-      request.files.add(
-        await http.MultipartFile.fromPath('file', _resumeFile!.path),
-      );
-
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = json.decode(responseData);
-
-      if (response.statusCode == 200) {
-        return {
-          'url': jsonResponse['secure_url'],
-          'public_id': jsonResponse['public_id'],
-        };
-      } else {
-        throw Exception('Upload failed: ${jsonResponse['message']}');
-      }
-    } catch (e) {
-      throw Exception('Failed to upload resume: $e');
     } finally {
       setState(() {
         _isUploadingResume = false;
@@ -375,7 +329,17 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       case 3:
         return _selectedSkills.isNotEmpty && _selectedTimeSlots.isNotEmpty;
       case 4:
-        return true; // Profile photo and resume are optional
+        // Make resume required
+        if (_resumeFile == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please upload your resume'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false;
+        }
+        return true;
       default:
         return false;
     }
@@ -398,15 +362,21 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
 
     try {
       // Upload profile image if selected
-      Map<String, String>? profileImageData;
+      String? profileImageUrl;
       if (_profileImage != null) {
-        profileImageData = await _uploadImageToCloudinary(_profileImage!);
+        profileImageUrl = await CloudinaryService.uploadImage(_profileImage!);
+        if (profileImageUrl == null) {
+          throw Exception('Failed to upload profile image');
+        }
       }
 
-      // Upload resume if selected
-      Map<String, String>? resumeData;
+      // Upload resume and get URLs if selected
+      Map<String, String?> resumeUrls = {};
       if (_resumeFile != null) {
-        resumeData = await _uploadResumeToCloudinary();
+        resumeUrls = await PDFService.uploadResumePDF(_resumeFile!);
+        if (resumeUrls['pdfUrl'] == null) {
+          throw Exception('Failed to upload resume');
+        }
       }
 
       // Prepare education level
@@ -420,7 +390,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       Map<String, dynamic> onboardingData = {
         'phone': _phoneController.text.trim(),
         'gender': _selectedGender,
-        'dateOfBirth': _selectedDateOfBirth,
+        'dateOfBirth': _selectedDateOfBirth?.toIso8601String(),
         'address': _addressController.text.trim(),
         'city': _cityController.text.trim(),
         'state': _stateController.text.trim(),
@@ -428,7 +398,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         'educationLevel': finalEducationLevel,
         'bio': _bioController.text.trim(),
         'onboardingCompleted': true,
-        'onboardingCompletedAt': DateTime.now(),
+        'onboardingCompletedAt': DateTime.now().toIso8601String(),
 
         // Student model specific fields
         'userType': 'student',
@@ -442,12 +412,11 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         },
         'totalEarned': 0.0,
         'upiLinked': false,
-        'profileImageUrl': profileImageData?['url'],
-        'profileImageCloudinaryId': profileImageData?['public_id'],
-        'resumeUrl': resumeData?['url'],
-        'resumeCloudinaryId': resumeData?['public_id'],
-        'createdAt': DateTime.now(),
-        'updatedAt': DateTime.now(),
+        'profileImageUrl': profileImageUrl,
+        'resumeUrl': resumeUrls['pdfUrl'],
+        'resumePreviewUrl': resumeUrls['previewUrl'],
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
       };
 
       // Save onboarding data to user profile
@@ -1224,86 +1193,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           const SizedBox(height: 32),
 
           // Resume Section
-          const Text(
-            'Resume (Optional)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Upload your resume in PDF, DOC, or DOCX format',
-            style: TextStyle(fontSize: 14, color: AppColors.grey),
-          ),
-          const SizedBox(height: 12),
-
-          if (_resumeFile != null) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.primaryBlue.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.description, color: AppColors.primaryBlue),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _resumeFileName ?? 'Resume',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.black,
-                          ),
-                        ),
-                        Text(
-                          'Tap to change',
-                          style: TextStyle(fontSize: 12, color: AppColors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _resumeFile = null;
-                        _resumeFileName = null;
-                      });
-                    },
-                    icon: const Icon(Icons.close, color: AppColors.primaryBlue),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _isUploadingResume ? null : _pickResume,
-              icon:
-                  _isUploadingResume
-                      ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.upload_file),
-              label: Text(
-                _resumeFile == null ? 'Upload Resume' : 'Change Resume',
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(color: AppColors.primaryBlue.withOpacity(0.5)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
+          _buildResumeSection(),
 
           // Tips section
           Container(
@@ -1345,6 +1235,82 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildResumeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Resume',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const Text(' *', style: TextStyle(color: Colors.red, fontSize: 18)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Upload your resume in PDF format',
+          style: TextStyle(fontSize: 14, color: AppColors.grey),
+        ),
+        const SizedBox(height: 12),
+        if (_resumeFile != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.lightBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.description_outlined,
+                  color: AppColors.primaryBlue,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _resumeFileName ?? 'Resume uploaded',
+                    style: const TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(Icons.check_circle, color: Colors.green),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _isUploadingResume ? null : _pickResume,
+            icon:
+                _isUploadingResume
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.upload_file),
+            label: Text(
+              _resumeFile == null ? 'Upload Resume' : 'Change Resume',
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: BorderSide(color: AppColors.primaryBlue.withOpacity(0.5)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

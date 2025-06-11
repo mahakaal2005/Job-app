@@ -9,6 +9,9 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:get_work_app/services/pdf_service.dart';
+import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,6 +27,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isUploadingImage = false;
   bool _isUploadingResume = false;
   Map<String, dynamic> _userData = {};
+  final _skillSearchController = TextEditingController();
+  List<String> _filteredSkills = [];
+  bool _showSkillSuggestions = false;
 
   // Track expanded sections
   final Map<String, bool> _expandedSections = {
@@ -107,6 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _githubController.dispose();
     _portfolioController.dispose();
     _twitterController.dispose();
+    _skillSearchController.dispose();
     super.dispose();
   }
 
@@ -168,8 +175,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ? _userData['availability']
             : _userData['availability']?['type'] ?? 'Full-time';
 
+    // Load resume data from onboarding
+    if (_userData['resumeUrl'] != null) {
+      setState(() {
+        _userData['resumeFileName'] =
+            _userData['resumeFileName'] ?? 'Resume.pdf';
+        _userData['resumePreviewUrl'] = _userData['resumePreviewUrl'];
+      });
+    }
+
     if (_userData['dateOfBirth'] != null) {
-      _dateOfBirth = (_userData['dateOfBirth'] as Timestamp).toDate();
+      final dob = _userData['dateOfBirth'];
+      if (dob is Timestamp) {
+        _dateOfBirth = dob.toDate();
+      } else if (dob is DateTime) {
+        _dateOfBirth = dob;
+      } else if (dob is String) {
+        _dateOfBirth = DateTime.tryParse(dob);
+      } else {
+        _dateOfBirth = null;
+      }
     }
   }
 
@@ -215,17 +240,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _uploadResume() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
 
-    if (pickedFile != null) {
-      setState(() {
-        _selectedResume = File(pickedFile.path);
-        _isUploadingResume = true;
-      });
+      if (result != null) {
+        setState(() {
+          _selectedResume = File(result.files.single.path!);
+          _isUploadingResume = true;
+        });
 
-      try {
-        final url = await _uploadToCloudinary(_selectedResume!);
+        // Use PDFService to handle the upload and preview generation
+        final uploadResult = await PDFService.uploadResumePDF(_selectedResume!);
+        if (uploadResult['pdfUrl'] == null) {
+          throw Exception('Failed to upload resume');
+        }
 
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
@@ -233,25 +264,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final collectionName =
               role == 'employee' ? 'employees' : 'users_specific';
 
+          // Update Firestore with available data
+          final updateData = {
+            'resumeUrl': uploadResult['pdfUrl'],
+            'resumeFileName': result.files.single.name,
+            'updatedAt': FieldValue.serverTimestamp(),
+          };
+
+          // Only add preview URL if it was successfully generated
+          if (uploadResult['previewUrl'] != null) {
+            updateData['resumePreviewUrl'] = uploadResult['previewUrl'];
+          }
+
           await FirebaseFirestore.instance
               .collection(collectionName)
               .doc(user.uid)
-              .update({
-                'resumeUrl': url,
-                'updatedAt': FieldValue.serverTimestamp(),
-              });
+              .update(updateData);
 
           setState(() {
-            _userData['resumeUrl'] = url;
-            _isUploadingResume = false;
+            _userData['resumeUrl'] = uploadResult['pdfUrl'];
+            _userData['resumeFileName'] = result.files.single.name;
+            if (uploadResult['previewUrl'] != null) {
+              _userData['resumePreviewUrl'] = uploadResult['previewUrl'];
+            }
           });
 
-          _showSuccessSnackBar('Resume updated successfully!');
+          _showSuccessSnackBar(
+            uploadResult['previewUrl'] != null
+                ? 'Resume updated successfully!'
+                : 'Resume uploaded successfully (preview generation failed)',
+          );
         }
-      } catch (e) {
-        setState(() => _isUploadingResume = false);
-        _showErrorSnackBar('Error uploading resume: $e');
       }
+    } catch (e) {
+      _showErrorSnackBar('Error uploading resume: $e');
+    } finally {
+      setState(() {
+        _isUploadingResume = false;
+        _selectedResume = null;
+      });
     }
   }
 
@@ -406,12 +457,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildResumeField() {
+    final hasResume = _userData['resumeUrl'] != null;
+
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Resume',
             style: TextStyle(
               fontSize: 16,
@@ -419,11 +472,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: AppColors.hintText,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           GestureDetector(
             onTap: _isEditing ? _uploadResume : null,
             child: Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
                 borderRadius: BorderRadius.circular(16),
@@ -443,22 +496,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _isEditing ? AppColors.primaryBlue : AppColors.hintText,
                     size: 24,
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _userData['resumeUrl'] != null
-                              ? 'Resume uploaded'
+                          _userData['resumeFileName'] != null
+                              ? _userData['resumeFileName']
                               : 'No resume uploaded',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             color: AppColors.black,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (_userData['resumeUrl'] != null)
-                          Text(
+                        if (_userData['resumeFileName'] != null && _isEditing)
+                          const Text(
                             'Tap to change',
                             style: TextStyle(
                               fontSize: 12,
@@ -469,7 +524,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   if (_isUploadingResume)
-                    SizedBox(
+                    const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -477,41 +532,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: AppColors.primaryBlue,
                       ),
                     )
-                  else if (_userData['resumeUrl'] != null)
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: AppColors.success,
-                      size: 20,
+                  else if (hasResume)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: () async {
+                            final url = _userData['resumeUrl'];
+                            if (url != null) {
+                              final uri = Uri.parse(url);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri);
+                              }
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.visibility_rounded,
+                            color: AppColors.primaryBlue,
+                            size: 20,
+                          ),
+                          tooltip: 'View Resume',
+                        ),
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
+                      ],
                     ),
                 ],
               ),
             ),
           ),
-          if (_userData['resumeUrl'] != null && !_isEditing)
-            Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: TextButton(
-                onPressed: () async {
-                  // Open resume URL in browser
-                  final Uri resumeUri = Uri.parse(_userData['resumeUrl']);
-if (await canLaunchUrl(resumeUri)) {
-  await launchUrl(resumeUri, mode: LaunchMode.externalApplication);
-} else {
-  // Handle the error
-  print('Could not launch resume URL');
-}
-
-                  
-                },
-                child: Text(
-                  'View Resume',
-                  style: TextStyle(
-                    color: AppColors.primaryBlue,
-                    fontWeight: FontWeight.w600,
-                  ),
+          if (hasResume && _userData['resumePreviewUrl'] != null) ...[
+            const SizedBox(height: 16),
+            const Text(
+              'Preview',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.hintText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 300),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.mutedText.withOpacity(0.2),
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  _userData['resumePreviewUrl']!,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value:
+                            loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                        color: AppColors.primaryBlue,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: 32,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Failed to load resume preview',
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -909,70 +1027,110 @@ if (await canLaunchUrl(resumeUri)) {
   }
 
   Widget _buildDropdown({
-  required String value,
-  required List<String> options,
-  required String label,
-  required IconData icon,
-  required Function(String?) onChanged,
-}) {
-  // Ensure the current value exists in options, if not use the first option
-  final String dropdownValue = options.contains(value) ? value : options.first;
+    required String value,
+    required List<String> options,
+    required String label,
+    required IconData icon,
+    required Function(String?) onChanged,
+  }) {
+    // Ensure the current value exists in options, if not use the first option
+    final String dropdownValue =
+        options.contains(value) ? value : options.first;
 
-  return Container(
-    margin: EdgeInsets.only(bottom: 16),
-    child: DropdownButtonFormField<String>(
-      value: dropdownValue,
-      onChanged: _isEditing ? onChanged : null,
-      style: TextStyle(
-        fontSize: 16,
-        color: AppColors.black,
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Container(
-          margin: EdgeInsets.all(12),
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _isEditing
-                ? AppColors.primaryBlue.withOpacity(0.1)
-                : AppColors.softGrey,
-            borderRadius: BorderRadius.circular(8),
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      child: DropdownButtonFormField<String>(
+        value: dropdownValue,
+        onChanged: _isEditing ? onChanged : null,
+        style: TextStyle(
+          fontSize: 16,
+          color: AppColors.black,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Container(
+            margin: EdgeInsets.all(12),
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color:
+                  _isEditing
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : AppColors.softGrey,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+              size: 20,
+            ),
           ),
-          child: Icon(
-            icon,
+          labelStyle: TextStyle(
             color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
-            size: 20,
+            fontWeight: FontWeight.w600,
+          ),
+          filled: true,
+          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: AppColors.dividerColor),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
           ),
         ),
-        labelStyle: TextStyle(
-          color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
-          fontWeight: FontWeight.w600,
-        ),
-        filled: true,
-        fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.dividerColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
-        ),
+        items:
+            options.map((String option) {
+              return DropdownMenuItem<String>(
+                value: option,
+                child: Text(option),
+              );
+            }).toList(),
       ),
-      items: options.map((String option) {
-        return DropdownMenuItem<String>(
-          value: option,
-          child: Text(option),
-        );
-      }).toList(),
-    ),
-  );
-}
+    );
+  }
+
+  void _filterSkills(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredSkills = [];
+        _showSkillSuggestions = false;
+      } else {
+        _filteredSkills =
+            allSkills
+                .where(
+                  (skill) =>
+                      skill.toLowerCase().contains(query.toLowerCase()) &&
+                      !_skills.contains(skill),
+                )
+                .take(5)
+                .toList();
+        _showSkillSuggestions = _filteredSkills.isNotEmpty;
+      }
+    });
+  }
+
+  void _addSkill(String skill) {
+    if (!_skills.contains(skill)) {
+      setState(() {
+        _skills.add(skill);
+        _skillSearchController.clear();
+        _showSkillSuggestions = false;
+        _filteredSkills = [];
+      });
+    }
+  }
+
+  void _removeSkill(String skill) {
+    setState(() {
+      _skills.remove(skill);
+    });
+  }
 
   Widget _buildSkillsSection() {
     return _buildSectionCard(
@@ -980,102 +1138,173 @@ if (await canLaunchUrl(resumeUri)) {
       icon: Icons.stars_rounded,
       sectionKey: 'skills',
       children: [
-        if (_isEditing)
-          Container(
-            margin: EdgeInsets.only(bottom: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Add a skill',
-                      filled: true,
-                      fillColor: AppColors.lightBlue,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+        if (_isEditing) ...[
+          TextFormField(
+            controller: _skillSearchController,
+            onChanged: _filterSkills,
+            decoration: InputDecoration(
+              hintText: 'Search skills...',
+              prefixIcon: Container(
+                margin: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.primaryBlue,
+                  size: 20,
+                ),
+              ),
+              suffixIcon:
+                  _skillSearchController.text.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _skillSearchController.clear();
+                          _filterSkills('');
+                        },
+                      )
+                      : null,
+              filled: true,
+              fillColor: AppColors.lightBlue,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: AppColors.dividerColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
+              ),
+            ),
+          ),
+          if (_showSkillSuggestions) ...[
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowLight,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filteredSkills.length,
+                itemBuilder: (context, index) {
+                  final skill = _filteredSkills[index];
+                  return ListTile(
+                    dense: true,
+                    title: Text(
+                      skill,
+                      style: const TextStyle(
+                        color: AppColors.primaryText,
+                        fontSize: 14,
                       ),
                     ),
-                    onSubmitted: (value) {
-                      if (value.trim().isNotEmpty &&
-                          !_skills.contains(value.trim())) {
-                        setState(() => _skills.add(value.trim()));
-                      }
-                    },
-                  ),
+                    leading: const Icon(
+                      Icons.add_circle_outline,
+                      color: AppColors.primaryBlue,
+                      size: 20,
+                    ),
+                    onTap: () => _addSkill(skill),
+                    hoverColor: AppColors.primaryBlue.withOpacity(0.1),
+                  );
+                },
+              ),
+            ),
+          ],
+        ],
+        if (_skills.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                _skills.map((skill) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primaryBlue.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          skill,
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (_isEditing) ...[
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => _removeSkill(skill),
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryBlue.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: AppColors.primaryBlue,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }).toList(),
+          ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.lightBlue,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: AppColors.primaryBlue.withOpacity(0.7),
                 ),
-                SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    onPressed: () {
-                      // Show skill adding dialog
-                    },
-                    icon: Icon(Icons.add_rounded, color: AppColors.white),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Add your skills to help employers find you',
+                    style: TextStyle(
+                      color: AppColors.primaryText,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children:
-              _skills.map((skill) {
-                return Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient:
-                        _isEditing
-                            ? AppColors.blueGradient
-                            : LinearGradient(
-                              colors: [AppColors.softGrey, AppColors.softGrey],
-                            ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            _isEditing
-                                ? AppColors.blueShadow.withOpacity(0.3)
-                                : Colors.transparent,
-                        blurRadius: 6,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        skill,
-                        style: TextStyle(
-                          color: _isEditing ? AppColors.white : AppColors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (_isEditing) ...[
-                        SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => setState(() => _skills.remove(skill)),
-                          child: Icon(
-                            Icons.close_rounded,
-                            color: AppColors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              }).toList(),
-        ),
+        ],
       ],
     );
   }
@@ -1350,8 +1579,8 @@ if (await canLaunchUrl(resumeUri)) {
                   label: 'College/University',
                   icon: Icons.account_balance_rounded,
                 ),
-                _buildResumeField(), // Added resume field here
-              ], // This is the correct closing bracket for the children of _buildSectionCard
+                _buildResumeField(),
+              ],
             ),
 
             // Skills Section
@@ -1376,7 +1605,7 @@ if (await canLaunchUrl(resumeUri)) {
                           setState(() {
                             _isEditing = false;
                             _selectedImage = null;
-                            _populateControllers(); // Reset changes
+                            _populateControllers();
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -1430,7 +1659,7 @@ if (await canLaunchUrl(resumeUri)) {
                   ],
                 ),
               ),
-          ], // This is the correct closing bracket for the Column children
+          ],
         ),
       ),
     );

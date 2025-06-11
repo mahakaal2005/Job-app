@@ -5,6 +5,7 @@ import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.
 import 'package:get_work_app/screens/main/user/jobs/job_application_model.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/services/auth_services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class JobApplicationForm extends StatefulWidget {
   final Job job;
@@ -23,6 +24,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
   final _auth = FirebaseAuth.instance;
   Map<String, dynamic>? _userData;
   bool _isSubmitting = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -31,10 +33,25 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
   }
 
   Future<void> _loadUserData() async {
-    final userData = await AuthService.getUserData();
-    setState(() {
-      _userData = userData;
-    });
+    try {
+      final userData = await AuthService.getUserData();
+      if (mounted) {
+        setState(() {
+          _userData = userData;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading user data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _submitApplication() async {
@@ -102,6 +119,10 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       minChildSize: 0.5,
@@ -139,29 +160,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
       child: Column(
         children: [
           // Banner Image
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              image: DecorationImage(
-                image: NetworkImage(
-                  widget.job.companyLogo ??
-                      'https://via.placeholder.com/800x200?text=Company+Banner',
-                ),
-                fit: BoxFit.cover,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.primaryBlue.withOpacity(0.8),
-                  AppColors.royalBlue.withOpacity(0.6),
-                ],
-              ),
-            ),
-          ),
+         
           Container(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -209,7 +208,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildResumePreview(),
+            _buildResumeSection(),
             const SizedBox(height: 20),
             _buildApplicationFormCard(),
             const SizedBox(height: 20),
@@ -221,14 +220,16 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
     );
   }
 
-  Widget _buildResumePreview() {
+  Widget _buildResumeSection() {
+    if (_userData == null) return const SizedBox.shrink();
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primaryBlue.withOpacity(0.2),
+          color: AppColors.mutedText.withOpacity(0.1),
           width: 1,
         ),
         boxShadow: [
@@ -247,18 +248,18 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  color: AppColors.royalBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.description_outlined,
-                  color: AppColors.primaryBlue,
+                  color: AppColors.royalBlue,
                   size: 20,
                 ),
               ),
               const SizedBox(width: 12),
               const Text(
-                'Resume Preview',
+                'Resume',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -268,122 +269,117 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
             ],
           ),
           const SizedBox(height: 16),
-          if (_userData != null) ...[
-            _buildProfileSection(),
-            const Divider(height: 32),
-            _buildResumeDetails(),
-          ] else
-            const Center(child: CircularProgressIndicator()),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildProfileSection() {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundImage: NetworkImage(
-            _userData?['profileImageUrl'] ?? 'https://via.placeholder.com/60',
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _userData?['fullName'] ?? '',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryText,
-                ),
+          // Show resume filename if available
+          if (_userData?['resumeFileName'] != null) ...[
+            Text(
+              'Current Resume: ${_userData!['resumeFileName']}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.primaryText,
               ),
-              const SizedBox(height: 4),
-              Text(
-                _userData?['email'] ?? '',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.mutedText.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _userData?['phone'] ?? '',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.mutedText.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+            ),
+            const SizedBox(height: 12),
+          ],
 
-  Widget _buildResumeDetails() {
-    // Convert the skills data from List<dynamic> to List<String>
-    final List<String> skills =
-        (_userData?['skills'] as List<dynamic>?)
-            ?.map((skill) => skill.toString())
-            .toList() ??
-        [];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Skills',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryText,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children:
-              skills.map((skill) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+          // Resume Preview and PDF View
+          if (_userData?['resumePreviewUrl'] != null) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Preview',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.primaryText,
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.royalBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 300),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.mutedText.withOpacity(0.2),
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  _userData!['resumePreviewUrl']!,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        value:
+                            loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                        color: AppColors.primaryBlue,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: 32,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Failed to load resume preview',
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ] else ...[
+            // Show message if no resume is uploaded
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.error.withOpacity(0.8),
+                    size: 24,
                   ),
-                  child: Text(
-                    skill,
-                    style: const TextStyle(
-                      color: AppColors.royalBlue,
-                      fontSize: 14,
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Please upload your resume in your profile before applying',
+                      style: TextStyle(color: AppColors.error, fontSize: 14),
                     ),
                   ),
-                );
-              }).toList(),
-        ),
-        if (_userData?['resumeUrl'] != null) ...[
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: () {
-              // Add resume preview functionality
-            },
-            icon: const Icon(Icons.remove_red_eye_outlined),
-            label: const Text('Preview Full Resume'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryBlue,
-              side: const BorderSide(color: AppColors.primaryBlue),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
