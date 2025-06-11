@@ -10,6 +10,7 @@ import 'package:get_work_app/screens/main/employye/emp_chats.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmployerDashboardScreen extends StatefulWidget {
   const EmployerDashboardScreen({Key? key}) : super(key: key);
@@ -25,12 +26,14 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
   List<Job> _jobs = [];
+  List<Map<String, dynamic>> _recentApplicants = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadJobs();
+    _loadRecentApplicants();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<JobProvider>(context, listen: false).loadJobs();
     });
@@ -76,14 +79,56 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
     }
   }
 
+  Future<void> _loadRecentApplicants() async {
+    try {
+      final jobProvider = Provider.of<JobProvider>(context, listen: false);
+      final jobs = await jobProvider.getEmployerJobs();
+
+      if (jobs.isEmpty) return;
+
+      final List<Map<String, dynamic>> allApplicants = [];
+
+      for (var job in jobs) {
+        final applicantsSnapshot =
+            await FirebaseFirestore.instance
+                .collection('jobs')
+                .doc(job.companyName)
+                .collection('jobPostings')
+                .doc(job.id)
+                .collection('applicants')
+                .orderBy('appliedAt', descending: true)
+                .limit(5)
+                .get();
+
+        for (var doc in applicantsSnapshot.docs) {
+          allApplicants.add({...doc.data(), 'jobTitle': job.title});
+        }
+      }
+
+      // Sort all applicants by appliedAt and take the 5 most recent
+      allApplicants.sort((a, b) {
+        final aDate = DateTime.parse(a['appliedAt']);
+        final bDate = DateTime.parse(b['appliedAt']);
+        return bDate.compareTo(aDate);
+      });
+
+      setState(() {
+        _recentApplicants = allApplicants.take(5).toList();
+      });
+    } catch (e) {
+      print('Error loading recent applicants: $e');
+    }
+  }
+
   void _handleStatusChange(String jobId, bool newStatus) {
     setState(() {
-      _jobs = _jobs.map((job) {
-        if (job.id == jobId) {
-          return job.copyWith(isActive: newStatus);
-        }
-        return job;
-      }).toList();
+      _jobs =
+          _jobs.map((job) {
+            if (job.id == jobId) {
+              return job.copyWith(isActive: newStatus);
+            }
+            return job;
+          }).toList();
     });
   }
 
@@ -278,18 +323,19 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                         ),
                       ],
                     ),
-                    child: _companyInfo?['companyLogo'] != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.network(
-                              _companyInfo!['companyLogo'],
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildDefaultCompanyLogo();
-                              },
-                            ),
-                          )
-                        : _buildDefaultCompanyLogo(),
+                    child:
+                        _companyInfo?['companyLogo'] != null
+                            ? ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.network(
+                                _companyInfo!['companyLogo'],
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildDefaultCompanyLogo();
+                                },
+                              ),
+                            )
+                            : _buildDefaultCompanyLogo(),
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -377,7 +423,10 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                       title: 'Create Job Opening',
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, AppRoutes.createJobOpening);
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.createJobOpening,
+                        );
                       },
                     ),
                     _buildDrawerItem(
@@ -508,11 +557,13 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
+  List<Map<String, dynamic>> _recentApplicants = [];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadRecentApplicants();
   }
 
   Future<void> _loadUserData() async {
@@ -537,6 +588,51 @@ class _DashboardPageState extends State<DashboardPage> {
           isError: true,
         );
       }
+    }
+  }
+
+  Future<void> _loadRecentApplicants() async {
+    try {
+      final jobIds = widget.jobs.map((job) => job.id).toList();
+
+      if (jobIds.isEmpty) return;
+
+      final applicantsSnapshot =
+          await FirebaseFirestore.instance
+              .collection('job_applications')
+              .where('jobId', whereIn: jobIds)
+              .orderBy('appliedAt', descending: true)
+              .limit(5)
+              .get();
+
+      final List<Map<String, dynamic>> applicants = [];
+      for (var doc in applicantsSnapshot.docs) {
+        final userData =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(doc.data()['userId'])
+                .get();
+
+        final jobData =
+            await FirebaseFirestore.instance
+                .collection('jobs')
+                .doc(doc.data()['jobId'])
+                .get();
+
+        if (userData.exists && jobData.exists) {
+          applicants.add({
+            ...doc.data(),
+            'userData': userData.data(),
+            'jobData': jobData.data(),
+          });
+        }
+      }
+
+      setState(() {
+        _recentApplicants = applicants;
+      });
+    } catch (e) {
+      print('Error loading recent applicants: $e');
     }
   }
 
@@ -650,25 +746,26 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(width: 12),
               Builder(
-                builder: (context) => GestureDetector(
-                  onTap: () => Scaffold.of(context).openEndDrawer(),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.whiteText.withOpacity(0.2),
-                        width: 1,
+                builder:
+                    (context) => GestureDetector(
+                      onTap: () => Scaffold.of(context).openEndDrawer(),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.glassWhite,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.whiteText.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.menu,
+                          color: AppColors.whiteText,
+                          size: 24,
+                        ),
                       ),
                     ),
-                    child: Icon(
-                      Icons.menu,
-                      color: AppColors.whiteText,
-                      size: 24,
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -684,109 +781,252 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return _isLoading
         ? Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-            ),
-          )
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+          ),
+        )
         : Column(
-            children: [
-              _buildTopBar(userName),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RecentJobsCard(
-                        jobs: widget.jobs,
-                        onSeeAllPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutes.allJobListings,
-                            arguments: widget.jobs,
-                          );
-                        },
-                        onStatusChanged: widget.onStatusChanged,
-                      ),
-                      const SizedBox(height: 24),
-                      GridView.count(
-                        crossAxisCount: screenWidth < 600 ? 2 : 4,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        childAspectRatio: screenWidth < 600 ? 1.2 : 1.0,
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              AppRoutes.createJobOpening,
-                            ),
-                            child: _buildDashboardCard(
-                              title: 'Create Job',
-                              subtitle: 'Post new opening',
-                              icon: Icons.work_outline,
-                              color: AppColors.success,
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.success.withOpacity(0.1),
-                                  AppColors.successLight,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+          children: [
+            _buildTopBar(userName),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RecentJobsCard(
+                      jobs: widget.jobs,
+                      onSeeAllPressed: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.allJobListings,
+                          arguments: widget.jobs,
+                        );
+                      },
+                      onStatusChanged: widget.onStatusChanged,
+                    ),
+                    const SizedBox(height: 24),
+                    GridView.count(
+                      crossAxisCount: screenWidth < 600 ? 2 : 4,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      childAspectRatio: screenWidth < 600 ? 1.2 : 1.0,
+                      children: [
+                        GestureDetector(
+                          onTap:
+                              () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.createJobOpening,
                               ),
-                            ),
-                          ),
-                          _buildDashboardCard(
-                            title: 'Messages',
-                            subtitle: '12 unread',
-                            icon: Icons.chat,
-                            color: AppColors.warning,
+                          child: _buildDashboardCard(
+                            title: 'Create Job',
+                            subtitle: 'Post new opening',
+                            icon: Icons.work_outline,
+                            color: AppColors.success,
                             gradient: LinearGradient(
                               colors: [
-                                AppColors.warning.withOpacity(0.1),
-                                AppColors.warningLight,
+                                AppColors.success.withOpacity(0.1),
+                                AppColors.successLight,
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                           ),
-                          _buildDashboardCard(
-                            title: 'Reports',
-                            subtitle: 'View analytics',
-                            icon: Icons.analytics,
-                            color: AppColors.primaryBlue,
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primaryBlue.withOpacity(0.1),
-                                AppColors.lightBlue,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Messages',
+                          subtitle: '12 unread',
+                          icon: Icons.chat,
+                          color: AppColors.warning,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.warning.withOpacity(0.1),
+                              AppColors.warningLight,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          _buildDashboardCard(
-                            title: 'Settings',
-                            subtitle: 'Manage account',
-                            icon: Icons.settings,
-                            color: AppColors.grey,
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.grey.withOpacity(0.1),
-                                AppColors.lightGrey,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Reports',
+                          subtitle: 'View analytics',
+                          icon: Icons.analytics,
+                          color: AppColors.primaryBlue,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primaryBlue.withOpacity(0.1),
+                              AppColors.lightBlue,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        _buildDashboardCard(
+                          title: 'Settings',
+                          subtitle: 'Manage account',
+                          icon: Icons.settings,
+                          color: AppColors.grey,
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.grey.withOpacity(0.1),
+                              AppColors.lightGrey,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadowLight,
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Recent Applicants',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryText,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  // TODO: Navigate to all applicants
+                                },
+                                child: Text(
+                                  'View All',
+                                  style: TextStyle(
+                                    color: AppColors.primaryBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if (_recentApplicants.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Text(
+                                  'No recent applicants',
+                                  style: TextStyle(
+                                    color: AppColors.secondaryText,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _recentApplicants.length,
+                              itemBuilder: (context, index) {
+                                final applicant = _recentApplicants[index];
+
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage:
+                                          applicant['applicantProfileImg'] !=
+                                                      null &&
+                                                  applicant['applicantProfileImg']
+                                                      .isNotEmpty
+                                              ? NetworkImage(
+                                                applicant['applicantProfileImg'],
+                                              )
+                                              : null,
+                                      child:
+                                          applicant['applicantProfileImg'] ==
+                                                      null ||
+                                                  applicant['applicantProfileImg']
+                                                      .isEmpty
+                                              ? Text(
+                                                applicant['applicantName'][0]
+                                                    .toUpperCase(),
+                                                style: TextStyle(
+                                                  color: AppColors.primaryBlue,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              )
+                                              : null,
+                                    ),
+                                    title: Text(
+                                      applicant['applicantName'] ?? 'Anonymous',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primaryText,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          applicant['jobTitle'] ??
+                                              'Unknown Position',
+                                          style: TextStyle(
+                                            color: AppColors.primaryBlue,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Applied ${_formatTimeAgo(applicant['appliedAt'])}',
+                                          style: TextStyle(
+                                            color: AppColors.secondaryText,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: IconButton(
+                                      icon: Icon(
+                                        Icons.arrow_forward_ios,
+                                        size: 16,
+                                      ),
+                                      onPressed: () {
+                                        // TODO: Navigate to applicant details
+                                      },
+                                    ),
+                                    onTap: () {
+                                      // TODO: Navigate to applicant details
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          );
+            ),
+          ],
+        );
   }
 
   Widget _buildDashboardCard({
@@ -847,5 +1087,28 @@ class _DashboardPageState extends State<DashboardPage> {
         ],
       ),
     );
+  }
+
+  String _formatTimeAgo(dynamic timestamp) {
+    if (timestamp == null) return 'Recently';
+
+    final DateTime dateTime =
+        timestamp is Timestamp
+            ? timestamp.toDate()
+            : DateTime.parse(timestamp.toString());
+
+    final difference = DateTime.now().difference(dateTime);
+
+    if (difference.inDays > 7) {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 }

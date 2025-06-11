@@ -8,7 +8,7 @@ class JobProvider with ChangeNotifier {
   List<Job> get jobs => _jobs;
   bool get isLoading => _isLoading;
 
-    JobProvider() {
+  JobProvider() {
     _initialize();
   }
 
@@ -16,6 +16,14 @@ class JobProvider with ChangeNotifier {
     await loadJobs();
   }
 
+  Future<List<Job>> getEmployerJobs() async {
+    try {
+      return await JobService.getCompanyJobs();
+    } catch (e) {
+      print('Error getting employer jobs: $e');
+      return [];
+    }
+  }
 
   Future<void> loadJobs() async {
     try {

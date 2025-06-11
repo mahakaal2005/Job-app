@@ -5,6 +5,8 @@ import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
 
 class JobDetailsScreen extends StatefulWidget {
   final Job job;
@@ -27,32 +29,63 @@ class JobDetailsScreen extends StatefulWidget {
 class _JobDetailsScreenState extends State<JobDetailsScreen> {
   late Job _job;
   bool _isLoading = false;
+  List<Map<String, dynamic>> _applicants = [];
 
   @override
   void initState() {
     super.initState();
     _job = widget.job;
+    _loadApplicants();
+  }
+
+  Future<void> _loadApplicants() async {
+    try {
+      final applicantsSnapshot =
+          await FirebaseFirestore.instance
+              .collection('jobs')
+              .doc(_job.companyName)
+              .collection('jobPostings')
+              .doc(_job.id)
+              .collection('applicants')
+              .orderBy('appliedAt', descending: true)
+              .limit(5)
+              .get();
+
+      final List<Map<String, dynamic>> applicants = [];
+      for (var doc in applicantsSnapshot.docs) {
+        final data = doc.data();
+        applicants.add(data);
+      }
+
+      setState(() {
+        _applicants = applicants;
+      });
+    } catch (e) {
+      print('Error loading applicants: $e');
+    }
   }
 
   Future<void> _toggleJobStatus() async {
     setState(() => _isLoading = true);
-    
+
     try {
-      await Provider.of<JobProvider>(context, listen: false)
-          .updateJobStatus(_job.id, !_job.isActive);
-      
+      await Provider.of<JobProvider>(
+        context,
+        listen: false,
+      ).updateJobStatus(_job.id, !_job.isActive);
+
       setState(() {
         _job = _job.copyWith(isActive: !_job.isActive);
       });
-      
+
       widget.onStatusChanged(_job.id, _job.isActive);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _job.isActive 
-              ? 'Job activated successfully' 
-              : 'Job deactivated successfully',
+            _job.isActive
+                ? 'Job activated successfully'
+                : 'Job deactivated successfully',
           ),
           backgroundColor: AppColors.success,
         ),
@@ -72,9 +105,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   Future<void> _editJob() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => EditJobScreen(job: _job),
-      ),
+      MaterialPageRoute(builder: (context) => EditJobScreen(job: _job)),
     );
 
     if (result != null && result is Job) {
@@ -94,80 +125,133 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   }
 
   Future<void> _deleteJob() async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: AppColors.cardBackground,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      title: Text(
-        'Delete Job',
-        style: TextStyle(
-          color: AppColors.primaryText,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      content: Text(
-        'Are you sure you want to delete this job posting? This action cannot be undone.',
-        style: TextStyle(color: AppColors.secondaryText),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: AppColors.secondaryText),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.error,
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppColors.cardBackground,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
             ),
+            title: Text(
+              'Delete Job',
+              style: TextStyle(
+                color: AppColors.primaryText,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to delete this job posting? This action cannot be undone.',
+              style: TextStyle(color: AppColors.secondaryText),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppColors.secondaryText),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: AppColors.whiteText),
+                ),
+              ),
+            ],
           ),
-          child: const Text(
-            'Delete',
-            style: TextStyle(color: AppColors.whiteText),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+
+      try {
+        await Provider.of<JobProvider>(
+          context,
+          listen: false,
+        ).deleteJob(_job.id);
+
+        // Notify parent screens about the deletion
+        if (widget.onJobDeleted != null) {
+          widget.onJobDeleted!(_job.id);
+        }
+
+        Navigator.pop(context); // Close the details screen
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Job deleted successfully'),
+            backgroundColor: AppColors.error,
           ),
-        ),
-      ],
-    ),
-  );
-
-  if (confirmed == true) {
-    setState(() => _isLoading = true);
-
-    try {
-      await Provider.of<JobProvider>(context, listen: false).deleteJob(_job.id);
-      
-      // Notify parent screens about the deletion
-      if (widget.onJobDeleted != null) {
-        widget.onJobDeleted!(_job.id);
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete job: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      } finally {
+        setState(() => _isLoading = false);
       }
-
-      Navigator.pop(context); // Close the details screen
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Job deleted successfully'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete job: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
-}
+
+  void _showApplicantDetails(Map<String, dynamic> applicant) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => ApplicantDetailsScreen(
+              applicant: applicant,
+              jobTitle: _job.title,
+            ),
+      ),
+    );
+
+    if (result != null && result is String) {
+      // Update applicant status in Firestore
+      try {
+        await FirebaseFirestore.instance
+            .collection('jobs')
+            .doc(_job.companyName)
+            .collection('jobPostings')
+            .doc(_job.id)
+            .collection('applicants')
+            .doc(applicant['id'])
+            .update({'status': result});
+
+        // Refresh applicants list
+        _loadApplicants();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Application ${result.toLowerCase()}',
+              style: const TextStyle(color: AppColors.whiteText),
+            ),
+            backgroundColor:
+                result == 'accepted' ? AppColors.success : AppColors.error,
+          ),
+        );
+      } catch (e) {
+        print('Error updating applicant status: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update application status'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,70 +272,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           ),
         ),
         actions: [
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteText),
-                ),
-              ),
-            )
-          else
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: AppColors.whiteText),
-              onSelected: (value) {
-                switch (value) {
-                  case 'toggle_status':
-                    _toggleJobStatus();
-                    break;
-                  case 'edit':
-                    _editJob();
-                    break;
-                  case 'delete':
-                    _deleteJob();
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'toggle_status',
-                  child: Row(
-                    children: [
-                      Icon(
-                        _job.isActive ? Icons.pause : Icons.play_arrow,
-                        color: AppColors.primaryText,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(_job.isActive ? 'Deactivate' : 'Activate'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, color: AppColors.primaryText),
-                      SizedBox(width: 8),
-                      Text('Edit'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: AppColors.error),
-                      SizedBox(width: 8),
-                      Text('Delete'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          IconButton(
+            icon: const Icon(Icons.edit, color: AppColors.whiteText),
+            onPressed: _editJob,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: AppColors.whiteText),
+            onPressed: _deleteJob,
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -307,9 +335,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _job.isActive
-                              ? AppColors.success
-                              : AppColors.error,
+                          color:
+                              _job.isActive
+                                  ? AppColors.success
+                                  : AppColors.error,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -361,26 +390,135 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
             const SizedBox(height: 20),
 
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Applications',
-                    '${_job.applicantsCount}',
-                    Icons.people,
-                    AppColors.primaryBlue,
+            // Applicants Section
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowLight,
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Views',
-                    '${_job.viewCount ?? 0}',
-                    Icons.visibility,
-                    AppColors.success,
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Applicants (${_applicants.length})',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryText,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // TODO: Navigate to full applicants list
+                        },
+                        child: Text(
+                          'View All',
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  if (_applicants.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          'No applicants yet',
+                          style: TextStyle(
+                            color: AppColors.secondaryText,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _applicants.length,
+                      itemBuilder: (context, index) {
+                        final applicant = _applicants[index];
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage:
+                                  applicant['applicantProfileImg'] != null &&
+                                          applicant['applicantProfileImg']
+                                              .isNotEmpty
+                                      ? NetworkImage(
+                                        applicant['applicantProfileImg'],
+                                      )
+                                      : null,
+                              child:
+                                  applicant['applicantProfileImg'] == null ||
+                                          applicant['applicantProfileImg']
+                                              .isEmpty
+                                      ? Text(
+                                        applicant['applicantName'][0]
+                                            .toUpperCase(),
+                                        style: TextStyle(
+                                          color: AppColors.primaryBlue,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                      : null,
+                            ),
+                            title: Text(
+                              applicant['applicantName'] ?? 'Anonymous',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryText,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Experience: ${applicant['yearsOfExperience']}',
+                                  style: TextStyle(
+                                    color: AppColors.secondaryText,
+                                  ),
+                                ),
+                                Text(
+                                  'Status: ${applicant['status'] ?? 'Pending'}',
+                                  style: TextStyle(
+                                    color: AppColors.primaryBlue,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.arrow_forward_ios, size: 16),
+                              onPressed: () => _showApplicantDetails(applicant),
+                            ),
+                            onTap: () => _showApplicantDetails(applicant),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -401,13 +539,47 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Job Description',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryText,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Job Description',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryText,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.people,
+                              color: AppColors.primaryBlue,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${_applicants.length} Applicants',
+                              style: TextStyle(
+                                color: AppColors.primaryBlue,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -418,151 +590,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       height: 1.5,
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            if (_job.requirements.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadowLight,
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Requirements',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryText,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ..._job.requirements
-                        .map(
-                          (req) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.only(top: 8),
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryBlue,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    req,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: AppColors.secondaryText,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 20),
-
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadowLight,
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Compensation & Benefits',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_job.salaryRange.isNotEmpty)
-                    _buildInfoRow(
-                      Icons.attach_money,
-                      'Salary Range',
-                      _job.salaryRange,
-                    ),
-                  if (_job.benefits.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.card_giftcard,
-                          color: AppColors.primaryBlue,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Benefits',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryText,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              ..._job.benefits
-                                  .map(
-                                    (benefit) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Text(
-                                        '• $benefit',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: AppColors.secondaryText,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -601,101 +628,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            title,
-            style: TextStyle(
-              color: AppColors.secondaryText,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: AppColors.primaryBlue, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryText,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(fontSize: 14, color: AppColors.secondaryText),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    return '${date.day}/${date.month}/${date.year}';
   }
 }
