@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
+import 'package:get_work_app/provider/applicant_provider.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/emp_job_details_Screen.dart';
 import 'package:get_work_app/utils/app_colors.dart';
@@ -24,7 +25,22 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<JobProvider>(context, listen: false).loadJobs();
+      final jobProvider = Provider.of<JobProvider>(context, listen: false);
+      final applicantProvider = Provider.of<ApplicantProvider>(
+        context,
+        listen: false,
+      );
+
+      // Load jobs and initialize applicant listeners
+      jobProvider.loadJobs().then((_) {
+        if (jobProvider.jobs.isNotEmpty) {
+          // Initialize listeners for the company of the first job
+          // Assuming all jobs are from the same company
+          applicantProvider.initializeCompanyListeners(
+            jobProvider.jobs[0].companyName,
+          );
+        }
+      });
     });
   }
 
@@ -163,170 +179,180 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
   }
 
   Widget _buildJobCard(BuildContext context, Job job, JobProvider jobProvider) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        // In your _buildJobCard method, update the JobDetailsScreen navigation:
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => JobDetailsScreen(
-                    job: job,
-                    onStatusChanged: (jobId, isActive) {
-                      jobProvider.updateJobStatus(jobId, isActive);
-                      if (widget.onStatusChanged != null) {
-                        widget.onStatusChanged!(jobId, isActive);
-                      }
-                    },
-                    onJobDeleted: (jobId) {
-                      // This will trigger a rebuild when a job is deleted
-                      jobProvider.loadJobs();
-                    },
-                  ),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        job.title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryText,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        job.companyName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.primaryBlue,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        job.isActive
-                            ? AppColors.success.withOpacity(0.1)
-                            : AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: job.isActive ? AppColors.success : AppColors.error,
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    job.isActive ? 'Active' : 'Inactive',
-                    style: TextStyle(
-                      color: job.isActive ? AppColors.success : AppColors.error,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on,
-                  color: AppColors.secondaryText,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  job.location,
-                  style: TextStyle(
-                    color: AppColors.secondaryText,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Icon(
-                  Icons.work_outline,
-                  color: AppColors.secondaryText,
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  job.employmentType,
-                  style: TextStyle(
-                    color: AppColors.secondaryText,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              job.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.secondaryText,
-                height: 1.4,
+    return Consumer<ApplicantProvider>(
+      builder: (context, applicantProvider, child) {
+        final applicantCount = applicantProvider.applicantCounts[job.id] ?? 0;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadowLight,
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+            ],
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => JobDetailsScreen(
+                        job: job,
+                        onStatusChanged: (jobId, isActive) {
+                          jobProvider.updateJobStatus(jobId, isActive);
+                          if (widget.onStatusChanged != null) {
+                            widget.onStatusChanged!(jobId, isActive);
+                          }
+                        },
+                        onJobDeleted: (jobId) {
+                          jobProvider.loadJobs();
+                        },
+                      ),
+                ),
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStatChip(
-                  Icons.people,
-                  '${job.applicantsCount} Applied',
-                  AppColors.primaryBlue,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            job.title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryText,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            job.companyName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.primaryBlue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            job.isActive
+                                ? AppColors.success.withOpacity(0.1)
+                                : AppColors.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color:
+                              job.isActive
+                                  ? AppColors.success
+                                  : AppColors.error,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        job.isActive ? 'Active' : 'Inactive',
+                        style: TextStyle(
+                          color:
+                              job.isActive
+                                  ? AppColors.success
+                                  : AppColors.error,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                _buildStatChip(
-                  Icons.visibility,
-                  '${job.viewCount ?? 0} Views',
-                  AppColors.success,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: AppColors.secondaryText,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      job.location,
+                      style: TextStyle(
+                        color: AppColors.secondaryText,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Icon(
+                      Icons.work_outline,
+                      color: AppColors.secondaryText,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      job.employmentType,
+                      style: TextStyle(
+                        color: AppColors.secondaryText,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
+                const SizedBox(height: 12),
                 Text(
-                  _formatDate(job.createdAt),
+                  job.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.hintText,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: AppColors.secondaryText,
+                    height: 1.4,
                   ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _buildStatChip(
+                      Icons.people,
+                      '$applicantCount Applicants',
+                      AppColors.primaryBlue,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildStatChip(
+                      Icons.visibility,
+                      '${job.viewCount ?? 0} Views',
+                      AppColors.success,
+                    ),
+                    const Spacer(),
+                    Text(
+                      _formatDate(job.createdAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.hintText,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

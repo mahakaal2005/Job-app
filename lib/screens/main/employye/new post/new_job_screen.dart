@@ -22,12 +22,14 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   final _responsibilityController = TextEditingController();
   final _requirementController = TextEditingController();
   final _skillSearchController = TextEditingController();
+  final _benefitsController = TextEditingController();
 
   String _selectedEmploymentType = 'Full-time';
   String _selectedExperienceLevel = 'Entry Level';
   List<String> _selectedSkills = [];
   List<String> _responsibilities = [];
   List<String> _requirements = [];
+  List<String> _benefits = [];
   List<String> _filteredSkills = [];
   bool _isLoading = false;
   bool _showSkillSuggestions = false;
@@ -47,7 +49,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     'Executive Level',
   ];
 
-  final List<String> _workFromOptions = ['On-site', 'Remote']; 
+  final List<String> _workFromOptions = ['On-site', 'Remote'];
 
   @override
   void initState() {
@@ -64,6 +66,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     _responsibilityController.dispose();
     _requirementController.dispose();
     _skillSearchController.dispose();
+    _benefitsController.dispose();
     super.dispose();
   }
 
@@ -133,6 +136,21 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     });
   }
 
+  void _addBenefit() {
+    if (_benefitsController.text.trim().isNotEmpty) {
+      setState(() {
+        _benefits.add(_benefitsController.text.trim());
+        _benefitsController.clear();
+      });
+    }
+  }
+
+  void _removeBenefit(int index) {
+    setState(() {
+      _benefits.removeAt(index);
+    });
+  }
+
   Future<void> _createJob() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -172,7 +190,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         employerId: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        benefits: [],
+        benefits: _benefits,
         applicantsCount: 0,
         isActive: true,
         viewCount: 0,
@@ -247,6 +265,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 Icons.description,
                 maxLines: 4,
               ),
+              const SizedBox(height: 20),
+              _buildBenefitsSection(),
               const SizedBox(height: 20),
               _buildInputField(
                 'Location *',
@@ -329,6 +349,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: AppColors.primaryBlue,
                           ),
                         ),
               ),
@@ -508,6 +529,74 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 }).toList(),
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildBenefitsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Benefits *',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryBlue,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _benefitsController,
+                decoration: InputDecoration(
+                  hintText: 'Add job benefits',
+                  prefixIcon: const Icon(Icons.card_giftcard),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onFieldSubmitted: (_) => _addBenefit(),
+              ),
+            ),
+            const SizedBox(width: 10),
+            ElevatedButton(
+              onPressed: _addBenefit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBlue,
+                padding: const EdgeInsets.all(15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Icon(Icons.add, color: AppColors.whiteText),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (_benefits.isNotEmpty)
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _benefits.length,
+            itemBuilder: (context, index) {
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(_benefits[index]),
+                  trailing: IconButton(
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      color: AppColors.error,
+                    ),
+                    onPressed: () => _removeBenefit(index),
+                  ),
+                ),
+              );
+            },
+          ),
       ],
     );
   }
