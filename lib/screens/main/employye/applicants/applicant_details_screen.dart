@@ -5,6 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:get_work_app/provider/all_applicants_provider.dart';
 import 'package:get_work_app/provider/applicant_status_provider.dart';
+import 'package:get_work_app/services/chat_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_work_app/screens/main/employye/emp_chats.dart';
+import 'package:get_work_app/screens/main/employye/applicants/chat_detail_screen.dart'
+    as chat;
 
 class ApplicantDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> applicant;
@@ -23,6 +28,7 @@ class ApplicantDetailsScreen extends StatefulWidget {
 class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
   String? _resumePreviewUrl;
   bool _isLoading = true;
+  final ChatService _chatService = ChatService();
 
   @override
   void initState() {
@@ -664,8 +670,22 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
   }
 
   void _messageApplicant() {
-    // TODO: Implement messaging functionality
-    print('Message button clicked');
+    final chatId = _chatService.getChatId(
+      FirebaseAuth.instance.currentUser!.uid,
+      widget.applicant['applicantId'],
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => chat.ChatDetailScreen(
+              chatId: chatId,
+              otherUserId: widget.applicant['applicantId'],
+              otherUserName: widget.applicant['applicantName'],
+            ),
+      ),
+    );
   }
 
   Future<void> _updateStatus(String status) async {
