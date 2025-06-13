@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/provider/all_applicants_provider.dart';
+import 'package:intl/intl.dart';
 
 class AllApplicantsScreen extends StatefulWidget {
   final String jobId;
@@ -20,44 +22,17 @@ class AllApplicantsScreen extends StatefulWidget {
 }
 
 class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
-  List<Map<String, dynamic>> _applicants = [];
-  bool _isLoading = true;
-  String _error = '';
-
   @override
   void initState() {
     super.initState();
-    _loadApplicants();
-  }
-
-  Future<void> _loadApplicants() async {
-    try {
-      final applicantsSnapshot =
-          await FirebaseFirestore.instance
-              .collection('jobs')
-              .doc(widget.companyName)
-              .collection('jobPostings')
-              .doc(widget.jobId)
-              .collection('applicants')
-              .orderBy('appliedAt', descending: true)
-              .get();
-
-      final List<Map<String, dynamic>> applicants = [];
-      for (var doc in applicantsSnapshot.docs) {
-        final data = doc.data();
-        applicants.add(data);
-      }
-
-      setState(() {
-        _applicants = applicants;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to load applicants: $e';
-        _isLoading = false;
-      });
-    }
+    // Load applicants when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AllApplicantsProvider>().loadApplicants(
+        widget.companyName,
+        jobId: widget.jobId.isEmpty ? null : widget.jobId,
+        jobTitle: widget.jobTitle,
+      );
+    });
   }
 
   @override
@@ -68,7 +43,9 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
         backgroundColor: AppColors.primaryBlue,
         elevation: 0,
         title: Text(
-          'All Applicants',
+          widget.jobId.isEmpty
+              ? 'All Applicants'
+              : 'Applicants for ${widget.jobTitle}',
           style: TextStyle(
             color: AppColors.whiteText,
             fontWeight: FontWeight.bold,
@@ -79,94 +56,272 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _error.isNotEmpty
-              ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    _error,
-                    style: TextStyle(color: AppColors.error),
-                    textAlign: TextAlign.center,
-                  ),
+      body: Column(
+        children: [
+          // Search and Filter Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
-              )
-              : _applicants.isEmpty
-              ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'No applicants yet',
-                    style: TextStyle(
-                      color: AppColors.secondaryText,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _applicants.length,
-                itemBuilder: (context, index) {
-                  final applicant = _applicants[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage:
-                            applicant['applicantProfileImg'] != null &&
-                                    applicant['applicantProfileImg'].isNotEmpty
-                                ? NetworkImage(applicant['applicantProfileImg'])
-                                : null,
-                        child:
-                            applicant['applicantProfileImg'] == null ||
-                                    applicant['applicantProfileImg'].isEmpty
-                                ? Text(
-                                  applicant['applicantName'][0].toUpperCase(),
-                                  style: TextStyle(
-                                    color: AppColors.primaryBlue,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                                : null,
+              ],
+            ),
+            child: Column(
+              children: [
+                // Search Bar
+                TextField(
+                  onChanged: (value) {
+                    context.read<AllApplicantsProvider>().updateSearchQuery(
+                      value,
+                    );
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search applicants...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: AppColors.mutedText.withOpacity(0.3),
                       ),
-                      title: Text(
-                        applicant['applicantName'] ?? 'Anonymous',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryText,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: AppColors.mutedText.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Filters Row
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      // Job Filter (only show if viewing all applicants)
+                      if (widget.jobId.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppColors.mutedText.withOpacity(0.3),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Consumer<AllApplicantsProvider>(
+                            builder: (context, provider, child) {
+                              return DropdownButton<String>(
+                                value:
+                                    provider.jobTitles.contains('all')
+                                        ? 'all'
+                                        : provider.jobTitles.first,
+                                underline: const SizedBox(),
+                                items:
+                                    provider.jobTitles.map((job) {
+                                      return DropdownMenuItem(
+                                        value: job,
+                                        child: Text(
+                                          job == 'all' ? 'All Jobs' : job,
+                                        ),
+                                      );
+                                    }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    provider.updateJobFilter(value);
+                                  }
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      const SizedBox(width: 12),
+                      // Sort Options
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: AppColors.mutedText.withOpacity(0.3),
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Consumer<AllApplicantsProvider>(
+                          builder: (context, provider, child) {
+                            return Row(
+                              children: [
+                                DropdownButton<String>(
+                                  value: provider.sortBy,
+                                  underline: const SizedBox(),
+                                  items:
+                                      ['date', 'name', 'status'].map((sort) {
+                                        return DropdownMenuItem(
+                                          value: sort,
+                                          child: Text(
+                                            'Sort by ${sort.substring(0, 1).toUpperCase()}${sort.substring(1)}',
+                                          ),
+                                        );
+                                      }).toList(),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      provider.updateSorting(value);
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    provider.isSortAscending
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    provider.updateSorting(provider.sortBy);
+                                  },
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Experience: ${applicant['yearsOfExperience']}',
-                            style: TextStyle(color: AppColors.secondaryText),
-                          ),
-                          Text(
-                            'Status: ${applicant['status'] ?? 'Pending'}',
-                            style: TextStyle(
-                              color: AppColors.primaryBlue,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Applicants List
+          Expanded(
+            child: Consumer<AllApplicantsProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (provider.error.isNotEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        provider.error,
+                        style: TextStyle(color: AppColors.error),
+                        textAlign: TextAlign.center,
                       ),
-                      trailing: IconButton(
-                        icon: Icon(Icons.arrow_forward_ios, size: 16),
-                        onPressed: () => _showApplicantDetails(applicant),
-                      ),
-                      onTap: () => _showApplicantDetails(applicant),
                     ),
                   );
-                },
-              ),
+                }
+
+                final applicants = provider.applicants;
+
+                if (applicants.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        'No applicants found',
+                        style: TextStyle(
+                          color: AppColors.secondaryText,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: applicants.length,
+                  itemBuilder: (context, index) {
+                    final applicant = applicants[index];
+                    final appliedAt = DateTime.parse(applicant['appliedAt']);
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage:
+                              applicant['applicantProfileImg'] != null &&
+                                      applicant['applicantProfileImg']
+                                          .isNotEmpty
+                                  ? NetworkImage(
+                                    applicant['applicantProfileImg'],
+                                  )
+                                  : null,
+                          child:
+                              applicant['applicantProfileImg'] == null ||
+                                      applicant['applicantProfileImg'].isEmpty
+                                  ? Text(
+                                    applicant['applicantName'][0].toUpperCase(),
+                                    style: TextStyle(
+                                      color: AppColors.primaryBlue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                  : null,
+                        ),
+                        title: Text(
+                          applicant['applicantName'] ?? 'Anonymous',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryText,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Applied for ${applicant['jobTitle']}',
+                              style: TextStyle(
+                                color: AppColors.primaryBlue,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              'Applied on ${DateFormat('MMM dd, yyyy').format(appliedAt)}',
+                              style: TextStyle(
+                                color: AppColors.secondaryText,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(
+                              applicant['status'],
+                            ).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            (applicant['status'] ?? 'Pending').toUpperCase(),
+                            style: TextStyle(
+                              color: _getStatusColor(applicant['status']),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        onTap: () => _showApplicantDetails(applicant),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -177,33 +332,32 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
         builder:
             (context) => ApplicantDetailsScreen(
               applicant: applicant,
-              jobTitle: widget.jobTitle,
+              jobTitle: applicant['jobTitle'],
             ),
       ),
     );
 
     if (result != null && result is String) {
-      // Update applicant status in Firestore
-      try {
-        await FirebaseFirestore.instance
-            .collection('jobs')
-            .doc(widget.companyName)
-            .collection('jobPostings')
-            .doc(widget.jobId)
-            .collection('applicants')
-            .doc(applicant['id'])
-            .update({'status': result});
+      // Update applicant status using the provider
+      await context.read<AllApplicantsProvider>().updateApplicantStatus(
+        companyName: widget.companyName,
+        jobId: applicant['jobId'],
+        applicantId: applicant['id'],
+        status: result,
+      );
+    }
+  }
 
-        // Refresh applicants list
-        _loadApplicants();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update status: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'accepted':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      case 'shortlisted':
+        return Colors.orange;
+      default:
+        return Colors.blue;
     }
   }
 }

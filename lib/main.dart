@@ -7,6 +7,7 @@ import 'package:get_work_app/utils/app_colors.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:get_work_app/provider/applicant_provider.dart';
+import 'package:get_work_app/provider/all_applicants_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => JobProvider()),
         ChangeNotifierProvider(create: (_) => ApplicantProvider()),
-        ChangeNotifierProvider(create: (_) => BookmarkProvider()), // Add this
+        ChangeNotifierProvider(create: (_) => BookmarkProvider()),
+        ChangeNotifierProvider(create: (_) => AllApplicantsProvider()),
       ],
       child: MaterialApp(
         title: 'GetWork App',
