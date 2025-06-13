@@ -7,6 +7,7 @@ import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
+import 'package:get_work_app/screens/main/employye/applicants/all_applicants_screen.dart';
 
 class JobDetailsScreen extends StatefulWidget {
   final Job job;
@@ -48,7 +49,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               .doc(_job.id)
               .collection('applicants')
               .orderBy('appliedAt', descending: true)
-              .limit(5)
+              .limit(3)
               .get();
 
       final List<Map<String, dynamic>> applicants = [];
@@ -56,6 +57,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         final data = doc.data();
         applicants.add(data);
       }
+
+      // Update applicants count in jobPostings collection
+      await FirebaseFirestore.instance
+          .collection('jobs')
+          .doc(_job.companyName)
+          .collection('jobPostings')
+          .doc(_job.id)
+          .update({'applicantsCount': applicants.length});
 
       setState(() {
         _applicants = applicants;
@@ -420,7 +429,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: Navigate to full applicants list
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => AllApplicantsScreen(
+                                    jobId: _job.id,
+                                    companyName: _job.companyName,
+                                    jobTitle: _job.title,
+                                  ),
+                            ),
+                          );
                         },
                         child: Text(
                           'View All',

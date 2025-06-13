@@ -3,13 +3,13 @@ import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'skills_list.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
+import 'package:file_selector/file_selector.dart';
 
 class StudentOnboardingScreen extends StatefulWidget {
   const StudentOnboardingScreen({super.key});
@@ -240,25 +240,25 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
 
   Future<void> _pickResume() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
+      final typeGroup = XTypeGroup(label: 'PDFs', extensions: ['pdf']);
 
-      if (result != null) {
+      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+
+      if (file != null) {
         setState(() {
           _isUploadingResume = true;
         });
 
-        final file = File(result.files.single.path!);
-        final fileName = result.files.single.name;
+        final fileBytes = await file.readAsBytes();
+        final tempFile = File(file.path);
+        final fileName = file.name;
 
         // Use PDFService to handle the upload
-        final uploadResult = await PDFService.uploadResumePDF(file);
+        final uploadResult = await PDFService.uploadResumePDF(tempFile);
 
         if (uploadResult['pdfUrl'] != null) {
           setState(() {
-            _resumeFile = file;
+            _resumeFile = tempFile;
             _resumeFileName = fileName;
             _resumePreviewUrl = uploadResult['previewUrl'];
           });

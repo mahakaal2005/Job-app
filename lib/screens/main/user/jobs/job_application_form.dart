@@ -84,6 +84,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
         applicantProfileImg: userData['profileImageUrl'] ?? user.photoURL ?? '',
         applicantGender: userData['gender'] ?? '',
         resumeUrl: userData['resumeUrl'] ?? '',
+        resumePreviewUrl: userData['resumePreviewUrl'],
         whyJoin: _whyJoinController.text.trim(),
         yearsOfExperience: _experienceController.text.trim(),
         appliedAt: DateTime.now(),
@@ -160,7 +161,6 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
       child: Column(
         children: [
           // Banner Image
-         
           Container(
             padding: const EdgeInsets.all(20),
             child: Column(

@@ -12,6 +12,7 @@ class JobApplication {
   final String applicantProfileImg;
   final String applicantGender;
   final String resumeUrl;
+  final String? resumePreviewUrl;
   final String whyJoin;
   final String yearsOfExperience;
   final DateTime appliedAt;
@@ -31,6 +32,7 @@ class JobApplication {
     required this.applicantProfileImg,
     required this.applicantGender,
     required this.resumeUrl,
+    this.resumePreviewUrl,
     required this.whyJoin,
     required this.yearsOfExperience,
     required this.appliedAt,
@@ -52,6 +54,7 @@ class JobApplication {
       'applicantProfileImg': applicantProfileImg,
       'applicantGender': applicantGender,
       'resumeUrl': resumeUrl,
+      'resumePreviewUrl': resumePreviewUrl,
       'whyJoin': whyJoin,
       'yearsOfExperience': yearsOfExperience,
       'appliedAt': appliedAt.toIso8601String(),
@@ -74,6 +77,7 @@ class JobApplication {
       applicantProfileImg: json['applicantProfileImg'] ?? '',
       applicantGender: json['applicantGender'] ?? '',
       resumeUrl: json['resumeUrl'] ?? '',
+      resumePreviewUrl: json['resumePreviewUrl'],
       whyJoin: json['whyJoin'] ?? '',
       yearsOfExperience: json['yearsOfExperience'] ?? '',
       appliedAt: DateTime.parse(json['appliedAt']),

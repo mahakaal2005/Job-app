@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'dart:io';
@@ -125,17 +125,19 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
   }
 
   Future<void> _pickDocument(String type) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    final typeGroup = XTypeGroup(
+      label: 'Documents',
+      extensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
     );
 
-    if (result != null && result.files.single.path != null) {
+    final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+
+    if (file != null) {
       setState(() {
         if (type == 'license') {
-          _businessLicense = File(result.files.single.path!);
+          _businessLicense = File(file.path);
         } else if (type == 'documents') {
-          _companyDocuments.add(File(result.files.single.path!));
+          _companyDocuments.add(File(file.path));
         }
       });
     }
@@ -148,113 +150,125 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
   }
 
   Future<void> _submitOnboarding() async {
-  if (!_formKey.currentState!.validate()) {
-    _showSnackBar('Please fill in all required fields', isError: true);
-    return;
-  }
-
-  // Additional validation for company documents
-  if (_companyLogo == null) {
-    _showSnackBar('Company logo is required', isError: true);
-    return;
-  }
-
-  if (_businessLicense == null) {
-    _showSnackBar('Business license is required', isError: true);
-    return;
-  }
-
-  if (_employeeIdCard == null) {
-    _showSnackBar('Employee ID card is required', isError: true);
-    return;
-  }
-
-  setState(() {
-    _isLoading = true;
-  });
-
-  try {
-    // Upload files to Cloudinary
-    String? companyLogoUrl = await CloudinaryService.uploadImage(_companyLogo!);
-    String? businessLicenseUrl = await CloudinaryService.uploadDocument(_businessLicense!);
-    String? employeeIdCardUrl = await CloudinaryService.uploadImage(_employeeIdCard!);
-    
-    // Upload additional company documents if any
-    List<String> companyDocumentUrls = [];
-    if (_companyDocuments.isNotEmpty) {
-      List<String?> uploadedUrls = await CloudinaryService.uploadMultipleFiles(_companyDocuments);
-      companyDocumentUrls = uploadedUrls.whereType<String>().toList();
-    }
-
-    // Check if all required files were uploaded successfully
-    if (companyLogoUrl == null || businessLicenseUrl == null || employeeIdCardUrl == null) {
-      _showSnackBar('Failed to upload one or more required documents', isError: true);
+    if (!_formKey.currentState!.validate()) {
+      _showSnackBar('Please fill in all required fields', isError: true);
       return;
     }
 
-    // Prepare onboarding data with Cloudinary URLs
-    Map<String, dynamic> onboardingData = {
-      // Company Information (all required)
-      'companyInfo': {
-        'companyName': _companyNameController.text.trim(),
-        'companyEmail': _companyEmailController.text.trim(),
-        'companyPhone': _companyPhoneController.text.trim(),
-        'companyAddress': _companyAddressController.text.trim(),
-        'companyWebsite': _companyWebsiteController.text.trim(),
-        'companyDescription': _companyDescriptionController.text.trim(),
-        'establishedYear': _establishedYearController.text.trim(),
-        'employeeCount': _employeeCountController.text.trim(),
-        'industry': _selectedIndustry,
-        'companySize': _selectedCompanySize,
-        'companyLogo': companyLogoUrl,
-        'businessLicense': businessLicenseUrl,
-        'companyDocuments': companyDocumentUrls,
-      },
-      // Employee Information
-      'employeeInfo': {
-        'jobTitle': _jobTitleController.text.trim(),
-        'department': _departmentController.text.trim(),
-        'employeeId': _employeeIdController.text.trim(),
-        'workLocation': _workLocationController.text.trim(),
-        'employmentType': _selectedEmploymentType,
-        'managerName': _managerNameController.text.trim(),
-        'managerEmail': _managerEmailController.text.trim(),
-        'employeeIdCard': employeeIdCardUrl,
-      },
-      'onboardingCompleted': true,
-      'onboardingCompletedAt': DateTime.now().toIso8601String(),
-      'updatedAt': DateTime.now().toIso8601String(),
-    };
-
-    // Save to Firestore using AuthService
-    await AuthService.completeUserOnboarding(onboardingData);
-
-    _showSnackBar('Employee onboarding completed successfully!');
-
-    // Small delay to show success message
-    await Future.delayed(const Duration(milliseconds: 1000));
-
-    // Navigate to employee home via AuthWrapper
-    if (mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.home,
-        (route) => false,
-      );
+    // Additional validation for company documents
+    if (_companyLogo == null) {
+      _showSnackBar('Company logo is required', isError: true);
+      return;
     }
-  } catch (e) {
-    _showSnackBar(
-      'Failed to complete onboarding: ${e.toString()}',
-      isError: true,
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+
+    if (_businessLicense == null) {
+      _showSnackBar('Business license is required', isError: true);
+      return;
+    }
+
+    if (_employeeIdCard == null) {
+      _showSnackBar('Employee ID card is required', isError: true);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Upload files to Cloudinary
+      String? companyLogoUrl = await CloudinaryService.uploadImage(
+        _companyLogo!,
+      );
+      String? businessLicenseUrl = await CloudinaryService.uploadDocument(
+        _businessLicense!,
+      );
+      String? employeeIdCardUrl = await CloudinaryService.uploadImage(
+        _employeeIdCard!,
+      );
+
+      // Upload additional company documents if any
+      List<String> companyDocumentUrls = [];
+      if (_companyDocuments.isNotEmpty) {
+        List<String?> uploadedUrls =
+            await CloudinaryService.uploadMultipleFiles(_companyDocuments);
+        companyDocumentUrls = uploadedUrls.whereType<String>().toList();
+      }
+
+      // Check if all required files were uploaded successfully
+      if (companyLogoUrl == null ||
+          businessLicenseUrl == null ||
+          employeeIdCardUrl == null) {
+        _showSnackBar(
+          'Failed to upload one or more required documents',
+          isError: true,
+        );
+        return;
+      }
+
+      // Prepare onboarding data with Cloudinary URLs
+      Map<String, dynamic> onboardingData = {
+        // Company Information (all required)
+        'companyInfo': {
+          'companyName': _companyNameController.text.trim(),
+          'companyEmail': _companyEmailController.text.trim(),
+          'companyPhone': _companyPhoneController.text.trim(),
+          'companyAddress': _companyAddressController.text.trim(),
+          'companyWebsite': _companyWebsiteController.text.trim(),
+          'companyDescription': _companyDescriptionController.text.trim(),
+          'establishedYear': _establishedYearController.text.trim(),
+          'employeeCount': _employeeCountController.text.trim(),
+          'industry': _selectedIndustry,
+          'companySize': _selectedCompanySize,
+          'companyLogo': companyLogoUrl,
+          'businessLicense': businessLicenseUrl,
+          'companyDocuments': companyDocumentUrls,
+        },
+        // Employee Information
+        'employeeInfo': {
+          'jobTitle': _jobTitleController.text.trim(),
+          'department': _departmentController.text.trim(),
+          'employeeId': _employeeIdController.text.trim(),
+          'workLocation': _workLocationController.text.trim(),
+          'employmentType': _selectedEmploymentType,
+          'managerName': _managerNameController.text.trim(),
+          'managerEmail': _managerEmailController.text.trim(),
+          'employeeIdCard': employeeIdCardUrl,
+        },
+        'onboardingCompleted': true,
+        'onboardingCompletedAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      // Save to Firestore using AuthService
+      await AuthService.completeUserOnboarding(onboardingData);
+
+      _showSnackBar('Employee onboarding completed successfully!');
+
+      // Small delay to show success message
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      // Navigate to employee home via AuthWrapper
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.home,
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      _showSnackBar(
+        'Failed to complete onboarding: ${e.toString()}',
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
-}
 
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -274,7 +288,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
       } else if (_currentPage == 1 && !_validateEmployeeInfo()) {
         return;
       }
-      
+
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -291,7 +305,10 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
         _selectedCompanySize == null ||
         _establishedYearController.text.isEmpty ||
         _employeeCountController.text.isEmpty) {
-      _showSnackBar('Please fill all company information fields', isError: true);
+      _showSnackBar(
+        'Please fill all company information fields',
+        isError: true,
+      );
       return false;
     }
     return true;
@@ -303,7 +320,10 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
         _employeeIdController.text.isEmpty ||
         _selectedEmploymentType == null ||
         _workLocationController.text.isEmpty) {
-      _showSnackBar('Please fill all required employee information fields', isError: true);
+      _showSnackBar(
+        'Please fill all required employee information fields',
+        isError: true,
+      );
       return false;
     }
     return true;
@@ -339,9 +359,10 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
                     child: Container(
                       height: 4,
                       decoration: BoxDecoration(
-                        color: i <= _currentPage
-                            ? AppColors.primaryBlue
-                            : AppColors.grey.withOpacity(0.3),
+                        color:
+                            i <= _currentPage
+                                ? AppColors.primaryBlue
+                                : AppColors.grey.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -387,31 +408,33 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
                 if (_currentPage > 0) const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                            if (_currentPage == 2) {
-                              _submitOnboarding();
-                            } else {
-                              _nextPage();
-                            }
-                          },
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () {
+                              if (_currentPage == 2) {
+                                _submitOnboarding();
+                              } else {
+                                _nextPage();
+                              }
+                            },
+                    child:
+                        _isLoading
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
+                            )
+                            : Text(
+                              _currentPage == 2
+                                  ? 'Complete Onboarding'
+                                  : 'Next',
                             ),
-                          )
-                        : Text(
-                            _currentPage == 2
-                                ? 'Complete Onboarding'
-                                : 'Next',
-                          ),
                   ),
                 ),
               ],
@@ -465,7 +488,9 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
               if (value == null || value.trim().isEmpty) {
                 return 'Company email is required';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              if (!RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              ).hasMatch(value)) {
                 return 'Please enter a valid email address';
               }
               return null;
@@ -516,7 +541,8 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
               if (value == null || value.trim().isEmpty) {
                 return 'Company website is required';
               }
-              if (!value.startsWith('http://') && !value.startsWith('https://')) {
+              if (!value.startsWith('http://') &&
+                  !value.startsWith('https://')) {
                 return 'Please include http:// or https://';
               }
               return null;
@@ -527,12 +553,13 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
           DropdownButtonFormField<String>(
             value: _selectedIndustry,
             decoration: const InputDecoration(labelText: 'Industry *'),
-            items: _industries.map((industry) {
-              return DropdownMenuItem(
-                value: industry,
-                child: Text(industry),
-              );
-            }).toList(),
+            items:
+                _industries.map((industry) {
+                  return DropdownMenuItem(
+                    value: industry,
+                    child: Text(industry),
+                  );
+                }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedIndustry = value;
@@ -550,9 +577,10 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
           DropdownButtonFormField<String>(
             value: _selectedCompanySize,
             decoration: const InputDecoration(labelText: 'Company Size *'),
-            items: _companySizes.map((size) {
-              return DropdownMenuItem(value: size, child: Text(size));
-            }).toList(),
+            items:
+                _companySizes.map((size) {
+                  return DropdownMenuItem(value: size, child: Text(size));
+                }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedCompanySize = value;
@@ -692,9 +720,10 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
           DropdownButtonFormField<String>(
             value: _selectedEmploymentType,
             decoration: const InputDecoration(labelText: 'Employment Type *'),
-            items: _employmentTypes.map((type) {
-              return DropdownMenuItem(value: type, child: Text(type));
-            }).toList(),
+            items:
+                _employmentTypes.map((type) {
+                  return DropdownMenuItem(value: type, child: Text(type));
+                }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedEmploymentType = value;
@@ -750,7 +779,9 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
               if (value == null || value.trim().isEmpty) {
                 return 'Manager email is required';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              if (!RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              ).hasMatch(value)) {
                 return 'Please enter a valid email address';
               }
               return null;
@@ -792,7 +823,8 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
           // Business License (Required)
           _buildFileUploadSection(
             title: 'Business License *',
-            subtitle: 'Upload business registration/license document (required)',
+            subtitle:
+                'Upload business registration/license document (required)',
             file: _businessLicense,
             onTap: () => _pickDocument('license'),
             isRequired: true,
@@ -836,25 +868,26 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
 
           if (_companyDocuments.isNotEmpty) ...[
             Column(
-              children: _companyDocuments.asMap().entries.map((entry) {
-                int index = entry.key;
-                File file = entry.value;
-                String fileName = file.path.split('/').last;
+              children:
+                  _companyDocuments.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    File file = entry.value;
+                    String fileName = file.path.split('/').last;
 
-                return Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.description),
-                    title: Text(
-                      fileName,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeDocument(index),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    return Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.description),
+                        title: Text(
+                          fileName,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _removeDocument(index),
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ],
         ],
@@ -903,59 +936,63 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
             height: isImage ? 150 : 80,
             decoration: BoxDecoration(
               border: Border.all(
-                color: isRequired && file == null
-                    ? Colors.red
-                    : AppColors.grey.withOpacity(0.3),
+                color:
+                    isRequired && file == null
+                        ? Colors.red
+                        : AppColors.grey.withOpacity(0.3),
                 style: BorderStyle.solid,
               ),
               borderRadius: BorderRadius.circular(12),
               color: AppColors.grey.withOpacity(0.05),
             ),
-            child: file != null
-                ? isImage
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(file, fit: BoxFit.cover),
-                      )
-                    : Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.description,
-                              size: 24,
-                              color: AppColors.primaryBlue,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              file.path.split('/').last,
-                              style: const TextStyle(
-                                fontSize: 12,
+            child:
+                file != null
+                    ? isImage
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(file, fit: BoxFit.cover),
+                        )
+                        : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.description,
+                                size: 24,
                                 color: AppColors.primaryBlue,
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isImage ? Icons.image : Icons.upload_file,
-                        size: 32,
-                        color: isRequired ? Colors.red : AppColors.grey,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        isImage ? 'Tap to select image' : 'Tap to select file',
-                        style: TextStyle(
-                          fontSize: 14,
+                              const SizedBox(height: 8),
+                              Text(
+                                file.path.split('/').last,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.primaryBlue,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                    : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          isImage ? Icons.image : Icons.upload_file,
+                          size: 32,
                           color: isRequired ? Colors.red : AppColors.grey,
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isImage
+                              ? 'Tap to select image'
+                              : 'Tap to select file',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isRequired ? Colors.red : AppColors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
           ),
         ),
         if (isRequired && file == null)
@@ -963,10 +1000,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               'This document is required',
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.red, fontSize: 12),
             ),
           ),
       ],

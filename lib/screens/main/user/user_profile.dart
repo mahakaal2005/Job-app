@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
 
@@ -241,14 +241,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _uploadResume() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
+      final typeGroup = XTypeGroup(label: 'PDFs', extensions: ['pdf']);
 
-      if (result != null) {
+      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+
+      if (file != null) {
         setState(() {
-          _selectedResume = File(result.files.single.path!);
+          _selectedResume = File(file.path);
           _isUploadingResume = true;
         });
 
@@ -267,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Update Firestore with available data
           final updateData = {
             'resumeUrl': uploadResult['pdfUrl'],
-            'resumeFileName': result.files.single.name,
+            'resumeFileName': file.name,
             'updatedAt': FieldValue.serverTimestamp(),
           };
 
@@ -283,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           setState(() {
             _userData['resumeUrl'] = uploadResult['pdfUrl'];
-            _userData['resumeFileName'] = result.files.single.name;
+            _userData['resumeFileName'] = file.name;
             if (uploadResult['previewUrl'] != null) {
               _userData['resumePreviewUrl'] = uploadResult['previewUrl'];
             }
