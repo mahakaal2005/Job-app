@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:get_work_app/provider/applicant_provider.dart';
 import 'package:get_work_app/provider/all_applicants_provider.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ApplicantProvider()),
         ChangeNotifierProvider(create: (_) => BookmarkProvider()),
         ChangeNotifierProvider(create: (_) => AllApplicantsProvider()),
+        ChangeNotifierProvider(create: (_) => ApplicantStatusProvider()),
       ],
       child: MaterialApp(
         title: 'GetWork App',

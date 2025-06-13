@@ -9,6 +9,8 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
 import 'package:get_work_app/screens/main/employye/applicants/all_applicants_screen.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
+import 'package:intl/intl.dart';
 
 class JobDetailsScreen extends StatefulWidget {
   final Job job;
@@ -44,10 +46,26 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       context,
       listen: false,
     );
+    final statusProvider = Provider.of<ApplicantStatusProvider>(
+      context,
+      listen: false,
+    );
     // Initialize company-wide listeners
     applicantProvider.initializeCompanyListeners(_job.companyName);
     // Load applicants for this specific job
     await applicantProvider.loadApplicants(_job.companyName, _job.id);
+    // Load statuses for this job
+    await statusProvider.loadJobStatuses(_job.companyName, _job.id);
+  }
+
+  @override
+  void dispose() {
+    // Clear status cache when leaving the screen
+    Provider.of<ApplicantStatusProvider>(
+      context,
+      listen: false,
+    ).clearJobCache(_job.companyName, _job.id);
+    super.dispose();
   }
 
   Future<void> _toggleJobStatus() async {
@@ -203,34 +221,34 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
     if (result != null && result is String) {
       try {
-        await Provider.of<ApplicantProvider>(
-          context,
-          listen: false,
-        ).updateApplicantStatus(
-          _job.companyName,
-          _job.id,
-          applicant['id'],
-          result,
+        // Use the ApplicantStatusProvider to update the status
+        await context.read<ApplicantStatusProvider>().updateStatus(
+          companyName: _job.companyName,
+          jobId: _job.id,
+          applicantId: applicant['id'],
+          status: result,
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Application ${result.toLowerCase()}',
-              style: const TextStyle(color: AppColors.whiteText),
-            ),
-            backgroundColor:
-                result == 'accepted' ? AppColors.success : AppColors.error,
-          ),
+        // Refresh the applicants list
+        await context.read<ApplicantProvider>().loadApplicants(
+          _job.companyName,
+          _job.id,
         );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Application ${result.toLowerCase()}',
+                style: const TextStyle(color: AppColors.whiteText),
+              ),
+              backgroundColor:
+                  result == 'accepted' ? AppColors.success : AppColors.error,
+            ),
+          );
+        }
       } catch (e) {
         print('Error updating applicant status: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update application status'),
-            backgroundColor: AppColors.error,
-          ),
-        );
       }
     }
   }
@@ -514,28 +532,41 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                     color: AppColors.primaryText,
                                   ),
                                 ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Experience: ${applicant['yearsOfExperience']}',
-                                      style: TextStyle(
-                                        color: AppColors.secondaryText,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Status: ${applicant['status'] ?? 'Pending'}',
-                                      style: TextStyle(
-                                        color: AppColors.primaryBlue,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+                                subtitle: Text(
+                                  'Applied on ${DateFormat('MMM dd, yyyy').format(DateTime.parse(applicant['appliedAt']))}',
+                                  style: TextStyle(
+                                    color: AppColors.secondaryText,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                                trailing: IconButton(
-                                  icon: Icon(Icons.arrow_forward_ios, size: 16),
-                                  onPressed:
-                                      () => _showApplicantDetails(applicant),
+                                trailing: Consumer<ApplicantStatusProvider>(
+                                  builder: (context, provider, child) {
+                                    final currentStatus = provider.getStatus(
+                                      _job.companyName,
+                                      _job.id,
+                                      applicant['id'],
+                                    );
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(
+                                          currentStatus,
+                                        ).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        currentStatus.toUpperCase(),
+                                        style: TextStyle(
+                                          color: _getStatusColor(currentStatus),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                                 onTap: () => _showApplicantDetails(applicant),
                               ),
@@ -726,5 +757,18 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           ),
       ],
     );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'accepted':
+        return Colors.green;
+      case 'rejected':
+        return Colors.red;
+      case 'shortlisted':
+        return Colors.orange;
+      default:
+        return Colors.blue;
+    }
   }
 }

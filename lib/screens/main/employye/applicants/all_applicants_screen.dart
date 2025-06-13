@@ -4,6 +4,7 @@ import 'package:get_work_app/screens/main/employye/applicants/applicant_details_
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/provider/all_applicants_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 
 class AllApplicantsScreen extends StatefulWidget {
   final String jobId;
@@ -26,13 +27,34 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
   void initState() {
     super.initState();
     // Load applicants when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AllApplicantsProvider>().loadApplicants(
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Load statuses for this job first
+      if (widget.jobId.isNotEmpty) {
+        await context.read<ApplicantStatusProvider>().loadJobStatuses(
+          widget.companyName,
+          widget.jobId,
+        );
+      }
+
+      // Then load applicants
+      await context.read<AllApplicantsProvider>().loadApplicants(
         widget.companyName,
         jobId: widget.jobId.isEmpty ? null : widget.jobId,
         jobTitle: widget.jobTitle,
       );
     });
+  }
+
+  @override
+  void dispose() {
+    // Clear status cache when leaving the screen
+    if (widget.jobId.isNotEmpty) {
+      context.read<ApplicantStatusProvider>().clearJobCache(
+        widget.companyName,
+        widget.jobId,
+      );
+    }
+    super.dispose();
   }
 
   @override
@@ -58,6 +80,21 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
       ),
       body: Column(
         children: [
+          // Status Filter Buttons
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(child: _buildFilterButton('All', 'all')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterButton('Pending', 'pending')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterButton('Accepted', 'accepted')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterButton('Rejected', 'rejected')),
+              ],
+            ),
+          ),
           // Search and Filter Section
           Container(
             padding: const EdgeInsets.all(16),
@@ -292,25 +329,37 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                             ),
                           ],
                         ),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(
-                              applicant['status'],
-                            ).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            (applicant['status'] ?? 'Pending').toUpperCase(),
-                            style: TextStyle(
-                              color: _getStatusColor(applicant['status']),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        trailing: Consumer<ApplicantStatusProvider>(
+                          builder: (context, provider, child) {
+                            final currentStatus =
+                                provider.getStatus(
+                                  widget.companyName,
+                                  applicant['jobId'],
+                                  applicant['id'],
+                                ) ??
+                                applicant['status'] ??
+                                'pending';
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(
+                                  currentStatus,
+                                ).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                currentStatus.toUpperCase(),
+                                style: TextStyle(
+                                  color: _getStatusColor(currentStatus),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                         onTap: () => _showApplicantDetails(applicant),
                       ),
@@ -338,13 +387,24 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
     );
 
     if (result != null && result is String) {
-      // Update applicant status using the provider
-      await context.read<AllApplicantsProvider>().updateApplicantStatus(
-        companyName: widget.companyName,
-        jobId: applicant['jobId'],
-        applicantId: applicant['id'],
-        status: result,
-      );
+      try {
+        // Update status in both providers
+        await context.read<ApplicantStatusProvider>().updateStatus(
+          companyName: widget.companyName,
+          jobId: applicant['jobId'],
+          applicantId: applicant['id'],
+          status: result,
+        );
+
+        await context.read<AllApplicantsProvider>().updateApplicantStatus(
+          companyName: widget.companyName,
+          jobId: applicant['jobId'],
+          applicantId: applicant['id'],
+          status: result,
+        );
+      } catch (e) {
+        print('Error updating applicant status: $e');
+      }
     }
   }
 
@@ -359,5 +419,61 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
       default:
         return Colors.blue;
     }
+  }
+
+  Widget _buildFilterButton(String label, String status) {
+    return Consumer<AllApplicantsProvider>(
+      builder: (context, provider, child) {
+        final isSelected = provider.selectedStatus == status;
+        return ElevatedButton(
+          onPressed: () {
+            provider.updateStatusFilter(status);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                isSelected ? AppColors.primaryBlue : Colors.grey[200],
+            foregroundColor:
+                isSelected ? AppColors.whiteText : AppColors.primaryText,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusChip(String? status) {
+    return Consumer<ApplicantStatusProvider>(
+      builder: (context, provider, child) {
+        final currentStatus = provider.getStatus(
+          widget.companyName,
+          widget.jobId,
+          status ?? 'pending',
+        );
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: _getStatusColor(currentStatus).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            currentStatus.toUpperCase(),
+            style: TextStyle(
+              color: _getStatusColor(currentStatus),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        );
+      },
+    );
   }
 }

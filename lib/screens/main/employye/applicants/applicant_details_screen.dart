@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:get_work_app/provider/all_applicants_provider.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 
 class ApplicantDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> applicant;
@@ -138,24 +141,36 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(
-                        widget.applicant['status'],
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      widget.applicant['status']?.toUpperCase() ?? 'PENDING',
-                      style: TextStyle(
-                        color: _getStatusColor(widget.applicant['status']),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  Consumer<ApplicantStatusProvider>(
+                    builder: (context, provider, child) {
+                      final currentStatus =
+                          provider.getStatus(
+                            widget.applicant['companyName'],
+                            widget.applicant['jobId'],
+                            widget.applicant['id'],
+                          ) ??
+                          widget.applicant['status'] ??
+                          'pending';
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(
+                            currentStatus,
+                          ).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          currentStatus.toUpperCase(),
+                          style: TextStyle(
+                            color: _getStatusColor(currentStatus),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -398,6 +413,47 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
 
             const SizedBox(height: 20),
 
+            // Status Action Buttons
+            if (widget.applicant['status']?.toLowerCase() != 'accepted' &&
+                widget.applicant['status']?.toLowerCase() != 'rejected')
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _updateStatus('accepted'),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Accept'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: AppColors.whiteText,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _updateStatus('rejected'),
+                      icon: const Icon(Icons.cancel_outlined),
+                      label: const Text('Reject'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: AppColors.whiteText,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+            const SizedBox(height: 20),
+
             // Contact Buttons
             Row(
               children: [
@@ -610,5 +666,32 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
   void _messageApplicant() {
     // TODO: Implement messaging functionality
     print('Message button clicked');
+  }
+
+  Future<void> _updateStatus(String status) async {
+    try {
+      // Use the ApplicantStatusProvider to update the status
+      await context.read<ApplicantStatusProvider>().updateStatus(
+        companyName: widget.applicant['companyName'],
+        jobId: widget.applicant['jobId'],
+        applicantId: widget.applicant['id'],
+        status: status,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Application ${status.toLowerCase()}'),
+            backgroundColor: status == 'accepted' ? Colors.green : Colors.red,
+          ),
+        );
+        Navigator.pop(context, status);
+      }
+    } catch (e) {
+      print('Error updating status: $e');
+      if (mounted) {
+        Navigator.pop(context, status);
+      }
+    }
   }
 }

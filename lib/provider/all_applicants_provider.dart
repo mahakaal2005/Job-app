@@ -20,6 +20,7 @@ class AllApplicantsProvider with ChangeNotifier {
   List<String> get jobTitles => _jobTitles;
   bool get isSortAscending => _sortAscending;
   String get sortBy => _sortBy;
+  String get selectedStatus => _selectedStatus;
 
   // Load all applicants
   Future<void> loadApplicants(
@@ -133,25 +134,25 @@ class AllApplicantsProvider with ChangeNotifier {
   void _applyFilters() {
     List<Map<String, dynamic>> filtered = List.from(_allApplicants);
 
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((applicant) {
-            final name =
-                applicant['applicantName']?.toString().toLowerCase() ?? '';
-            final email =
-                applicant['applicantEmail']?.toString().toLowerCase() ?? '';
-            final query = _searchQuery.toLowerCase();
-            return name.contains(query) || email.contains(query);
-          }).toList();
-    }
-
     // Apply status filter
     if (_selectedStatus != 'all') {
       filtered =
           filtered.where((applicant) {
-            return (applicant['status'] ?? 'pending').toLowerCase() ==
-                _selectedStatus;
+            final status = applicant['status']?.toLowerCase() ?? 'pending';
+            return status == _selectedStatus.toLowerCase();
+          }).toList();
+    }
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered =
+          filtered.where((applicant) {
+            return applicant['applicantName']?.toLowerCase().contains(query) ==
+                    true ||
+                applicant['jobTitle']?.toLowerCase().contains(query) == true ||
+                applicant['applicantEmail']?.toLowerCase().contains(query) ==
+                    true;
           }).toList();
     }
 
@@ -165,22 +166,23 @@ class AllApplicantsProvider with ChangeNotifier {
 
     // Apply sorting
     filtered.sort((a, b) {
-      if (_sortBy == 'date') {
-        final aDate = DateTime.parse(a['appliedAt']);
-        final bDate = DateTime.parse(b['appliedAt']);
-        return _sortAscending ? aDate.compareTo(bDate) : bDate.compareTo(aDate);
-      } else if (_sortBy == 'name') {
-        final aName = a['applicantName']?.toString() ?? '';
-        final bName = b['applicantName']?.toString() ?? '';
-        return _sortAscending ? aName.compareTo(bName) : bName.compareTo(aName);
-      } else if (_sortBy == 'status') {
-        final aStatus = a['status']?.toString() ?? 'pending';
-        final bStatus = b['status']?.toString() ?? 'pending';
-        return _sortAscending
-            ? aStatus.compareTo(bStatus)
-            : bStatus.compareTo(aStatus);
+      int comparison = 0;
+      switch (_sortBy) {
+        case 'date':
+          final dateA = DateTime.parse(a['appliedAt']);
+          final dateB = DateTime.parse(b['appliedAt']);
+          comparison = dateA.compareTo(dateB);
+          break;
+        case 'name':
+          comparison = (a['applicantName'] ?? '').compareTo(
+            b['applicantName'] ?? '',
+          );
+          break;
+        case 'status':
+          comparison = (a['status'] ?? '').compareTo(b['status'] ?? '');
+          break;
       }
-      return 0;
+      return _sortAscending ? comparison : -comparison;
     });
 
     _filteredApplicants = filtered;
@@ -195,6 +197,24 @@ class AllApplicantsProvider with ChangeNotifier {
     required String status,
   }) async {
     try {
+      // Get the applicant data first
+      final applicantDoc =
+          await FirebaseFirestore.instance
+              .collection('jobs')
+              .doc(companyName)
+              .collection('jobPostings')
+              .doc(jobId)
+              .collection('applicants')
+              .doc(applicantId)
+              .get();
+
+      if (!applicantDoc.exists) {
+        throw Exception('Applicant not found');
+      }
+
+      final applicantData = applicantDoc.data()!;
+
+      // Update job application status
       await FirebaseFirestore.instance
           .collection('jobs')
           .doc(companyName)
@@ -204,15 +224,25 @@ class AllApplicantsProvider with ChangeNotifier {
           .doc(applicantId)
           .update({'status': status});
 
+      // Update user's application status in their profile
+      await FirebaseFirestore.instance
+          .collection('users_specific')
+          .doc(applicantData['applicantId'])
+          .collection('applications')
+          .doc(jobId)
+          .update({'status': status});
+
       // Update local state
       final index = _allApplicants.indexWhere((a) => a['id'] == applicantId);
       if (index != -1) {
         _allApplicants[index]['status'] = status;
-        _applyFilters();
+        _applyFilters(); // This will update the filtered list
       }
-    } catch (e) {
-      _error = 'Failed to update status: $e';
+
       notifyListeners();
+    } catch (e) {
+      print('Error updating applicant status: $e');
+      rethrow;
     }
   }
 }
