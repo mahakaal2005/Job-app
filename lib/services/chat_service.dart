@@ -25,6 +25,15 @@ class ChatService {
     final String chatId = getChatId(currentUserId, receiverId);
     final Timestamp timestamp = Timestamp.now();
 
+    // Fetch user and employer data
+    final userData = await getUserData(currentUserId);
+    final employerData = await getEmployerData(receiverId);
+
+    // Get participant names
+    final String senderDisplayName = userData?['name'] ?? senderName;
+    final String receiverDisplayName =
+        employerData?['companyName'] ?? receiverName;
+
     // Create a new message
     final newMessage = {
       'senderId': currentUserId,
@@ -41,19 +50,19 @@ class ChatService {
         .collection('messages')
         .add(newMessage);
 
-    // Update the chat metadata
+    // Update the chat metadata with proper names
     await _firestore.collection('chats').doc(chatId).set({
       'lastMessage': message,
       'lastMessageTime': timestamp,
       'participants': [currentUserId, receiverId],
-      'participantNames': [senderName, receiverName],
+      'participantNames': [senderDisplayName, receiverDisplayName],
       'updatedAt': timestamp,
     }, SetOptions(merge: true));
 
     // Send push notification to receiver
     await _sendPushNotification(
       receiverId: receiverId,
-      senderName: senderName,
+      senderName: senderDisplayName,
       message: message,
       chatId: chatId,
     );
@@ -68,10 +77,11 @@ class ChatService {
   }) async {
     try {
       // Get receiver's FCM token
-      final receiverDoc = await _firestore
-          .collection('users') // or your user collection name
-          .doc(receiverId)
-          .get();
+      final receiverDoc =
+          await _firestore
+              .collection('users') // or your user collection name
+              .doc(receiverId)
+              .get();
 
       if (receiverDoc.exists) {
         final receiverData = receiverDoc.data() as Map<String, dynamic>;
@@ -126,13 +136,14 @@ class ChatService {
   Future<void> markMessagesAsRead(String chatId, String currentUserId) async {
     try {
       final batch = _firestore.batch();
-      final snapshot = await _firestore
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .where('receiverId', isEqualTo: currentUserId)
-          .where('isRead', isEqualTo: false)
-          .get();
+      final snapshot =
+          await _firestore
+              .collection('chats')
+              .doc(chatId)
+              .collection('messages')
+              .where('receiverId', isEqualTo: currentUserId)
+              .where('isRead', isEqualTo: false)
+              .get();
 
       for (var doc in snapshot.docs) {
         batch.update(doc.reference, {'isRead': true});
@@ -147,14 +158,15 @@ class ChatService {
   // Get unread message count for a specific chat
   Future<int> getUnreadMessageCount(String chatId, String currentUserId) async {
     try {
-      final snapshot = await _firestore
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .where('receiverId', isEqualTo: currentUserId)
-          .where('isRead', isEqualTo: false)
-          .get();
-      
+      final snapshot =
+          await _firestore
+              .collection('chats')
+              .doc(chatId)
+              .collection('messages')
+              .where('receiverId', isEqualTo: currentUserId)
+              .where('isRead', isEqualTo: false)
+              .get();
+
       return snapshot.docs.length;
     } catch (e) {
       print('Error getting unread count: $e');
@@ -178,15 +190,15 @@ class ChatService {
     try {
       final String currentUserId = _auth.currentUser!.uid;
       final String? token = await _messaging.getToken();
-      
+
       if (token != null) {
         await _firestore
             .collection('users') // or your user collection name
             .doc(currentUserId)
             .set({
-          'fcmToken': token,
-          'lastSeen': Timestamp.now(),
-        }, SetOptions(merge: true));
+              'fcmToken': token,
+              'lastSeen': Timestamp.now(),
+            }, SetOptions(merge: true));
       }
     } catch (e) {
       print('Error updating FCM token: $e');
