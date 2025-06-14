@@ -8,7 +8,7 @@ import 'package:get_work_app/provider/applicant_status_provider.dart';
 import 'package:get_work_app/services/chat_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/screens/main/employye/emp_chats.dart';
-import 'package:get_work_app/screens/main/employye/emp_chat_detail_screen.dart'
+import 'package:get_work_app/screens/main/employye/applicants/chat_detail_screen.dart'
     as chat;
 
 class ApplicantDetailsScreen extends StatefulWidget {
@@ -679,7 +679,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
       context,
       MaterialPageRoute(
         builder:
-            (context) => chat.EmpChatDetailScreen(
+            (context) => chat.ChatDetailScreen(
               chatId: chatId,
               otherUserId: widget.applicant['applicantId'],
               otherUserName: widget.applicant['applicantName'],

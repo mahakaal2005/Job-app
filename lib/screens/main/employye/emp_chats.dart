@@ -4,7 +4,7 @@ import 'package:get_work_app/models/chat_message.dart';
 import 'package:get_work_app/services/chat_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_work_app/screens/main/employye/emp_chat_detail_screen.dart';
+import 'package:get_work_app/screens/main/employye/applicants/chat_detail_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -275,7 +275,7 @@ class _EmpChatsState extends State<EmpChats> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => EmpChatDetailScreen(
+                              builder: (context) => ChatDetailScreen(
                                 chatId: chatRoom.id,
                                 otherUserId: otherParticipantId,
                                 otherUserName: otherParticipantName,
@@ -389,7 +389,7 @@ class _EmpChatsState extends State<EmpChats> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EmpChatDetailScreen(
+            builder: (context) => ChatDetailScreen(
               chatId: chatId,
               otherUserId: otherUserId,
               otherUserName: otherUserName,
@@ -413,7 +413,7 @@ class _EmpChatsState extends State<EmpChats> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EmpChatDetailScreen(
+            builder: (context) => ChatDetailScreen(
               chatId: chatId,
               otherUserId: otherUserId,
               otherUserName: otherUserName,

@@ -5,12 +5,12 @@ import 'package:get_work_app/services/chat_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class UserChatDetailScreen extends StatefulWidget {
+class ChatDetailScreen extends StatefulWidget {
   final String chatId;
   final String otherUserId;
   final String otherUserName;
 
-  const UserChatDetailScreen({
+  const ChatDetailScreen({
     Key? key,
     required this.chatId,
     required this.otherUserId,
@@ -18,21 +18,22 @@ class UserChatDetailScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<UserChatDetailScreen> createState() => _UserChatDetailScreenState();
+  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
 
-class _UserChatDetailScreenState extends State<UserChatDetailScreen> with WidgetsBindingObserver {
+class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final ChatService _chatService = ChatService();
   final ScrollController _scrollController = ScrollController();
   final currentUserId = FirebaseAuth.instance.currentUser?.uid;
   final currentUserName =
-      FirebaseAuth.instance.currentUser?.displayName ?? 'User';
+      FirebaseAuth.instance.currentUser?.displayName ?? 'Employer';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Mark messages as read when the screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _markMessagesAsRead();
     });
@@ -48,11 +49,13 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Mark messages as read when app comes to foreground
     if (state == AppLifecycleState.resumed) {
       _markMessagesAsRead();
     }
   }
 
+  // Mark messages as read
   Future<void> _markMessagesAsRead() async {
     if (currentUserId != null) {
       await _chatService.markMessagesAsRead(widget.chatId, currentUserId!);
@@ -104,6 +107,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
             ),
           ],
         ),
+        
       ),
       body: Column(
         children: [
@@ -160,6 +164,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
                     .map((doc) => ChatMessage.fromFirestore(doc))
                     .toList();
 
+                // Mark messages as read when new messages arrive
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _markMessagesAsRead();
                 });
@@ -173,14 +178,17 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
                     final message = messages[index];
                     final isMe = message.senderId == currentUserId;
                     
+                    // Check if we should show time separator
                     bool showTimeSeparator = false;
                     if (index == messages.length - 1) {
+                      // Always show time for the oldest message
                       showTimeSeparator = true;
                     } else {
                       final currentTime = message.timestamp.toDate();
                       final nextTime = messages[index + 1].timestamp.toDate();
                       final timeDifference = nextTime.difference(currentTime).inMinutes;
                       
+                      // Show time separator if more than 5 minutes apart
                       if (timeDifference > 5) {
                         showTimeSeparator = true;
                       }
@@ -188,6 +196,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
 
                     return Column(
                       children: [
+                        // Time separator
                         if (showTimeSeparator)
                           Container(
                             margin: const EdgeInsets.symmetric(vertical: 16),
@@ -199,6 +208,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
                               ),
                             ),
                           ),
+                        // Message bubble
                         _buildMessageBubble(message, isMe),
                       ],
                     );
@@ -316,6 +326,44 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
     );
   }
 
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo, color: Colors.blue),
+              title: const Text('Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle photo selection
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam, color: Colors.red),
+              title: const Text('Video'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle video selection
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file, color: Colors.orange),
+              title: const Text('Document'),
+              onTap: () {
+                Navigator.pop(context);
+                // Handle document selection
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _sendMessage() {
     final message = _messageController.text.trim();
     if (message.isEmpty) return;
@@ -329,6 +377,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen> with Widget
 
     _messageController.clear();
     
+    // Scroll to bottom after sending message
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
