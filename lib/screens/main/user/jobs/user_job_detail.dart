@@ -31,6 +31,8 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   bool _isScrolled = false;
   late bool _isBookmarked;
   String _companyDescription = '';
+  bool _hasAlreadyApplied = false;
+  bool _isCheckingApplication = true;
 
   @override
   void initState() {
@@ -55,6 +57,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
 
     _animationController.forward();
     _fetchCompanyDescription();
+    _checkIfAlreadyApplied();
   }
 
   Future<void> _fetchCompanyDescription() async {
@@ -82,6 +85,38 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       setState(() {
         _companyDescription = 'Failed to load company description.';
       });
+    }
+  }
+
+  Future<void> _checkIfAlreadyApplied() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        setState(() => _isCheckingApplication = false);
+        return;
+      }
+
+      final applicationSnapshot =
+          await FirebaseFirestore.instance
+              .collection('jobs')
+              .doc(widget.job.companyName)
+              .collection('jobPostings')
+              .doc(widget.job.id)
+              .collection('applicants')
+              .where('applicantId', isEqualTo: user.uid)
+              .get();
+
+      if (mounted) {
+        setState(() {
+          _hasAlreadyApplied = applicationSnapshot.docs.isNotEmpty;
+          _isCheckingApplication = false;
+        });
+      }
+    } catch (e) {
+      print('Error checking application status: $e');
+      if (mounted) {
+        setState(() => _isCheckingApplication = false);
+      }
     }
   }
 
@@ -113,7 +148,20 @@ class _JobDetailScreenState extends State<JobDetailScreen>
           _buildFloatingHeader(),
         ],
       ),
-      bottomNavigationBar: _buildModernBottomBar(),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadowLight,
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: Row(children: [_buildApplyButton()]),
+      ),
     );
   }
 
@@ -667,82 +715,74 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     );
   }
 
-  Widget _buildModernBottomBar() {
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: AppColors.cardBackground,
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.shadowMedium,
-          blurRadius: 20,
-          offset: const Offset(0, -8),
+  Widget _buildApplyButton() {
+    if (_isCheckingApplication) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+          strokeWidth: 2,
         ),
-      ],
-    ),
-    child: SafeArea(
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: _isBookmarked ? AppColors.primaryBlue : Colors.transparent,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: AppColors.primaryBlue, width: 2),
-            ),
-            child: IconButton(
-              icon: Icon(
-                _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                color: _isBookmarked ? AppColors.whiteText : AppColors.primaryBlue,
-              ),
-              onPressed: () {
-                setState(() => _isBookmarked = !_isBookmarked);
-                widget.onBookmarkToggled(widget.job.id);
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Container(
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.blueShadow,
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                onPressed: _showApplyDialog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                child: const Text(
-                  'Apply Now',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.whiteText,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+      );
+    }
 
+    return Expanded(
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: _hasAlreadyApplied ? null : AppColors.primaryGradient,
+          color: _hasAlreadyApplied ? AppColors.success.withOpacity(0.1) : null,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow:
+              _hasAlreadyApplied
+                  ? null
+                  : [
+                    BoxShadow(
+                      color: AppColors.blueShadow,
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+        ),
+        child: ElevatedButton(
+          onPressed: _showApplyDialog,
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                _hasAlreadyApplied ? Colors.transparent : Colors.transparent,
+            shadowColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_hasAlreadyApplied) ...[
+                Icon(
+                  Icons.check_circle_outline,
+                  color: AppColors.success,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                _hasAlreadyApplied ? 'Applied' : 'Apply Now',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color:
+                      _hasAlreadyApplied
+                          ? AppColors.success
+                          : AppColors.whiteText,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _showApplyDialog() {
     final user = FirebaseAuth.instance.currentUser;
@@ -751,6 +791,16 @@ class _JobDetailScreenState extends State<JobDetailScreen>
         const SnackBar(
           content: Text('Please login to apply for jobs'),
           backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_hasAlreadyApplied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You have already applied for this position'),
+          backgroundColor: Colors.orange,
         ),
       );
       return;

@@ -617,11 +617,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                     setState(() => _currentIndex = 3);
                   },
                 ),
-                _buildDrawerItem(
-                  icon: Icons.work_outline_rounded,
-                  title: 'My Applications',
-                  onTap: () => Navigator.pop(context),
-                ),
+                
                 _buildDrawerItem(
                   icon: Icons.bookmark_outline_rounded,
                   title: 'Saved Jobs',

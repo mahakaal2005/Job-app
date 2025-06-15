@@ -25,11 +25,38 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
   Map<String, dynamic>? _userData;
   bool _isSubmitting = false;
   bool _isLoading = true;
+  bool _hasAlreadyApplied = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _checkIfAlreadyApplied();
+  }
+
+  Future<void> _checkIfAlreadyApplied() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      final applicationSnapshot =
+          await _firestore
+              .collection('jobs')
+              .doc(widget.job.companyName)
+              .collection('jobPostings')
+              .doc(widget.job.id)
+              .collection('applicants')
+              .where('applicantId', isEqualTo: user.uid)
+              .get();
+
+      if (mounted) {
+        setState(() {
+          _hasAlreadyApplied = applicationSnapshot.docs.isNotEmpty;
+        });
+      }
+    } catch (e) {
+      print('Error checking application status: $e');
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -122,6 +149,72 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_hasAlreadyApplied) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppColors.backgroundColor,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 64,
+                  color: AppColors.success,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Already Applied',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryText,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'You have already applied for this position.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.secondaryText,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
     }
 
     return DraggableScrollableSheet(
