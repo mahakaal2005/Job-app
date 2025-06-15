@@ -5,6 +5,7 @@ import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/provider/all_applicants_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:get_work_app/provider/applicant_status_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AllApplicantsScreen extends StatefulWidget {
   final String jobId;
@@ -28,8 +29,23 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
     super.initState();
     // Load applicants when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Load statuses for this job first
-      if (widget.jobId.isNotEmpty) {
+      // Load statuses for all jobs if viewing all applicants
+      if (widget.jobId.isEmpty) {
+        final jobsSnapshot =
+            await FirebaseFirestore.instance
+                .collection('jobs')
+                .doc(widget.companyName)
+                .collection('jobPostings')
+                .get();
+
+        for (var job in jobsSnapshot.docs) {
+          await context.read<ApplicantStatusProvider>().loadJobStatuses(
+            widget.companyName,
+            job.id,
+          );
+        }
+      } else {
+        // Load statuses for specific job
         await context.read<ApplicantStatusProvider>().loadJobStatuses(
           widget.companyName,
           widget.jobId,
@@ -339,23 +355,33 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                                 ) ??
                                 applicant['status'] ??
                                 'pending';
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getStatusColor(
-                                  currentStatus,
-                                ).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                currentStatus.toUpperCase(),
-                                style: TextStyle(
-                                  color: _getStatusColor(currentStatus),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
+
+                            return GestureDetector(
+                              onTap: () => _showApplicantDetails(applicant),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(
+                                    currentStatus,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _getStatusColor(
+                                      currentStatus,
+                                    ).withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  currentStatus.toUpperCase(),
+                                  style: TextStyle(
+                                    color: _getStatusColor(currentStatus),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             );

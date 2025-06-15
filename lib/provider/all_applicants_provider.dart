@@ -130,65 +130,6 @@ class AllApplicantsProvider with ChangeNotifier {
     _applyFilters();
   }
 
-  // Apply all filters
-  void _applyFilters() {
-    List<Map<String, dynamic>> filtered = List.from(_allApplicants);
-
-    // Apply status filter
-    if (_selectedStatus != 'all') {
-      filtered =
-          filtered.where((applicant) {
-            final status = applicant['status']?.toLowerCase() ?? 'pending';
-            return status == _selectedStatus.toLowerCase();
-          }).toList();
-    }
-
-    // Apply search filter
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      filtered =
-          filtered.where((applicant) {
-            return applicant['applicantName']?.toLowerCase().contains(query) ==
-                    true ||
-                applicant['jobTitle']?.toLowerCase().contains(query) == true ||
-                applicant['applicantEmail']?.toLowerCase().contains(query) ==
-                    true;
-          }).toList();
-    }
-
-    // Apply job filter
-    if (_selectedJob != 'all') {
-      filtered =
-          filtered.where((applicant) {
-            return applicant['jobTitle'] == _selectedJob;
-          }).toList();
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) {
-      int comparison = 0;
-      switch (_sortBy) {
-        case 'date':
-          final dateA = DateTime.parse(a['appliedAt']);
-          final dateB = DateTime.parse(b['appliedAt']);
-          comparison = dateA.compareTo(dateB);
-          break;
-        case 'name':
-          comparison = (a['applicantName'] ?? '').compareTo(
-            b['applicantName'] ?? '',
-          );
-          break;
-        case 'status':
-          comparison = (a['status'] ?? '').compareTo(b['status'] ?? '');
-          break;
-      }
-      return _sortAscending ? comparison : -comparison;
-    });
-
-    _filteredApplicants = filtered;
-    notifyListeners();
-  }
-
   // Update applicant status
   Future<void> updateApplicantStatus({
     required String companyName,
@@ -244,5 +185,66 @@ class AllApplicantsProvider with ChangeNotifier {
       print('Error updating applicant status: $e');
       rethrow;
     }
+  }
+
+  // Apply all filters
+  void _applyFilters() {
+    List<Map<String, dynamic>> filtered = List.from(_allApplicants);
+
+    // Apply status filter
+    if (_selectedStatus != 'all') {
+      filtered =
+          filtered.where((applicant) {
+            final status = applicant['status']?.toLowerCase() ?? 'pending';
+            return status == _selectedStatus.toLowerCase();
+          }).toList();
+    }
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered =
+          filtered.where((applicant) {
+            return applicant['applicantName']?.toLowerCase().contains(query) ==
+                    true ||
+                applicant['jobTitle']?.toLowerCase().contains(query) == true ||
+                applicant['applicantEmail']?.toLowerCase().contains(query) ==
+                    true;
+          }).toList();
+    }
+
+    // Apply job filter
+    if (_selectedJob != 'all') {
+      filtered =
+          filtered.where((applicant) {
+            return applicant['jobTitle'] == _selectedJob;
+          }).toList();
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) {
+      int comparison = 0;
+      switch (_sortBy) {
+        case 'date':
+          final dateA = DateTime.parse(a['appliedAt']);
+          final dateB = DateTime.parse(b['appliedAt']);
+          comparison = dateA.compareTo(dateB);
+          break;
+        case 'name':
+          comparison = (a['applicantName'] ?? '').compareTo(
+            b['applicantName'] ?? '',
+          );
+          break;
+        case 'status':
+          comparison = (a['status'] ?? 'pending').compareTo(
+            b['status'] ?? 'pending',
+          );
+          break;
+      }
+      return _sortAscending ? comparison : -comparison;
+    });
+
+    _filteredApplicants = filtered;
+    notifyListeners();
   }
 }
