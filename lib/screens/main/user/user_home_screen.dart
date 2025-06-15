@@ -1485,7 +1485,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       case 1:
         return const MyGigsScreen();
       case 2:
-        return const ChatScreen();
+        return const UserChats();
       case 3:
         return const ProfileScreen();
       default:
