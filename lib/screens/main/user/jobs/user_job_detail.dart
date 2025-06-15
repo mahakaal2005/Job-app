@@ -466,7 +466,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '₹${widget.job.salaryRange}/hr',
+                  '₹${widget.job.salaryRange}/month',
                   style: const TextStyle(
                     color: AppColors.whiteText,
                     fontSize: 24,

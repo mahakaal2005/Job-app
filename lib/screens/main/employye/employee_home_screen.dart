@@ -241,6 +241,7 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                 _selectedIndex = index;
               });
             },
+            onLogout: _showLogoutDialog,
           ),
           const EmpChats(),
           const EmpAnalytics(),
@@ -556,12 +557,14 @@ class DashboardPage extends StatefulWidget {
   final List<Job> jobs;
   final Function(String, bool) onStatusChanged;
   final Function(int) onIndexChanged;
+  final VoidCallback onLogout;
 
   const DashboardPage({
     Key? key,
     required this.jobs,
     required this.onStatusChanged,
     required this.onIndexChanged,
+    required this.onLogout,
   }) : super(key: key);
 
   @override
@@ -667,13 +670,11 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildTopBar(String userName) {
+  Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 20,
-        right: 20,
-        bottom: 20,
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.05,
+        vertical: 12,
       ),
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
@@ -683,69 +684,99 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.blueShadow,
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: const Color(0x330066FF),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome back,',
-                  style: TextStyle(
-                    color: AppColors.whiteText.withOpacity(0.9),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    color: AppColors.whiteText,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Row(
-            children: [
-              const SizedBox(width: 12),
-              Builder(
-                builder:
-                    (context) => GestureDetector(
-                      onTap: () => Scaffold.of(context).openEndDrawer(),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.glassWhite,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.whiteText.withOpacity(0.2),
-                            width: 1,
-                          ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.shadowLight,
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
                         ),
-                        child: Icon(
-                          Icons.menu,
-                          color: AppColors.whiteText,
-                          size: 24,
-                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: const Color(0xFF0066FF),
+                            child: const Icon(
+                              Icons.work_rounded,
+                              color: AppColors.white,
+                              size: 24,
+                            ),
+                          );
+                        },
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Welcome back,',
+                          style: TextStyle(
+                            fontSize: MediaQuery.of(context).size.width * 0.035,
+                            color: AppColors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _userData?['fullName']?.split(' ').first ?? 'User',
+                          style: TextStyle(
+                            fontSize: MediaQuery.of(context).size.width * 0.05,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
+            ),
+            GestureDetector(
+              onTap: widget.onLogout,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: AppColors.white,
+                  size: MediaQuery.of(context).size.width * 0.05,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -763,7 +794,7 @@ class _DashboardPageState extends State<DashboardPage> {
         )
         : Column(
           children: [
-            _buildTopBar(userName),
+            _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),

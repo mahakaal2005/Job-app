@@ -6,9 +6,11 @@ import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_job_detail.dart';
 import 'package:get_work_app/screens/main/user/saved_jobs_screen.dart';
+import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
 import 'package:get_work_app/screens/main/user/user_chats.dart';
 import 'package:get_work_app/screens/main/user/user_my_gigs.dart';
 import 'package:get_work_app/screens/main/user/user_profile.dart';
+import 'package:get_work_app/screens/main/user/user_help_and_support.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +29,9 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   bool _isLoading = true;
   int _currentIndex = 0;
   String _selectedFilter = 'All';
+  List<String> _selectedCities = [];
+  List<String> _selectedSkills = [];
+  final TextEditingController _cityController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -34,21 +39,22 @@ class _UserHomeScreenState extends State<UserHomeScreen>
 
   // Job data with lazy loading
   List<Job> _jobs = [];
+  List<Job> _filteredJobs = [];
   bool _isLoadingJobs = false;
   bool _hasMoreJobs = true;
   final int _jobsPerPage = 10;
   DocumentSnapshot<Map<String, dynamic>>? _lastDocument;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _skillController = TextEditingController();
+  List<String> _filteredSkills = [];
 
   final List<String> _filterOptions = [
     'All',
-    'Nearby',
     'High Pay',
     'Remote',
-    'Urgent',
+    'Bookmarked',
   ];
 
-  // Notifications
   final List<Map<String, dynamic>> _notifications = [
     {
       'id': 1,
@@ -94,10 +100,13 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     _loadUserData();
     _loadJobs();
     _animationController.forward();
+    _filteredSkills = List.from(allSkills);
   }
 
   @override
   void dispose() {
+    _cityController.dispose();
+    _skillController.dispose();
     _animationController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -142,6 +151,112 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     );
   }
 
+  void _filterSkills(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredSkills = List.from(allSkills);
+      } else {
+        _filteredSkills =
+            allSkills
+                .where(
+                  (skill) => skill.toLowerCase().contains(query.toLowerCase()),
+                )
+                .toList();
+      }
+    });
+  }
+
+  void _addCity(String city) {
+    if (city.isNotEmpty && !_selectedCities.contains(city)) {
+      setState(() {
+        _selectedCities.add(city);
+        _cityController.clear();
+        _applyFilters();
+      });
+    }
+  }
+
+  void _addSkill(String skill) {
+    if (skill.isNotEmpty && !_selectedSkills.contains(skill)) {
+      setState(() {
+        _selectedSkills.add(skill);
+        _skillController.clear();
+        _applyFilters();
+      });
+    }
+  }
+
+  void _removeCity(String city) {
+    setState(() {
+      _selectedCities.remove(city);
+      _applyFilters();
+    });
+  }
+
+  void _removeSkill(String skill) {
+    setState(() {
+      _selectedSkills.remove(skill);
+      _applyFilters();
+    });
+  }
+
+  void _applyFilters() {
+    setState(() {
+      _filteredJobs =
+          _jobs.where((job) {
+            bool matchesFilter = true;
+            bool matchesCity = true;
+            bool matchesSkill = true;
+            bool matchesBookmark = true;
+
+            // Apply main filter
+            switch (_selectedFilter) {
+              case 'High Pay':
+                final salary = int.tryParse(job.salaryRange) ?? 0;
+                matchesFilter = salary >= 10000; // 10L+ per year
+                break;
+              case 'Remote':
+                matchesFilter =
+                    job.location.toLowerCase().contains('remote') ||
+                    job.employmentType.toLowerCase().contains('remote');
+                break;
+              case 'Bookmarked':
+                final bookmarkProvider = Provider.of<BookmarkProvider>(
+                  context,
+                  listen: false,
+                );
+                matchesFilter = bookmarkProvider.isBookmarked(job.id);
+                break;
+              default: // 'All'
+                matchesFilter = true;
+            }
+
+            // Apply city filter - match if any selected city is in the job location
+            if (_selectedCities.isNotEmpty) {
+              matchesCity = _selectedCities.any(
+                (city) =>
+                    job.location.toLowerCase().contains(city.toLowerCase()),
+              );
+            }
+
+            // Apply skill filter - match if any selected skill is in the required skills
+            if (_selectedSkills.isNotEmpty) {
+              matchesSkill = _selectedSkills.any(
+                (skill) => job.requiredSkills.any(
+                  (jobSkill) =>
+                      jobSkill.toLowerCase().contains(skill.toLowerCase()),
+                ),
+              );
+            }
+
+            return matchesFilter &&
+                matchesCity &&
+                matchesSkill &&
+                matchesBookmark;
+          }).toList();
+    });
+  }
+
   Future<void> _loadJobs() async {
     if (_isLoadingJobs) return;
 
@@ -169,10 +284,12 @@ class _UserHomeScreenState extends State<UserHomeScreen>
 
         setState(() {
           _jobs = jobs;
+          _filteredJobs = jobs;
           _isLoadingJobs = false;
           _hasMoreJobs = jobs.length == _jobsPerPage;
           _lastDocument = newLastDoc;
         });
+        _applyFilters();
       }
     } catch (e) {
       if (mounted) {
@@ -263,15 +380,37 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   }
 
   String _formatSalary(String salary) {
-    final num = int.tryParse(salary) ?? 0;
-    if (num >= 10000000) {
-      return '₹${(num / 10000000).toStringAsFixed(1)}Cr';
-    } else if (num >= 100000) {
-      return '₹${(num / 100000).toStringAsFixed(1)}L';
-    } else if (num >= 1000) {
-      return '₹${(num / 1000).toStringAsFixed(0)}K';
+    // Assuming salary is in format "min-max" or just a single number
+    final parts = salary.split('-');
+    if (parts.length == 2) {
+      final min = int.tryParse(parts[0].trim()) ?? 0;
+      final max = int.tryParse(parts[1].trim()) ?? 0;
+
+      String formatAmount(int amount) {
+        if (amount >= 10000000) {
+          return '${(amount / 10000000).toStringAsFixed(1)}Cr';
+        } else if (amount >= 100000) {
+          return '${(amount / 100000).toStringAsFixed(1)}L';
+        } else if (amount >= 1000) {
+          return '${(amount / 1000).toStringAsFixed(1)}K';
+        }
+        return '$amount';
+      }
+
+      return '${formatAmount(min)} - ${formatAmount(max)}';
+    } else {
+      // Single value
+      final num = int.tryParse(salary) ?? 0;
+
+      if (num >= 10000000) {
+        return '${(num / 10000000).toStringAsFixed(1)}Cr';
+      } else if (num >= 100000) {
+        return '${(num / 100000).toStringAsFixed(1)}L';
+      } else if (num >= 1000) {
+        return '${(num / 1000).toStringAsFixed(1)}K';
+      }
+      return '$num';
     }
-    return '₹$num';
   }
 
   String _getTimeAgo(String dateString) {
@@ -497,24 +636,17 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                   },
                 ),
                 _buildDrawerItem(
-                  icon: Icons.payment_rounded,
-                  title: 'Payment History',
-                  onTap: () => Navigator.pop(context),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.analytics_outlined,
-                  title: 'Analytics',
-                  onTap: () => Navigator.pop(context),
-                ),
-                _buildDrawerItem(
-                  icon: Icons.settings_outlined,
-                  title: 'Settings',
-                  onTap: () => Navigator.pop(context),
-                ),
-                _buildDrawerItem(
                   icon: Icons.help_outline_rounded,
                   title: 'Help & Support',
-                  onTap: () => Navigator.pop(context),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserHelpAndSupport(),
+                      ),
+                    );
+                  },
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -824,12 +956,12 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.blueShadow,
+            color: const Color(0x330066FF),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -839,71 +971,93 @@ class _UserHomeScreenState extends State<UserHomeScreen>
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: MediaQuery.of(context).size.width * 0.05,
-            vertical: 16,
+            vertical: 12,
           ),
-          child: Column(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome back,',
-                          style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width * 0.04,
-                            color: AppColors.white.withOpacity(0.9),
-                            fontWeight: FontWeight.w500,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadowLight,
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _userName.split(' ').first,
-                          style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width * 0.07,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Discover your next opportunity',
-                          style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width * 0.035,
-                            color: AppColors.white.withOpacity(0.8),
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      _buildNotificationDropdown(),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.menu_rounded,
-                            color: AppColors.white,
-                            size: MediaQuery.of(context).size.width * 0.06,
-                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: const Color(0xFF0066FF),
+                              child: const Icon(
+                                Icons.work_rounded,
+                                color: AppColors.white,
+                                size: 24,
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Welcome back,',
+                            style: TextStyle(
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.035,
+                              color: AppColors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _userName.split(' ').first,
+                            style: TextStyle(
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.05,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
+                  child: Icon(
+                    Icons.menu_rounded,
+                    color: AppColors.white,
+                    size: MediaQuery.of(context).size.width * 0.05,
+                  ),
+                ),
               ),
             ],
           ),
@@ -913,67 +1067,229 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   }
 
   Widget _buildFilterChips() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.07,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(
-          horizontal: MediaQuery.of(context).size.width * 0.04,
-        ),
-        itemCount: _filterOptions.length,
-        itemBuilder: (context, index) {
-          final filter = _filterOptions[index];
-          final isSelected = _selectedFilter == filter;
-
-          return Padding(
-            padding: EdgeInsets.only(
-              right: MediaQuery.of(context).size.width * 0.03,
-            ),
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedFilter = filter),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width * 0.04,
-                  vertical: MediaQuery.of(context).size.height * 0.01,
-                ),
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppColors.primaryGradient : null,
-                  color: isSelected ? null : AppColors.white,
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(
-                    color:
-                        isSelected
-                            ? Colors.transparent
-                            : AppColors.dividerColor,
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          isSelected
-                              ? AppColors.blueShadow.withOpacity(0.3)
-                              : AppColors.shadowLight,
-                      blurRadius: isSelected ? 8 : 4,
-                      offset: Offset(0, isSelected ? 4 : 2),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _cityController,
+                  decoration: InputDecoration(
+                    hintText: 'City Filter...',
+                    prefixIcon: Icon(
+                      Icons.location_city,
+                      color: AppColors.primaryBlue,
+                      size: 20,
                     ),
-                  ],
-                ),
-                child: Text(
-                  filter,
-                  style: TextStyle(
-                    color:
-                        isSelected ? AppColors.white : AppColors.secondaryText,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add, size: 20),
+                      onPressed: () => _addCity(_cityController.text),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.dividerColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.dividerColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryBlue),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
+                  onSubmitted: _addCity,
                 ),
               ),
+              const SizedBox(width: 8),
+              // Skills Search
+              Expanded(
+                child: TextField(
+                  controller: _skillController,
+                  decoration: InputDecoration(
+                    hintText: 'Skills Filter...',
+                    prefixIcon: Icon(
+                      Icons.work,
+                      color: AppColors.primaryBlue,
+                      size: 20,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.add, size: 20),
+                      onPressed: () => _addSkill(_skillController.text),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.dividerColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.dividerColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryBlue),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  onChanged: _filterSkills,
+                  onSubmitted: _addSkill,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Selected Cities and Skills
+        if (_selectedCities.isNotEmpty || _selectedSkills.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ..._selectedCities.map(
+                  (city) => Chip(
+                    label: Text(city),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () => _removeCity(city),
+                    backgroundColor: AppColors.lightBlue,
+                    labelStyle: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                ),
+                ..._selectedSkills.map(
+                  (skill) => Chip(
+                    label: Text(skill),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () => _removeSkill(skill),
+                    backgroundColor: AppColors.lightBlue,
+                    labelStyle: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        // Skills Dropdown
+        if (_skillController.text.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.dividerColor),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadowLight,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.25,
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _filteredSkills.length,
+              itemBuilder: (context, index) {
+                final skill = _filteredSkills[index];
+                return ListTile(
+                  dense: true,
+                  title: Text(skill, style: const TextStyle(fontSize: 14)),
+                  onTap: () => _addSkill(skill),
+                );
+              },
+            ),
+          ),
+        // Filter Chips
+        Container(
+          height: MediaQuery.of(context).size.height * 0.07,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.of(context).size.width * 0.04,
+            ),
+            itemCount: _filterOptions.length,
+            itemBuilder: (context, index) {
+              final filter = _filterOptions[index];
+              final isSelected = _selectedFilter == filter;
+
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: MediaQuery.of(context).size.width * 0.03,
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedFilter = filter;
+                      _applyFilters();
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width * 0.04,
+                      vertical: MediaQuery.of(context).size.height * 0.01,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: isSelected ? AppColors.primaryGradient : null,
+                      color: isSelected ? null : AppColors.white,
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color:
+                            isSelected
+                                ? Colors.transparent
+                                : AppColors.dividerColor,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              isSelected
+                                  ? AppColors.blueShadow.withOpacity(0.3)
+                                  : AppColors.shadowLight,
+                          blurRadius: isSelected ? 8 : 4,
+                          offset: Offset(0, isSelected ? 4 : 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      filter,
+                      style: TextStyle(
+                        color:
+                            isSelected
+                                ? AppColors.white
+                                : AppColors.secondaryText,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.w600,
+                        fontSize: MediaQuery.of(context).size.width * 0.035,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1294,7 +1610,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '/year',
+                                      '/month',
                                       style: TextStyle(
                                         fontSize:
                                             MediaQuery.of(context).size.width *
@@ -1446,12 +1762,13 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                       child: ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.only(bottom: 100),
-                        itemCount: _jobs.length + (_hasMoreJobs ? 1 : 0),
+                        itemCount:
+                            _filteredJobs.length + (_hasMoreJobs ? 1 : 0),
                         itemBuilder: (context, index) {
-                          if (index >= _jobs.length) {
+                          if (index >= _filteredJobs.length) {
                             return _buildLoadingIndicator();
                           }
-                          return _buildEnhancedJobCard(_jobs[index]);
+                          return _buildEnhancedJobCard(_filteredJobs[index]);
                         },
                       ),
                     ),
