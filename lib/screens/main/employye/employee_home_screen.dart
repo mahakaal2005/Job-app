@@ -233,7 +233,15 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          DashboardPage(jobs: _jobs, onStatusChanged: _handleStatusChange),
+          DashboardPage(
+            jobs: _jobs,
+            onStatusChanged: _handleStatusChange,
+            onIndexChanged: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+          ),
           const EmpChats(),
           const EmpAnalytics(),
           const EmpProfile(),
@@ -442,17 +450,10 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                       },
                     ),
                     _buildDrawerItem(
-                      icon: Icons.settings,
-                      title: 'Settings',
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                    _buildDrawerItem(
                       icon: Icons.help_outline,
                       title: 'Help & Support',
                       onTap: () {
-                        Navigator.pop(context);
+                        Navigator.pushNamed(context, AppRoutes.helpSupport);
                       },
                     ),
                   ],
@@ -554,11 +555,13 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
 class DashboardPage extends StatefulWidget {
   final List<Job> jobs;
   final Function(String, bool) onStatusChanged;
+  final Function(int) onIndexChanged;
 
   const DashboardPage({
     Key? key,
     required this.jobs,
     required this.onStatusChanged,
+    required this.onIndexChanged,
   }) : super(key: key);
 
   @override
@@ -717,50 +720,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           Row(
             children: [
-              Stack(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassWhite,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.whiteText.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.whiteText,
-                      size: 24,
-                    ),
-                  ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '2',
-                        style: TextStyle(
-                          color: AppColors.whiteText,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(width: 12),
               Builder(
                 builder:
@@ -852,46 +811,64 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                           ),
                         ),
-                        _buildDashboardCard(
-                          title: 'Messages',
-                          subtitle: '12 unread',
-                          icon: Icons.chat,
-                          color: AppColors.warning,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.warning.withOpacity(0.1),
-                              AppColors.warningLight,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                        GestureDetector(
+                          onTap: () => widget.onIndexChanged(1),
+                          child: _buildDashboardCard(
+                            title: 'Messages',
+                            subtitle: '12 unread',
+                            icon: Icons.chat,
+                            color: AppColors.warning,
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color.fromARGB(
+                                  255,
+                                  255,
+                                  212,
+                                  126,
+                                ).withOpacity(0.8),
+                                const Color.fromARGB(255, 224, 183, 102),
+                              ],
+                            ),
                           ),
                         ),
-                        _buildDashboardCard(
-                          title: 'Reports',
-                          subtitle: 'View analytics',
-                          icon: Icons.analytics,
-                          color: AppColors.primaryBlue,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primaryBlue.withOpacity(0.1),
-                              AppColors.lightBlue,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                        GestureDetector(
+                          onTap: () => widget.onIndexChanged(2),
+                          child: _buildDashboardCard(
+                            title: 'Reports',
+                            subtitle: 'View analytics',
+                            icon: Icons.bar_chart,
+                            color: AppColors.success,
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color.fromARGB(
+                                  255,
+                                  129,
+                                  249,
+                                  177,
+                                ).withOpacity(0.8),
+                                const Color.fromARGB(255, 132, 255, 181),
+                              ],
+                            ),
                           ),
                         ),
-                        _buildDashboardCard(
-                          title: 'Settings',
-                          subtitle: 'Manage account',
-                          icon: Icons.settings,
-                          color: AppColors.grey,
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.grey.withOpacity(0.1),
-                              AppColors.lightGrey,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                        GestureDetector(
+                          onTap: () => widget.onIndexChanged(3),
+                          child: _buildDashboardCard(
+                            title: 'Profile',
+                            subtitle: 'Manage account',
+                            icon: Icons.person_4_outlined,
+                            color: AppColors.grey,
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color.fromARGB(
+                                  255,
+                                  184,
+                                  179,
+                                  179,
+                                ).withOpacity(0.8),
+                                const Color.fromARGB(255, 144, 141, 141),
+                              ],
+                            ),
                           ),
                         ),
                       ],

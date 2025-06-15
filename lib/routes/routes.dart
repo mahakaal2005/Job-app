@@ -3,9 +3,12 @@ import 'package:get_work_app/screens/initial/onboarding_screen.dart';
 import 'package:get_work_app/screens/initial/splash_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
 import 'package:get_work_app/screens/login_signup/signup_screen.dart';
+import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
+import 'package:get_work_app/screens/main/employye/emp_chats.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
 import 'package:get_work_app/screens/main/employye/emp_profile.dart';
+import 'package:get_work_app/screens/main/employye/emp_help_support.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/all_jobs.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/new_job_screen.dart';
@@ -28,6 +31,9 @@ class AppRoutes {
   static const String employeeOnboarding = '/employee-onboarding';
   static const String createJobOpening = '/create-job-opening';
   static const String allJobListings = '/all-job-listings';
+  static const String helpSupport = '/help-support';
+  static const String reports = '/reports';
+  static const String empProfile = '/emp-profile';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -55,42 +61,48 @@ class AppRoutes {
         );
       case home:
         return MaterialPageRoute(builder: (_) => const AuthWrapper());
-case AppRoutes.allJobListings:
-  final args = settings.arguments as Map<String, dynamic>?;
-  return MaterialPageRoute(
-    builder: (_) => AllJobListingsScreen(
-      initialJobs: args?['initialJobs'] as List<Job>?,
-      onStatusChanged: args?['onStatusChanged'] as Function(String, bool)?,
-    ),
-  );
-
+      case allJobListings:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder:
+              (_) => AllJobListingsScreen(
+                initialJobs: args?['initialJobs'] as List<Job>?,
+                onStatusChanged:
+                    args?['onStatusChanged'] as Function(String, bool)?,
+              ),
+        );
       case userHome:
         return MaterialPageRoute(builder: (_) => const UserHomeScreen());
-
       case employeeHome:
-        return MaterialPageRoute(builder: (_) => const EmployerDashboardScreen());
-
+        return MaterialPageRoute(
+          builder: (_) => const EmployerDashboardScreen(),
+        );
       case employerProfile:
         return MaterialPageRoute(builder: (_) => const EmpProfile());
-
+      case helpSupport:
+        return MaterialPageRoute(builder: (_) => const EmpHelpSupportScreen());
       case jobsManagement:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('Jobs Management')),
-            body: const Center(
-              child: Text('Jobs Management Screen'),
-            ),
-          ),
+          builder:
+              (_) => Scaffold(
+                appBar: AppBar(title: const Text('Jobs Management')),
+                body: const Center(child: Text('Jobs Management Screen')),
+              ),
         );
-
       case messages:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('Messages')),
-            body: const Center(
-              child: Text('Messages Screen'),
-            ),
-          ),
+          builder:
+              (_) => const EmpChats(),
+        );
+      
+      case reports:
+        return MaterialPageRoute(
+          builder: (_) => const EmpAnalytics(),
+        );
+
+      case empProfile:
+        return MaterialPageRoute(
+          builder: (_) => const EmpProfile(),
         );
 
       case studentOnboarding:
@@ -98,13 +110,11 @@ case AppRoutes.allJobListings:
           builder: (_) => const StudentOnboardingScreen(),
           settings: settings,
         );
-
       case employeeOnboarding:
         return MaterialPageRoute(
           builder: (_) => const EmployeeOnboardingScreen(),
           settings: settings,
         );
-
       default:
         return MaterialPageRoute(
           builder:

@@ -140,7 +140,6 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       context,
       listen: false,
     );
-
   }
 
   Future<void> _loadJobs() async {
