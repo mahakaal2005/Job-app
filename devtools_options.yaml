@@ -1,3 +1,9 @@
 description: This file stores settings for Dart & Flutter DevTools.
 documentation: https://docs.flutter.dev/tools/devtools/extensions#configure-extension-enablement-states
 extensions:
+  # DevTools timeout and performance settings
+  timeout: 60000
+  debugger_timeout: 30000
+  memory_usage_threshold: 512
+  # Enable better error reporting
+  enable_verbose_logging: true
