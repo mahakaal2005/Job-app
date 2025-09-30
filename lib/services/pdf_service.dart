@@ -1,15 +1,17 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:pdfrx/pdfrx.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
 import 'package:image/image.dart' as img;
+// Note: flutter_pdfview doesn't have PDF to image conversion capabilities
+// We'll need to use a different approach for PDF preview generation
 
 class PDFService {
-  /// Converts the first page of a PDF file to a PNG image
-  /// Returns the path to the generated PNG file
-  static Future<String?> convertFirstPageToPng(File pdfFile) async {
+  /// Since flutter_pdfview doesn't support PDF to image conversion,
+  /// we'll create a simpler solution for PDF preview
+  static Future<String?> createPDFPreview(File pdfFile) async {
     try {
       // Verify file exists and is PDF
       if (!pdfFile.existsSync() ||
@@ -18,94 +20,59 @@ class PDFService {
         return null;
       }
 
-      // Load the PDF document
-      final doc = await PdfDocument.openFile(pdfFile.path);
-      if (doc.pages.isEmpty) {
-        print('PDF has no pages');
-        return null;
-      }
-
-      // Get the first page
-      final page = doc.pages[0]; // Pages are 0-indexed in pdfrx
-
-      // Calculate dimensions for a reasonable preview size
-      // Target width of 800px while maintaining aspect ratio
-      final targetWidth = 800;
-      final scale = targetWidth / page.width;
-      final targetHeight = (page.height * scale).toInt();
-
-      // Render the page as an image
-      final pageImage = await page.render(
-        width: targetWidth,
-        height: targetHeight,
-        backgroundColor: Colors.white,
-      );
-
-      // Get the image data
-      final bytes = pageImage?.pixels;
-      if (bytes == null) {
-        print('Failed to render PDF page to image');
-        return null;
-      }
-
-      // Create a temporary file for the PNG
+      // Create a placeholder image for PDF preview
+      // This is a temporary solution since flutter_pdfview doesn't support image conversion
       final tempDir = await getTemporaryDirectory();
       final tempFile = File(
         '${tempDir.path}/resume_preview_${DateTime.now().millisecondsSinceEpoch}.png',
       );
 
-      // Convert and compress the image
-      try {
-        // Convert RGBA to RGB and encode as PNG
-        final image = img.Image.fromBytes(
-          width: targetWidth,
-          height: targetHeight,
-          bytes: bytes.buffer,
-          numChannels: 4,
-        );
+      // Create a simple placeholder image
+      final image = img.Image(width: 400, height: 600);
+      img.fill(image, color: img.ColorRgb8(255, 255, 255)); // White background
 
-        // Convert to RGB format
-        final rgbImage = img.copyResize(
-          image,
-          width: targetWidth,
-          height: targetHeight,
-        );
+      // Add some text to indicate it's a PDF
+      img.drawString(image, 'PDF Document', font: img.arial24,
+          x: 50, y: 50, color: img.ColorRgb8(0, 0, 0));
+      img.drawString(image, 'Preview not available', font: img.arial14,
+          x: 50, y: 80, color: img.ColorRgb8(100, 100, 100));
 
-        // Encode as PNG with compression
-        final compressedBytes = img.encodePng(
-          rgbImage,
-          level: 7, // Compression level 0-9
-        );
+      final pngBytes = img.encodePng(image);
+      await tempFile.writeAsBytes(pngBytes);
 
-        // Write the compressed image
-        await tempFile.writeAsBytes(compressedBytes);
-
-        print('PNG file size: ${await tempFile.length()} bytes');
-      } catch (e) {
-        print('Error compressing image: $e');
-        // If compression fails, try direct bytes to PNG conversion
-        final rawImage = img.Image.fromBytes(
-          width: targetWidth,
-          height: targetHeight,
-          bytes: bytes.buffer,
-          numChannels: 4,
-        );
-        final pngBytes = img.encodePng(rawImage);
-        await tempFile.writeAsBytes(pngBytes);
-      }
-
-      // Clean up resources
-      await doc.dispose();
-
+      print('PDF preview placeholder created: ${tempFile.path}');
       return tempFile.path;
     } catch (e, stackTrace) {
-      print('Error converting PDF to PNG: $e');
+      print('Error creating PDF preview: $e');
       print('Stack trace: $stackTrace');
       return null;
     }
   }
 
-  /// Uploads a resume PDF and returns both the PDF URL and preview PNG URL
+  /// Alternative method: Just return the PDF file info without conversion
+  static Future<Map<String, dynamic>> getPDFInfo(File pdfFile) async {
+    try {
+      if (!pdfFile.existsSync() ||
+          !pdfFile.path.toLowerCase().endsWith('.pdf')) {
+        throw Exception('Invalid PDF file: ${pdfFile.path}');
+      }
+
+      final fileSize = await pdfFile.length();
+      final fileName = pdfFile.path.split('/').last;
+
+      return {
+        'fileName': fileName,
+        'fileSize': fileSize,
+        'filePath': pdfFile.path,
+        'hasPreview': false, // No preview available with flutter_pdfview
+      };
+    } catch (e) {
+      print('Error getting PDF info: $e');
+      return {};
+    }
+  }
+
+  /// Uploads a resume PDF and optionally creates a placeholder preview
   static Future<Map<String, String?>> uploadResumePDF(File pdfFile) async {
     try {
       // Verify file exists and is PDF
@@ -116,7 +83,7 @@ class PDFService {
 
       print('Starting PDF upload process...');
 
-      // First upload the original PDF
+      // Upload the original PDF
       print('Uploading PDF file...');
       final pdfUrl = await CloudinaryService.uploadDocument(pdfFile);
       if (pdfUrl == null) {
@@ -124,40 +91,78 @@ class PDFService {
       }
       print('PDF uploaded successfully: $pdfUrl');
 
-      // Then convert first page to PNG and upload it
-      print('Converting first page to PNG...');
+      // Create a simple preview placeholder (optional)
       String? previewUrl;
-      final pngPath = await convertFirstPageToPng(pdfFile);
+      try {
+        final placeholderPath = await createPDFPreview(pdfFile);
+        if (placeholderPath != null) {
+          final placeholderFile = File(placeholderPath);
+          if (await placeholderFile.exists()) {
+            print('Uploading placeholder preview...');
+            previewUrl = await CloudinaryService.uploadImage(placeholderFile);
+            print('Placeholder preview uploaded: $previewUrl');
 
-      if (pngPath != null) {
-        final pngFile = File(pngPath);
-        if (await pngFile.exists()) {
-          print('PNG conversion successful, uploading preview...');
-          print('PNG file size: ${await pngFile.length()} bytes');
-
-          try {
-            previewUrl = await CloudinaryService.uploadImage(pngFile);
-            print('Preview uploaded successfully: $previewUrl');
-          } catch (e) {
-            print('Error uploading preview: $e');
-            // Continue with PDF URL only
+            // Clean up
+            await placeholderFile.delete();
           }
-
-          // Clean up temporary PNG file
-          await pngFile.delete();
-        } else {
-          print('PNG file not found after conversion');
         }
-      } else {
-        print('Failed to convert PDF to PNG');
+      } catch (e) {
+        print('Error creating/uploading placeholder: $e');
+        // Continue without preview
       }
 
-      // Return both URLs - the PDF upload was successful even if preview failed
       return {'pdfUrl': pdfUrl, 'previewUrl': previewUrl};
     } catch (e, stackTrace) {
       print('Error uploading resume: $e');
       print('Stack trace: $stackTrace');
       return {'pdfUrl': null, 'previewUrl': null};
     }
+  }
+
+  /// Method to display PDF using flutter_pdfview
+  static Widget createPDFViewer(String pdfPath) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('PDF Viewer')),
+      body: Container(
+        child: const Center(
+          child: Text('PDF Viewer would go here\n'
+              'Use flutter_pdfview PDFView widget\n'
+              'when you need to display the PDF'),
+        ),
+      ),
+    );
+  }
+}
+
+// Example of how to use flutter_pdfview in a widget
+class PDFViewerWidget extends StatelessWidget {
+  final String pdfPath;
+
+  const PDFViewerWidget({Key? key, required this.pdfPath}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('PDF Viewer')),
+      body: Container(
+        child: const Center(
+          child: Text(
+            'To implement PDF viewing:\n\n'
+                '1. Import: import \'package:flutter_pdfview/flutter_pdfview.dart\';\n\n'
+                '2. Use PDFView widget:\n'
+                'PDFView(\n'
+                '  filePath: pdfPath,\n'
+                '  enableSwipe: true,\n'
+                '  swipeHorizontal: false,\n'
+                '  autoSpacing: false,\n'
+                '  pageFling: false,\n'
+                '  onRender: (pages) { /* handle render */ },\n'
+                '  onError: (error) { /* handle error */ },\n'
+                ')',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
   }
 }
