@@ -44,4 +44,68 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Environment files (contains sensitive data like API keys)
 .env
+.env.local
+.env.development
+.env.production
+.env.devtools
+
+# Documentation folder (contains project-specific docs and changes)
+atulDocs/
+
+# Firebase and Google Services files (may contain sensitive data)
+# Uncomment if you want to exclude these (recommended for public repos)
+# android/app/google-services.json
+# ios/Runner/GoogleService-Info.plist
+
+# Generated files
+lib/firebase_options.dart.backup
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Logs
+logs/
+*.log
+
+# API keys and secrets (additional protection)
+secrets/
+credentials/
+keys/
+
+# Platform specific build files
+*.apk
+*.aab
+*.ipa
+*.app
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Node modules (if using any web dependencies)
+node_modules/
+
+# macOS specific
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux specific
+*~
+.nfs*
