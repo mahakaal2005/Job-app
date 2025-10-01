@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/provider/applicant_provider.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/emp_job_details_Screen.dart';
-import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/emp_job_details_Screen.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 
 class AllJobListingsScreen extends StatefulWidget {
-  const AllJobListingsScreen({Key? key, this.initialJobs, this.onStatusChanged})
-    : super(key: key);
+  const AllJobListingsScreen({
+    super.key,
+    this.initialJobs,
+    this.onStatusChanged,
+  });
 
   final List<Job>? initialJobs;
   final Function(String, bool)? onStatusChanged;
@@ -44,26 +47,27 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
     });
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.primaryAccent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.whiteText),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnAccent),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'All Job Listings',
           style: TextStyle(
-            color: AppColors.whiteText,
+            color: AppColors.textOnAccent,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: AppColors.whiteText),
+            icon: const Icon(Icons.add, color: AppColors.textOnAccent),
             onPressed: () {
               Navigator.pushNamed(context, AppRoutes.createJobOpening);
             },
@@ -87,7 +91,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primaryText,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -113,7 +117,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                         ? Center(
                           child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primaryBlue,
+                              AppColors.primaryAccent,
                             ),
                           ),
                         )
@@ -160,16 +164,16 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryBlue : AppColors.surfaceColor,
+          color: isSelected ? AppColors.primaryAccent : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primaryBlue : AppColors.dividerColor,
+            color: isSelected ? AppColors.primaryAccent : AppColors.border,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? AppColors.whiteText : AppColors.primaryText,
+            color: isSelected ? AppColors.textOnAccent : AppColors.textPrimary,
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -187,11 +191,11 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.shadowLight,
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -232,7 +236,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primaryText,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -240,7 +244,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                             job.companyName,
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.primaryBlue,
+                              color: AppColors.primaryAccent,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -255,24 +259,18 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                       decoration: BoxDecoration(
                         color:
                             job.isActive
-                                ? AppColors.success.withOpacity(0.1)
-                                : AppColors.error.withOpacity(0.1),
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color:
-                              job.isActive
-                                  ? AppColors.success
-                                  : AppColors.error,
+                          color: job.isActive ? Colors.green : Colors.red,
                           width: 1,
                         ),
                       ),
                       child: Text(
                         job.isActive ? 'Active' : 'Inactive',
                         style: TextStyle(
-                          color:
-                              job.isActive
-                                  ? AppColors.success
-                                  : AppColors.error,
+                          color: job.isActive ? Colors.green : Colors.red,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -285,28 +283,28 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                   children: [
                     Icon(
                       Icons.location_on,
-                      color: AppColors.secondaryText,
+                      color: AppColors.textSecondary,
                       size: 16,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       job.location,
                       style: TextStyle(
-                        color: AppColors.secondaryText,
+                        color: AppColors.textSecondary,
                         fontSize: 14,
                       ),
                     ),
                     const SizedBox(width: 16),
                     Icon(
                       Icons.work_outline,
-                      color: AppColors.secondaryText,
+                      color: AppColors.textSecondary,
                       size: 16,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       job.employmentType,
                       style: TextStyle(
-                        color: AppColors.secondaryText,
+                        color: AppColors.textSecondary,
                         fontSize: 14,
                       ),
                     ),
@@ -319,7 +317,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.secondaryText,
+                    color: AppColors.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -329,20 +327,20 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                     _buildStatChip(
                       Icons.people,
                       '$applicantCount Applicants',
-                      AppColors.primaryBlue,
+                      AppColors.primaryAccent,
                     ),
                     const SizedBox(width: 12),
                     _buildStatChip(
                       Icons.visibility,
                       '${job.viewCount ?? 0} Views',
-                      AppColors.success,
+                      Colors.green,
                     ),
                     const Spacer(),
                     Text(
                       _formatDate(job.createdAt),
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.hintText,
+                        color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -390,13 +388,13 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: AppColors.lightBlue,
+              color: AppColors.primaryAccent.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.work_outline,
               size: 64,
-              color: AppColors.primaryBlue,
+              color: AppColors.primaryAccent,
             ),
           ),
           const SizedBox(height: 24),
@@ -405,7 +403,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryText,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -418,7 +416,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
-              color: AppColors.secondaryText,
+              color: AppColors.textSecondary,
               height: 1.5,
             ),
           ),
@@ -427,16 +425,16 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
             onPressed: () {
               Navigator.pushNamed(context, AppRoutes.createJobOpening);
             },
-            icon: const Icon(Icons.add, color: AppColors.whiteText),
+            icon: const Icon(Icons.add, color: AppColors.textOnAccent),
             label: const Text(
               'Create Job',
               style: TextStyle(
-                color: AppColors.whiteText,
+                color: AppColors.textOnAccent,
                 fontWeight: FontWeight.w600,
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
+              backgroundColor: AppColors.primaryAccent,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

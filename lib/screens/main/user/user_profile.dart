@@ -124,12 +124,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final role = await AuthService.getUserRole();
         final collectionName =
             role == 'employee' ? 'employees' : 'users_specific';
-
         final doc =
-            await FirebaseFirestore.instance
-                .collection(collectionName)
-                .doc(user.uid)
-                .get();
+            await FirebaseFirestore.instance.collection(collectionName).doc(user.uid).get();
 
         if (doc.exists && mounted) {
           setState(() {
@@ -210,26 +206,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       try {
         final url = await _uploadToCloudinary(_selectedImage!);
-
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
           final role = await AuthService.getUserRole();
           final collectionName =
               role == 'employee' ? 'employees' : 'users_specific';
-
           await FirebaseFirestore.instance
               .collection(collectionName)
               .doc(user.uid)
               .update({
-                'profileImageUrl': url,
-                'updatedAt': FieldValue.serverTimestamp(),
-              });
+            'profileImageUrl': url,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
 
           setState(() {
             _userData['profileImageUrl'] = url;
             _isUploadingImage = false;
           });
-
           _showSuccessSnackBar('Profile picture updated successfully!');
         }
       } catch (e) {
@@ -242,7 +235,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _uploadResume() async {
     try {
       final typeGroup = XTypeGroup(label: 'PDFs', extensions: ['pdf']);
-
       final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
 
       if (file != null) {
@@ -253,6 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         // Use PDFService to handle the upload and preview generation
         final uploadResult = await PDFService.uploadResumePDF(_selectedResume!);
+
         if (uploadResult['pdfUrl'] == null) {
           throw Exception('Failed to upload resume');
         }
@@ -425,12 +418,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: AppColors.white, size: 20),
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
             SizedBox(width: 12),
             Text(message, style: TextStyle(fontWeight: FontWeight.w600)),
           ],
         ),
-        backgroundColor: AppColors.success,
+        backgroundColor: AppColors.successColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: EdgeInsets.all(16),
@@ -443,12 +436,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_rounded, color: AppColors.white, size: 20),
+            Icon(Icons.error_rounded, color: Colors.white, size: 20),
             SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: AppColors.error,
+        backgroundColor: AppColors.errorColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
@@ -468,7 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.hintText,
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -477,12 +470,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+                color: _isEditing ? AppColors.glass15 : AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color:
                       _isEditing
-                          ? AppColors.primaryBlue
+                          ? AppColors.primaryAccent
                           : AppColors.dividerColor,
                   width: 1,
                 ),
@@ -492,7 +485,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icon(
                     Icons.insert_drive_file_rounded,
                     color:
-                        _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+                        _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
                     size: 24,
                   ),
                   const SizedBox(width: 16),
@@ -506,7 +499,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               : 'No resume uploaded',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.black,
+                            color: AppColors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -516,7 +509,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             'Tap to change',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.hintText,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                       ],
@@ -528,7 +521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.primaryBlue,
+                        color: AppColors.primaryAccent,
                       ),
                     )
                   else if (hasResume)
@@ -547,14 +540,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                           icon: const Icon(
                             Icons.visibility_rounded,
-                            color: AppColors.primaryBlue,
+                            color: AppColors.primaryAccent,
                             size: 20,
                           ),
                           tooltip: 'View Resume',
                         ),
                         const Icon(
                           Icons.check_circle_rounded,
-                          color: AppColors.success,
+                          color: AppColors.successColor,
                           size: 20,
                         ),
                       ],
@@ -570,7 +563,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppColors.hintText,
+                color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
@@ -579,7 +572,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppColors.mutedText.withOpacity(0.2),
+                  color: AppColors.textSecondary.withValues(alpha: 0.2),
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(8),
@@ -598,7 +591,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? loadingProgress.cumulativeBytesLoaded /
                                     loadingProgress.expectedTotalBytes!
                                 : null,
-                        color: AppColors.primaryBlue,
+                        color: AppColors.primaryAccent,
                       ),
                     );
                   },
@@ -610,14 +603,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Icon(
                             Icons.error_outline,
-                            color: AppColors.error,
+                            color: AppColors.errorColor,
                             size: 32,
                           ),
                           SizedBox(height: 8),
                           Text(
                             'Failed to load resume preview',
                             style: TextStyle(
-                              color: AppColors.error,
+                              color: AppColors.errorColor,
                               fontSize: 14,
                             ),
                           ),
@@ -647,23 +640,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
         gradient:
             _isEditing
                 ? LinearGradient(
-                  colors: [
-                    AppColors.primaryBlue.withOpacity(0.9),
-                    AppColors.neonBlue.withOpacity(0.9),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-                : AppColors.primaryGradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.sheenStart.withValues(alpha: 0.85),
+                      AppColors.primaryAccent.withValues(alpha: 0.75),
+                      AppColors.accentDeep.withValues(alpha: 0.65),
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  )
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.sheenStart.withValues(alpha: 0.9),
+                      AppColors.primaryAccent.withValues(alpha: 0.8),
+                      AppColors.accentDeep.withValues(alpha: 0.7),
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
         boxShadow: [
+          // Primary luxury shadow
           BoxShadow(
-            color: AppColors.blueShadow,
+            color: AppColors.accentDeep.withValues(alpha: 0.3),
             blurRadius: 20,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 10),
+          ),
+          // Soft ambient shadow
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -680,12 +691,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.white,
+                      color: Colors.white,
                     ),
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
@@ -699,19 +710,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon:
                           _isSaving
                               ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: AppColors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : Icon(
-                                _isEditing
-                                    ? Icons.save_rounded
-                                    : Icons.edit_rounded,
-                                color: AppColors.white,
-                              ),
+                                  _isEditing
+                                      ? Icons.save_rounded
+                                      : Icons.edit_rounded,
+                                  color: Colors.white,
+                                ),
                     ),
                   ),
                 ],
@@ -724,11 +735,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Container(
                       padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: Colors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.shadowMedium,
+                            color: AppColors.shadowLight,
                             blurRadius: 16,
                             offset: Offset(0, 8),
                           ),
@@ -736,30 +747,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       child: CircleAvatar(
                         radius: 50,
-                        backgroundColor: AppColors.neonBlue,
+                        backgroundColor: AppColors.primaryAccent,
                         backgroundImage:
                             _selectedImage != null
                                 ? FileImage(_selectedImage!)
                                 : _userData['profileImageUrl'] != null
-                                ? NetworkImage(_userData['profileImageUrl'])
-                                : null,
+                                    ? NetworkImage(_userData['profileImageUrl'])
+                                    : null,
                         child:
                             _isUploadingImage
                                 ? CircularProgressIndicator(
-                                  color: AppColors.white,
-                                )
+                                    color: Colors.white,
+                                  )
                                 : _selectedImage == null &&
-                                    _userData['profileImageUrl'] == null
-                                ? Text(
-                                  (_userData['fullName'] ?? 'U')[0]
-                                      .toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.white,
-                                  ),
-                                )
-                                : null,
+                                        _userData['profileImageUrl'] == null
+                                    ? Text(
+                                        (_userData['fullName'] ?? 'U')[0].toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : null,
                       ),
                     ),
                   ),
@@ -770,13 +780,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Container(
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.neonBlue,
+                          color: AppColors.primaryAccent,
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.white, width: 2),
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                         child: Icon(
                           Icons.camera_alt_rounded,
-                          color: AppColors.white,
+                          color: Colors.white,
                           size: 16,
                         ),
                       ),
@@ -789,20 +799,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.white,
+                  color: Colors.white,
                 ),
               ),
               SizedBox(height: 8),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   availabilityText,
                   style: TextStyle(
-                    color: AppColors.white,
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -819,8 +829,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: EdgeInsets.all(20),
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.glass15,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.glassBorder),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowLight,
@@ -836,21 +847,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.work_outline_rounded,
             value: '${_userData['totalEarned'] ?? 0}',
             label: 'Total Earned',
-            color: AppColors.success,
+            color: AppColors.successColor,
           ),
           Container(width: 1, height: 40, color: AppColors.dividerColor),
           _buildStatItem(
             icon: Icons.schedule_rounded,
             value: '${_userData['weeklyHours'] ?? 0}h',
             label: 'Weekly Hours',
-            color: AppColors.primaryBlue,
+            color: AppColors.primaryAccent,
           ),
           Container(width: 1, height: 40, color: AppColors.dividerColor),
           _buildStatItem(
             icon: Icons.star_rounded,
             value: '4.8',
             label: 'Rating',
-            color: AppColors.warning,
+            color: AppColors.warningColor,
           ),
         ],
       ),
@@ -868,7 +879,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color, size: 24),
@@ -879,14 +890,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.black,
+            color: Colors.white,
           ),
         ),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: AppColors.hintText,
+            color: AppColors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -903,13 +914,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.glass15,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.glassBorder),
         boxShadow: [
           BoxShadow(
             color:
                 _isEditing
-                    ? AppColors.blueShadow.withOpacity(0.2)
+                    ? AppColors.shadowLight.withValues(alpha: 0.2)
                     : AppColors.shadowLight,
             blurRadius: 10,
             offset: Offset(0, 4),
@@ -931,13 +943,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 color:
                     _isEditing
-                        ? AppColors.primaryBlue.withOpacity(0.2)
-                        : AppColors.softGrey,
+                        ? AppColors.primaryAccent.withValues(alpha: 0.2)
+                        : AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+                color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
                 size: 24,
               ),
             ),
@@ -947,7 +959,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: _isEditing ? AppColors.primaryBlue : AppColors.black,
+                color: _isEditing ? AppColors.primaryAccent : Colors.white,
               ),
             ),
           ],
@@ -980,7 +992,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         validator: validator,
         style: TextStyle(
           fontSize: 16,
-          color: AppColors.black,
+          color: Colors.white,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -991,22 +1003,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color:
                   _isEditing
-                      ? AppColors.primaryBlue.withOpacity(0.1)
-                      : AppColors.softGrey,
+                      ? AppColors.primaryAccent.withValues(alpha: 0.1)
+                      : AppColors.surface,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+              color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
               size: 20,
             ),
           ),
           labelStyle: TextStyle(
-            color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+            color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
           filled: true,
-          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+          fillColor: _isEditing ? AppColors.glass15 : AppColors.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -1017,7 +1029,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
+            borderSide: BorderSide(color: AppColors.primaryAccent, width: 2),
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
@@ -1039,11 +1051,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
-        value: dropdownValue,
+        initialValue: dropdownValue,
         onChanged: _isEditing ? onChanged : null,
         style: TextStyle(
           fontSize: 16,
-          color: AppColors.black,
+          color: Colors.white,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -1054,22 +1066,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color:
                   _isEditing
-                      ? AppColors.primaryBlue.withOpacity(0.1)
-                      : AppColors.softGrey,
+                      ? AppColors.primaryAccent.withValues(alpha: 0.1)
+                      : AppColors.surface,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+              color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
               size: 20,
             ),
           ),
           labelStyle: TextStyle(
-            color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+            color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
           filled: true,
-          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+          fillColor: _isEditing ? AppColors.glass15 : AppColors.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -1080,16 +1092,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
+            borderSide: BorderSide(color: AppColors.primaryAccent, width: 2),
           ),
         ),
-        items:
-            options.map((String option) {
-              return DropdownMenuItem<String>(
-                value: option,
-                child: Text(option),
-              );
-            }).toList(),
+        items: options.map((String option) {
+          return DropdownMenuItem<String>(
+            value: option,
+            child: Text(option),
+          );
+        }).toList(),
       ),
     );
   }
@@ -1100,15 +1111,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _filteredSkills = [];
         _showSkillSuggestions = false;
       } else {
-        _filteredSkills =
-            allSkills
-                .where(
-                  (skill) =>
-                      skill.toLowerCase().contains(query.toLowerCase()) &&
-                      !_skills.contains(skill),
-                )
-                .take(5)
-                .toList();
+        _filteredSkills = allSkills
+            .where((skill) =>
+                skill.toLowerCase().contains(query.toLowerCase()) &&
+                !_skills.contains(skill))
+            .take(5)
+            .toList();
         _showSkillSuggestions = _filteredSkills.isNotEmpty;
       }
     });
@@ -1147,27 +1155,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 margin: const EdgeInsets.all(12),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.search_rounded,
-                  color: AppColors.primaryBlue,
+                  color: AppColors.primaryAccent,
                   size: 20,
                 ),
               ),
               suffixIcon:
                   _skillSearchController.text.isNotEmpty
                       ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _skillSearchController.clear();
-                          _filterSkills('');
-                        },
-                      )
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _skillSearchController.clear();
+                            _filterSkills('');
+                          },
+                        )
                       : null,
               filled: true,
-              fillColor: AppColors.lightBlue,
+              fillColor: AppColors.glass15,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -1178,7 +1186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
+                borderSide: BorderSide(color: AppColors.primaryAccent, width: 2),
               ),
             ),
           ),
@@ -1187,8 +1195,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: AppColors.cardBackground,
+                color: AppColors.glass15,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.glassBorder),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.shadowLight,
@@ -1207,17 +1216,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: Text(
                       skill,
                       style: const TextStyle(
-                        color: AppColors.primaryText,
+                        color: AppColors.textPrimary,
                         fontSize: 14,
                       ),
                     ),
                     leading: const Icon(
                       Icons.add_circle_outline,
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryAccent,
                       size: 20,
                     ),
                     onTap: () => _addSkill(skill),
-                    hoverColor: AppColors.primaryBlue.withOpacity(0.1),
+                    hoverColor: AppColors.primaryAccent.withValues(alpha: 0.1),
                   );
                 },
               ),
@@ -1229,73 +1238,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children:
-                _skills.map((skill) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: AppColors.primaryBlue.withOpacity(0.3),
+            children: _skills.map((skill) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      skill,
+                      style: TextStyle(
+                        color: AppColors.primaryAccent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          skill,
-                          style: TextStyle(
-                            color: AppColors.primaryBlue,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                    if (_isEditing) ...[
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => _removeSkill(skill),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryAccent.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: AppColors.primaryAccent,
                           ),
                         ),
-                        if (_isEditing) ...[
-                          const SizedBox(width: 6),
-                          GestureDetector(
-                            onTap: () => _removeSkill(skill),
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryBlue.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                size: 14,
-                                color: AppColors.primaryBlue,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                }).toList(),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
           ),
         ] else ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.lightBlue,
+              color: AppColors.glass15,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: AppColors.primaryBlue.withOpacity(0.7),
+                  color: AppColors.primaryAccent.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
                     'Add your skills to help employers find you',
                     style: TextStyle(
-                      color: AppColors.primaryText,
+                      color: AppColors.textPrimary,
                       fontSize: 14,
                     ),
                   ),
@@ -1336,7 +1344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           controller: _portfolioController,
           label: 'Portfolio',
           icon: Icons.web_rounded,
-          color: AppColors.primaryBlue,
+          color: AppColors.primaryAccent,
         ),
         _buildSocialMediaField(
           controller: _twitterController,
@@ -1361,7 +1369,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         enabled: _isEditing,
         style: TextStyle(
           fontSize: 16,
-          color: AppColors.black,
+          color: Colors.white,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -1370,17 +1378,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
           ),
           labelStyle: TextStyle(
-            color: _isEditing ? color : AppColors.hintText,
+            color: _isEditing ? color : AppColors.textSecondary,
             fontWeight: FontWeight.w600,
           ),
           filled: true,
-          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+          fillColor: _isEditing ? AppColors.glass15 : AppColors.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -1428,38 +1436,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
-            color: AppColors.black,
+            color: Colors.white,
           ),
         ),
         SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children:
-              _timeSlots.map((slot) {
-                final isSelected = _preferredSlots.contains(slot);
-                return FilterChip(
-                  label: Text(slot),
-                  selected: isSelected,
-                  onSelected:
-                      _isEditing
-                          ? (selected) {
-                            setState(() {
-                              if (selected) {
-                                _preferredSlots.add(slot);
-                              } else {
-                                _preferredSlots.remove(slot);
-                              }
-                            });
-                          }
-                          : null,
-                  selectedColor: AppColors.primaryBlue,
-                  checkmarkColor: AppColors.white,
-                  labelStyle: TextStyle(
-                    color: isSelected ? AppColors.white : AppColors.black,
-                  ),
-                );
-              }).toList(),
+          children: _timeSlots.map((slot) {
+            final isSelected = _preferredSlots.contains(slot);
+            return FilterChip(
+              label: Text(slot),
+              selected: isSelected,
+              onSelected:
+                  _isEditing
+                      ? (selected) {
+                          setState(() {
+                            if (selected) {
+                              _preferredSlots.add(slot);
+                            } else {
+                              _preferredSlots.remove(slot);
+                            }
+                          });
+                        }
+                      : null,
+              selectedColor: AppColors.primaryAccent,
+              checkmarkColor: Colors.white,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.white,
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -1508,20 +1515,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return Container(
+        color: AppColors.background,
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryAccent),
+        ),
+      );
     }
 
-    return Scaffold(
-      backgroundColor:
-          _isEditing
-              ? AppColors.lightBlue.withOpacity(0.1)
-              : AppColors.backgroundColor,
-      body: SingleChildScrollView(
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: AppColors.background,
+      child: SingleChildScrollView(
         child: Column(
           children: [
             _buildProfileHeader(),
             _buildStatsRow(),
-
             // Basic Information
             _buildSectionCard(
               title: 'Basic Information',
@@ -1581,16 +1591,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildResumeField(),
               ],
             ),
-
             // Skills Section
             _buildSkillsSection(),
-
             // Social Media Section
             _buildSocialMediaSection(),
-
             // Availability Section
             _buildAvailabilitySection(),
-
             // Address Section
             _buildAddressSection(),
             if (_isEditing)
@@ -1608,7 +1614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           });
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
+                          backgroundColor: AppColors.errorColor,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1617,7 +1623,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Text(
                           'Cancel',
                           style: TextStyle(
-                            color: AppColors.white,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -1629,7 +1635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: ElevatedButton(
                         onPressed: _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
+                          backgroundColor: AppColors.successColor,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1638,26 +1644,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child:
                             _isSaving
                                 ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                                 : Text(
-                                  'Save Changes',
-                                  style: TextStyle(
-                                    color: AppColors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    'Save Changes',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
-                                ),
                       ),
                     ),
                   ],
                 ),
               ),
+            
+            // Extra spacing for floating bottom navigation
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
           ],
         ),
       ),

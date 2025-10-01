@@ -13,11 +13,11 @@ class JobDetailScreen extends StatefulWidget {
   final Function(String) onBookmarkToggled;
 
   const JobDetailScreen({
-    Key? key,
+    super.key,
     required this.job,
     required this.isBookmarked,
     required this.onBookmarkToggled,
-  }) : super(key: key);
+  });
 
   @override
   State<JobDetailScreen> createState() => _JobDetailScreenState();
@@ -130,7 +130,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           CustomScrollView(
@@ -151,10 +151,10 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: AppColors.surface,
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadowLight,
+              color: AppColors.border,
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -174,7 +174,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       systemOverlayStyle: SystemUiOverlayStyle.light,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(gradient: AppColors.elegantBlue),
+          decoration: const BoxDecoration(color: AppColors.primaryAccent),
           child: Stack(
             children: [
               // Animated background pattern
@@ -201,16 +201,16 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.glassWhite,
+                                  color: AppColors.surface.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: AppColors.whiteText.withOpacity(0.3),
+                                    color: AppColors.textOnAccent.withOpacity(0.3),
                                   ),
                                 ),
                                 child: Text(
                                   widget.job.companyName,
                                   style: const TextStyle(
-                                    color: AppColors.whiteText,
+                                    color: AppColors.textOnAccent,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -220,7 +220,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                               Text(
                                 widget.job.title,
                                 style: const TextStyle(
-                                  color: AppColors.whiteText,
+                                  color: AppColors.textOnAccent,
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   height: 1.2,
@@ -254,7 +254,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       child: Container(
         height: 100,
         decoration: BoxDecoration(
-          gradient: _isScrolled ? AppColors.primaryGradient : null,
+          color: _isScrolled ? AppColors.primaryAccent : null,
         ),
         child: SafeArea(
           child: Padding(
@@ -272,7 +272,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                         Text(
                           widget.job.title,
                           style: const TextStyle(
-                            color: AppColors.whiteText,
+                            color: AppColors.textOnAccent,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -282,7 +282,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                         Text(
                           widget.job.companyName,
                           style: TextStyle(
-                            color: AppColors.whiteText.withOpacity(0.7),
+                            color: AppColors.textOnAccent.withOpacity(0.7),
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -307,14 +307,14 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: AppColors.surface.withOpacity(0.2),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.whiteText.withOpacity(0.3)),
+        border: Border.all(color: AppColors.textOnAccent.withOpacity(0.3)),
       ),
       child: IconButton(
         icon: const Icon(
           Icons.arrow_back_ios_new,
-          color: AppColors.whiteText,
+          color: AppColors.textOnAccent,
           size: 18,
         ),
         onPressed: () => Navigator.pop(context),
@@ -347,12 +347,12 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: AppColors.surface.withOpacity(0.2),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.whiteText.withOpacity(0.3)),
+        border: Border.all(color: AppColors.textOnAccent.withOpacity(0.3)),
       ),
       child: IconButton(
-        icon: Icon(icon, color: AppColors.whiteText, size: 20),
+        icon: Icon(icon, color: AppColors.textOnAccent, size: 20),
         onPressed: onPressed,
         padding: EdgeInsets.zero,
       ),
@@ -365,10 +365,10 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       height: 80,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.white,
+        color: AppColors.textOnAccent,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowMedium,
+            color: AppColors.border,
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -394,7 +394,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       child: Text(
         widget.job.companyName[0].toUpperCase(),
         style: const TextStyle(
-          color: AppColors.primaryBlue,
+          color: AppColors.primaryAccent,
           fontWeight: FontWeight.bold,
           fontSize: 32,
         ),
@@ -406,9 +406,9 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.glassWhite,
+        color: AppColors.surface.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.whiteText.withOpacity(0.2)),
+        border: Border.all(color: AppColors.textOnAccent.withOpacity(0.2)),
       ),
       child: Row(
         children: [
@@ -429,13 +429,13 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     return Expanded(
       child: Row(
         children: [
-          Icon(icon, color: AppColors.whiteText, size: 16),
+          Icon(icon, color: AppColors.textOnAccent, size: 16),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
               style: const TextStyle(
-                color: AppColors.whiteText,
+                color: AppColors.textOnAccent,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -471,15 +471,15 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.neonBlue, Color.fromARGB(255, 51, 101, 171)],
+        gradient: LinearGradient(
+          colors: [AppColors.primaryAccent, AppColors.primaryAccent.withOpacity(0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.blueShadow,
+            color: AppColors.border,
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -490,12 +490,12 @@ class _JobDetailScreenState extends State<JobDetailScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.glassWhite,
+              color: AppColors.surface.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.attach_money,
-              color: AppColors.whiteText,
+              color: AppColors.textOnAccent,
               size: 24,
             ),
           ),
@@ -507,7 +507,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                 Text(
                   'Salary Range',
                   style: TextStyle(
-                    color: AppColors.whiteText.withOpacity(0.7),
+                    color: AppColors.textOnAccent.withOpacity(0.7),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -516,7 +516,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                 Text(
                   '₹${widget.job.salaryRange}/month',
                   style: const TextStyle(
-                    color: AppColors.whiteText,
+                    color: AppColors.textOnAccent,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -533,12 +533,12 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     return _buildModernCard(
       title: "Job Description",
       icon: Icons.description_outlined,
-      iconColor: AppColors.primaryBlue,
+      iconColor: AppColors.primaryAccent,
       child: Text(
         widget.job.description,
         style: const TextStyle(
           fontSize: 16,
-          color: AppColors.mutedText,
+          color: AppColors.textSecondary,
           height: 1.6,
         ),
       ),
@@ -549,7 +549,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     return _buildModernCard(
       title: "Requirements",
       icon: Icons.checklist_outlined,
-      iconColor: AppColors.error,
+      iconColor: AppColors.primaryAccent,
       child: Column(
         children:
             widget.job.requirements
@@ -569,12 +569,12 @@ class _JobDetailScreenState extends State<JobDetailScreen>
             width: 20,
             height: 20,
             decoration: const BoxDecoration(
-              color: AppColors.success,
+              color: AppColors.primaryAccent,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.check,
-              color: AppColors.whiteText,
+              color: AppColors.textOnAccent,
               size: 12,
             ),
           ),
@@ -584,7 +584,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
               requirement,
               style: const TextStyle(
                 fontSize: 15,
-                color: AppColors.mutedText,
+                color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),
@@ -598,7 +598,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     return _buildModernCard(
       title: "Skills Required",
       icon: Icons.code_outlined,
-      iconColor: AppColors.royalBlue,
+      iconColor: AppColors.primaryAccent,
       child: Wrap(
         spacing: 12,
         runSpacing: 12,
@@ -616,17 +616,17 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.royalBlue.withOpacity(0.1),
-            AppColors.primaryBlue.withOpacity(0.1),
+            AppColors.primaryAccent.withOpacity(0.1),
+            AppColors.primaryAccent.withOpacity(0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: AppColors.royalBlue.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primaryAccent.withOpacity(0.3)),
       ),
       child: Text(
         skill,
         style: const TextStyle(
-          color: AppColors.royalBlue,
+          color: AppColors.primaryAccent,
           fontWeight: FontWeight.w600,
           fontSize: 14,
         ),
@@ -638,7 +638,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     return _buildModernCard(
       title: "About Company",
       icon: Icons.business_outlined,
-      iconColor: AppColors.warning,
+      iconColor: AppColors.primaryAccent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -647,7 +647,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryText,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -655,7 +655,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
             _companyDescription,
             style: TextStyle(
               fontSize: 15,
-              color: AppColors.mutedText,
+              color: AppColors.textSecondary,
               height: 1.5,
             ),
           ),
@@ -674,11 +674,11 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight,
+            color: AppColors.border,
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -703,7 +703,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primaryText,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -721,7 +721,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
         width: 24,
         height: 24,
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
           strokeWidth: 2,
         ),
       );
@@ -731,15 +731,14 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       child: Container(
         height: 56,
         decoration: BoxDecoration(
-          gradient: _hasAlreadyApplied ? null : AppColors.primaryGradient,
-          color: _hasAlreadyApplied ? AppColors.success.withOpacity(0.1) : null,
+          color: _hasAlreadyApplied ? AppColors.primaryAccent.withOpacity(0.1) : AppColors.primaryAccent,
           borderRadius: BorderRadius.circular(28),
           boxShadow:
               _hasAlreadyApplied
                   ? null
                   : [
                     BoxShadow(
-                      color: AppColors.blueShadow,
+                      color: AppColors.border,
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -761,7 +760,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
               if (_hasAlreadyApplied) ...[
                 Icon(
                   Icons.check_circle_outline,
-                  color: AppColors.success,
+                  color: AppColors.primaryAccent,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -773,8 +772,8 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                   fontWeight: FontWeight.bold,
                   color:
                       _hasAlreadyApplied
-                          ? AppColors.success
-                          : AppColors.whiteText,
+                          ? AppColors.primaryAccent
+                          : AppColors.textOnAccent,
                 ),
               ),
             ],
@@ -824,7 +823,7 @@ class BackgroundPatternPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint =
         Paint()
-          ..color = AppColors.whiteText.withOpacity(0.1)
+          ..color = AppColors.textOnAccent.withOpacity(0.1)
           ..strokeWidth = 1;
 
     for (int i = 0; i < 20; i++) {

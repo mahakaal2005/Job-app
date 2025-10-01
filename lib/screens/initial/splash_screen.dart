@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
+
 import '../../utils/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -62,7 +63,13 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.background, AppColors.surface],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: Center(
           child: AnimatedBuilder(
             animation: _animationController,
@@ -78,11 +85,11 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: AppColors.white,
+                          color: AppColors.textOnAccent,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.black.withOpacity(0.2),
+                              color: AppColors.background.withOpacity(0.2),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -94,37 +101,37 @@ class _SplashScreenState extends State<SplashScreen>
                             'assets/images/logo.png',
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
+                              return Icon(
                                 Icons.work_outline,
                                 size: 60,
-                                color: AppColors.primaryBlue,
+                                color: AppColors.primaryAccent,
                               );
                             },
                           ),
                         ),
                       ),
                       const SizedBox(height: 30),
-                      const Text(
+                      Text(
                         'GetWork',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.white,
+                          color: AppColors.textOnAccent,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
+                      Text(
                         'Connect • Work • Grow',
                         style: TextStyle(
                           fontSize: 18,
-                          color: AppColors.white,
+                          color: AppColors.textOnAccent,
                           fontWeight: FontWeight.w300,
                         ),
                       ),
                       const SizedBox(height: 50),
-                      const CircularProgressIndicator(
+                      CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.white,
+                          AppColors.textOnAccent,
                         ),
                       ),
                     ],

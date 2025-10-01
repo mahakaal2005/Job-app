@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get_work_app/models/chat_message.dart';
 import 'package:get_work_app/services/chat_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final String chatId;
@@ -11,17 +11,18 @@ class ChatDetailScreen extends StatefulWidget {
   final String otherUserName;
 
   const ChatDetailScreen({
-    Key? key,
+    super.key,
     required this.chatId,
     required this.otherUserId,
     required this.otherUserName,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
 
-class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBindingObserver {
+class _ChatDetailScreenState extends State<ChatDetailScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final ChatService _chatService = ChatService();
   final ScrollController _scrollController = ScrollController();
@@ -78,7 +79,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.primaryBlue,
+              backgroundColor: AppColors.primaryAccent,
               child: Text(
                 widget.otherUserName.isNotEmpty
                     ? widget.otherUserName[0].toUpperCase()
@@ -107,7 +108,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
             ),
           ],
         ),
-        
       ),
       body: Column(
         children: [
@@ -120,10 +120,16 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 16),
-                        Text('Something went wrong',
-                            style: TextStyle(color: Colors.grey[600])),
+                        Text(
+                          'Something went wrong',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
                       ],
                     ),
                   );
@@ -138,7 +144,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[300]),
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 64,
+                          color: Colors.grey[300],
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'No messages yet',
@@ -160,9 +170,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                   );
                 }
 
-                final messages = snapshot.data!.docs
-                    .map((doc) => ChatMessage.fromFirestore(doc))
-                    .toList();
+                final messages =
+                    snapshot.data!.docs
+                        .map((doc) => ChatMessage.fromFirestore(doc))
+                        .toList();
 
                 // Mark messages as read when new messages arrive
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -177,7 +188,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                   itemBuilder: (context, index) {
                     final message = messages[index];
                     final isMe = message.senderId == currentUserId;
-                    
+
                     // Check if we should show time separator
                     bool showTimeSeparator = false;
                     if (index == messages.length - 1) {
@@ -186,8 +197,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                     } else {
                       final currentTime = message.timestamp.toDate();
                       final nextTime = messages[index + 1].timestamp.toDate();
-                      final timeDifference = nextTime.difference(currentTime).inMinutes;
-                      
+                      final timeDifference =
+                          nextTime.difference(currentTime).inMinutes;
+
                       // Show time separator if more than 5 minutes apart
                       if (timeDifference > 5) {
                         showTimeSeparator = true;
@@ -233,7 +245,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primaryBlue : Colors.white,
+          color: isMe ? AppColors.primaryAccent : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -242,7 +254,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -279,7 +291,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -311,7 +323,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
             const SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
+                color: AppColors.primaryAccent,
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -329,38 +341,45 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
   void _showAttachmentOptions() {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo, color: Colors.blue),
-              title: const Text('Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle photo selection
-              },
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo,
+                    color: AppColors.primaryAccent,
+                  ),
+                  title: const Text('Photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // Handle photo selection
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.videocam, color: Colors.red),
+                  title: const Text('Video'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // Handle video selection
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.insert_drive_file,
+                    color: Colors.orange,
+                  ),
+                  title: const Text('Document'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // Handle document selection
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.videocam, color: Colors.red),
-              title: const Text('Video'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle video selection
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.insert_drive_file, color: Colors.orange),
-              title: const Text('Document'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle document selection
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -376,7 +395,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
     );
 
     _messageController.clear();
-    
+
     // Scroll to bottom after sending message
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -407,7 +426,15 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
     } else if (difference.inDays == 1) {
       return 'Yesterday ${_formatTime(timestamp)}';
     } else if (difference.inDays < 7) {
-      const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      const weekdays = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
       return '${weekdays[date.weekday - 1]} ${_formatTime(timestamp)}';
     } else {
       return '${date.day}/${date.month}/${date.year} ${_formatTime(timestamp)}';

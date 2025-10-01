@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class JobProvider with ChangeNotifier {
   List<Job> _jobs = [];
   bool _isLoading = true;
-  Map<String, int> _applicantCounts = {};
+  final Map<String, int> _applicantCounts = {};
 
   List<Job> get jobs => _jobs;
   bool get isLoading => _isLoading;

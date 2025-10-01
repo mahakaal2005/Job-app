@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 
 class CreateJobScreen extends StatefulWidget {
-  const CreateJobScreen({Key? key}) : super(key: key);
+  const CreateJobScreen({super.key});
 
   @override
   State<CreateJobScreen> createState() => _CreateJobScreenState();
@@ -26,10 +25,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
 
   String _selectedEmploymentType = 'Full-time';
   String _selectedExperienceLevel = 'Entry Level';
-  List<String> _selectedSkills = [];
-  List<String> _responsibilities = [];
-  List<String> _requirements = [];
-  List<String> _benefits = [];
+  final List<String> _selectedSkills = [];
+  final List<String> _responsibilities = [];
+  final List<String> _requirements = [];
+  final List<String> _benefits = [];
   List<String> _filteredSkills = [];
   bool _isLoading = false;
   bool _showSkillSuggestions = false;
@@ -213,7 +212,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.success,
+        backgroundColor:
+            isError ? AppColors.primaryAccent : AppColors.primaryAccent,
         duration: Duration(seconds: isError ? 4 : 2),
       ),
     );
@@ -222,18 +222,18 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.primaryAccent,
         title: const Text(
           'Create New Job',
           style: TextStyle(
-            color: AppColors.whiteText,
+            color: AppColors.textOnAccent,
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.whiteText),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textOnAccent),
           onPressed: () => Navigator.pop(context),
         ),
         elevation: 0,
@@ -329,8 +329,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _createJob,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: AppColors.whiteText,
+                  backgroundColor: AppColors.primaryAccent,
+                  foregroundColor: AppColors.textOnAccent,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -341,7 +341,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     _isLoading
                         ? const CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.whiteText,
+                            AppColors.textOnAccent,
                           ),
                         )
                         : const Text(
@@ -349,7 +349,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primaryBlue,
+                            color: AppColors.textOnAccent,
                           ),
                         ),
               ),
@@ -367,7 +367,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         Text(
           'Required Skills *',
           style: TextStyle(
-            color: AppColors.primaryText,
+            color: AppColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -377,7 +377,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         // Search Input Field
         Container(
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -389,7 +389,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           ),
           child: TextFormField(
             controller: _skillSearchController,
-            style: TextStyle(color: AppColors.primaryText),
+            style: TextStyle(color: AppColors.textPrimary),
             onChanged: _filterSkills,
             onTap: () {
               if (_skillSearchController.text.isNotEmpty) {
@@ -398,12 +398,12 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             },
             decoration: InputDecoration(
               hintText: 'Search and add skills...',
-              hintStyle: TextStyle(color: AppColors.hintText),
-              prefixIcon: Icon(Icons.search, color: AppColors.primaryBlue),
+              hintStyle: TextStyle(color: AppColors.textSecondary),
+              prefixIcon: Icon(Icons.search, color: AppColors.primaryAccent),
               suffixIcon:
                   _skillSearchController.text.isNotEmpty
                       ? IconButton(
-                        icon: Icon(Icons.clear, color: AppColors.grey),
+                        icon: Icon(Icons.clear, color: AppColors.textSecondary),
                         onPressed: () {
                           _skillSearchController.clear();
                           setState(() {
@@ -418,7 +418,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: AppColors.cardBackground,
+              fillColor: AppColors.surface,
               contentPadding: const EdgeInsets.all(16),
             ),
           ),
@@ -430,7 +430,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             margin: const EdgeInsets.only(top: 4),
             constraints: const BoxConstraints(maxHeight: 200),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -451,17 +451,17 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   title: Text(
                     skill,
                     style: TextStyle(
-                      color: AppColors.primaryText,
+                      color: AppColors.textPrimary,
                       fontSize: 14,
                     ),
                   ),
                   leading: Icon(
                     Icons.add_circle_outline,
-                    color: AppColors.primaryBlue,
+                    color: AppColors.primaryAccent,
                     size: 20,
                   ),
                   onTap: () => _addSkill(skill),
-                  hoverColor: AppColors.primaryBlue.withOpacity(0.1),
+                  hoverColor: AppColors.primaryAccent.withValues(alpha: 0.1),
                 );
               },
             ),
@@ -473,7 +473,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           Text(
             'Selected Skills (${_selectedSkills.length})',
             style: TextStyle(
-              color: AppColors.primaryText,
+              color: AppColors.textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -490,10 +490,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      color: AppColors.primaryAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: AppColors.primaryBlue.withOpacity(0.3),
+                        color: AppColors.primaryAccent.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -502,7 +502,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                         Text(
                           skill,
                           style: TextStyle(
-                            color: AppColors.primaryBlue,
+                            color: AppColors.primaryAccent,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -513,13 +513,15 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryBlue.withOpacity(0.2),
+                              color: AppColors.primaryAccent.withValues(
+                                alpha: 0.2,
+                              ),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.close,
                               size: 14,
-                              color: AppColors.primaryBlue,
+                              color: AppColors.primaryAccent,
                             ),
                           ),
                         ),
@@ -542,7 +544,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: AppColors.primaryBlue,
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 10),
@@ -565,13 +567,13 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             ElevatedButton(
               onPressed: _addBenefit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
+                backgroundColor: AppColors.primaryAccent,
                 padding: const EdgeInsets.all(15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Icon(Icons.add, color: AppColors.whiteText),
+              child: Icon(Icons.add, color: AppColors.textOnAccent),
             ),
           ],
         ),
@@ -587,9 +589,9 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 child: ListTile(
                   title: Text(_benefits[index]),
                   trailing: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.remove_circle_outline,
-                      color: AppColors.error,
+                      color: AppColors.primaryAccent,
                     ),
                     onPressed: () => _removeBenefit(index),
                   ),
@@ -614,7 +616,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         Text(
           label,
           style: TextStyle(
-            color: AppColors.primaryText,
+            color: AppColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -622,7 +624,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -635,17 +637,17 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
-            style: TextStyle(color: AppColors.primaryText),
+            style: TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: AppColors.hintText),
-              prefixIcon: Icon(icon, color: AppColors.primaryBlue),
+              hintStyle: TextStyle(color: AppColors.textSecondary),
+              prefixIcon: Icon(icon, color: AppColors.primaryAccent),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: AppColors.cardBackground,
+              fillColor: AppColors.surface,
               contentPadding: const EdgeInsets.all(16),
             ),
             validator: (value) {
@@ -673,7 +675,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         Text(
           label,
           style: TextStyle(
-            color: AppColors.primaryText,
+            color: AppColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -681,7 +683,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -692,27 +694,27 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             ],
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             onChanged: onChanged,
-            style: TextStyle(color: AppColors.primaryText),
+            style: TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: AppColors.primaryBlue),
+              prefixIcon: Icon(icon, color: AppColors.primaryAccent),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: AppColors.cardBackground,
+              fillColor: AppColors.surface,
               contentPadding: const EdgeInsets.all(16),
             ),
-            dropdownColor: AppColors.cardBackground,
+            dropdownColor: AppColors.surface,
             items:
                 items.map((item) {
                   return DropdownMenuItem(
                     value: item,
                     child: Text(
                       item,
-                      style: TextStyle(color: AppColors.primaryText),
+                      style: TextStyle(color: AppColors.textPrimary),
                     ),
                   );
                 }).toList(),
@@ -736,7 +738,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         Text(
           title,
           style: TextStyle(
-            color: AppColors.primaryText,
+            color: AppColors.textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -747,7 +749,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -759,16 +761,16 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 ),
                 child: TextFormField(
                   controller: controller,
-                  style: TextStyle(color: AppColors.primaryText),
+                  style: TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     hintText: hint,
-                    hintStyle: TextStyle(color: AppColors.hintText),
+                    hintStyle: TextStyle(color: AppColors.textSecondary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: AppColors.cardBackground,
+                    fillColor: AppColors.surface,
                     contentPadding: const EdgeInsets.all(16),
                   ),
                 ),
@@ -777,7 +779,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
+                color: AppColors.primaryAccent,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -789,7 +791,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               ),
               child: IconButton(
                 onPressed: onAdd,
-                icon: const Icon(Icons.add, color: AppColors.whiteText),
+                icon: Icon(Icons.add, color: AppColors.textOnAccent),
               ),
             ),
           ],
@@ -813,7 +815,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     width: 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryAccent,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -822,7 +824,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     child: Text(
                       item,
                       style: TextStyle(
-                        color: AppColors.primaryText,
+                        color: AppColors.textPrimary,
                         fontSize: 14,
                       ),
                     ),
@@ -831,14 +833,14 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     onPressed: () => onRemove(index),
                     icon: Icon(
                       Icons.delete_outline,
-                      color: AppColors.error,
+                      color: AppColors.primaryAccent,
                       size: 20,
                     ),
                   ),
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ],
     );

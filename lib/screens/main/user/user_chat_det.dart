@@ -11,11 +11,11 @@ class UserChatDetailScreen extends StatefulWidget {
   final String otherUserName;
 
   const UserChatDetailScreen({
-    Key? key,
+    super.key,
     required this.chatId,
     required this.otherUserId,
     required this.otherUserName,
-  }) : super(key: key);
+  });
 
   @override
   State<UserChatDetailScreen> createState() => _UserChatDetailScreenState();
@@ -76,7 +76,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.primaryBlue,
+              backgroundColor: AppColors.primaryAccent,
               child: Text(
                 widget.otherUserName.isNotEmpty
                     ? widget.otherUserName[0].toUpperCase()
@@ -236,7 +236,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primaryBlue : Colors.white,
+          color: isMe ? AppColors.primaryAccent : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -314,7 +314,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
             const SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
+                color: AppColors.primaryAccent,
                 shape: BoxShape.circle,
               ),
               child: IconButton(

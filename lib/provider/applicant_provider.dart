@@ -6,7 +6,7 @@ class ApplicantProvider with ChangeNotifier {
   final Map<String, int> _applicantCounts = {};
   final Map<String, List<Map<String, dynamic>>> _applicants = {};
   bool _isLoading = false;
-  Map<String, StreamSubscription<QuerySnapshot>> _listeners = {};
+  final Map<String, StreamSubscription<QuerySnapshot>> _listeners = {};
 
   Map<String, int> get applicantCounts => _applicantCounts;
   Map<String, List<Map<String, dynamic>>> get applicants => _applicants;

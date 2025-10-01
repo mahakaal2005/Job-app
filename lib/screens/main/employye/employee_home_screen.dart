@@ -1,22 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/emp_job_provider.dart';
-import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
-import 'package:get_work_app/screens/main/employye/emp_profile.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/recent_jobs.dart';
-import 'package:get_work_app/screens/main/employye/applicants/all_applicants_screen.dart';
-import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
-import 'package:get_work_app/services/auth_services.dart';
-import 'package:get_work_app/screens/main/employye/emp_chats.dart';
-import 'package:get_work_app/utils/app_colors.dart';
-import 'package:get_work_app/routes/routes.dart';
-import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:get_work_app/widgets/ios_floating_bottom_nav.dart';
+import 'package:get_work_app/provider/emp_job_provider.dart';
+import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/main/employye/applicants/all_applicants_screen.dart';
+import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
+import 'package:get_work_app/screens/main/employye/emp_chats.dart';
+import 'package:get_work_app/screens/main/employye/emp_profile.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
+import 'package:get_work_app/screens/main/employye/new%20post/recent_jobs.dart';
+import 'package:get_work_app/services/auth_services.dart';
+import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/glassmorphism_utils.dart';
+
+import 'package:provider/provider.dart';
 
 class EmployerDashboardScreen extends StatefulWidget {
-  const EmployerDashboardScreen({Key? key}) : super(key: key);
+  const EmployerDashboardScreen({super.key});
 
   @override
   State<EmployerDashboardScreen> createState() =>
@@ -29,7 +31,9 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
   List<Job> _jobs = [];
-  List<Map<String, dynamic>> _recentApplicants = [];
+
+  // Controllers for iOS-style navigation
+  final PageController _pageController = PageController(initialPage: 0);
 
   @override
   void initState() {
@@ -40,6 +44,12 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<JobProvider>(context, listen: false).loadJobs();
     });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -122,11 +132,6 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
         final bDate = DateTime.parse(b['appliedAt']);
         return bDate.compareTo(aDate);
       });
-
-      // Return only the 3 most recent applicants
-      setState(() {
-        _recentApplicants = allApplicants.take(3).toList();
-      });
     } catch (e) {
       print('Error loading recent applicants: $e');
     }
@@ -149,7 +154,7 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.primaryBlue,
+        backgroundColor: isError ? Colors.red : AppColors.primaryAccent,
         duration: Duration(seconds: isError ? 4 : 2),
       ),
     );
@@ -175,22 +180,22 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.cardBackground,
+          backgroundColor: AppColors.surface,
           title: Text(
             'Logout',
             style: TextStyle(
-              color: AppColors.primaryText,
+              color: AppColors.textPrimary,
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
             'Are you sure you want to logout?',
-            style: TextStyle(color: AppColors.secondaryText),
+            style: TextStyle(color: AppColors.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: AppColors.grey)),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -198,8 +203,8 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                 _handleLogout();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: AppColors.whiteText,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -219,19 +224,20 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
 
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: AppColors.background,
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: IndexedStack(
-        index: _selectedIndex,
+      backgroundColor: AppColors.background,
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
         children: [
           DashboardPage(
             jobs: _jobs,
@@ -248,272 +254,270 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
           const EmpProfile(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-      endDrawer: _buildEndDrawer(screenHeight, screenWidth),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 15,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
+      extendBody: true, // IMPORTANT: This makes the body extend behind the floating bar
+      bottomNavigationBar: IOSFloatingBottomNav(
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
           });
+          _pageController.jumpToPage(index);
         },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.cardBackground,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.grey,
-        selectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 12,
-        ),
-        elevation: 0,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
+          IOSBottomNavItem(
+            activeIcon: EvaIcons.grid,
+            inactiveIcon: EvaIcons.gridOutline,
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_outlined),
-            activeIcon: Icon(Icons.chat),
+          IOSBottomNavItem(
+            activeIcon: EvaIcons.messageCircle,
+            inactiveIcon: EvaIcons.messageCircleOutline,
             label: 'Chats',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics_outlined),
-            activeIcon: Icon(Icons.analytics),
+          IOSBottomNavItem(
+            activeIcon: EvaIcons.barChart2,
+            inactiveIcon: EvaIcons.barChart2Outline,
             label: 'Analytics',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+          IOSBottomNavItem(
+            activeIcon: EvaIcons.person,
+            inactiveIcon: EvaIcons.personOutline,
             label: 'Profile',
           ),
         ],
       ),
+      endDrawer: _buildPortfolioDrawer(screenHeight, screenWidth),
     );
   }
 
-  Widget _buildEndDrawer(double screenHeight, double screenWidth) {
+  Widget _buildPortfolioDrawer(double screenHeight, double screenWidth) {
     return Drawer(
-      backgroundColor: AppColors.cardBackground,
-      width: screenWidth * 0.75, // Reduced from 0.8 to prevent overflow
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 24,
-                right: 24,
-                bottom: 32,
-              ),
-              decoration: BoxDecoration(gradient: AppColors.primaryGradient),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.whiteText,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.shadowMedium,
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child:
-                        _companyInfo?['companyLogo'] != null
-                            ? ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image.network(
-                                _companyInfo!['companyLogo'],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return _buildDefaultCompanyLogo();
-                                },
-                              ),
-                            )
-                            : _buildDefaultCompanyLogo(),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    _userData?['fullName'] ?? 'User',
-                    style: const TextStyle(
-                      color: AppColors.whiteText,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _companyInfo?['companyName'] ?? 'Company Name',
-                    style: TextStyle(
-                      color: AppColors.whiteText.withOpacity(0.8),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _buildDrawerItem(
-                      icon: Icons.dashboard,
-                      title: 'Dashboard',
-                      isSelected: _selectedIndex == 0,
-                      onTap: () {
-                        Navigator.pop(context);
-                        setState(() {
-                          _selectedIndex = 0;
-                        });
-                      },
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.chat,
-                      title: 'Messages',
-                      isSelected: _selectedIndex == 1,
-                      onTap: () {
-                        Navigator.pop(context);
-                        setState(() {
-                          _selectedIndex = 1;
-                        });
-                      },
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.analytics,
-                      title: 'Analytics',
-                      isSelected: _selectedIndex == 2,
-                      onTap: () {
-                        Navigator.pop(context);
-                        setState(() {
-                          _selectedIndex = 2;
-                        });
-                      },
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.person,
-                      title: 'Profile',
-                      isSelected: _selectedIndex == 3,
-                      onTap: () {
-                        Navigator.pop(context);
-                        setState(() {
-                          _selectedIndex = 3;
-                        });
-                      },
-                    ),
-                    Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 20,
+      backgroundColor: Colors.transparent,
+      width: screenWidth * 0.75,
+      child: GlassmorphismUtils.glassDrawer(
+        width: screenWidth * 0.75,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Portfolio-style header
+              Container(
+                margin: const EdgeInsets.all(20),
+                child: GlassmorphismUtils.portfolioCard(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Company logo with enhanced glass effect
+                      GlassmorphismUtils.glassContainer(
+                        width: 70,
+                        height: 70,
+                        borderRadius: 20,
+                        backgroundColor: AppColors.glass25,
+                        borderColor: AppColors.glassBorderStrong,
+                        child:
+                            _companyInfo?['companyLogo'] != null
+                                ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Image.network(
+                                    _companyInfo!['companyLogo'],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return _buildPortfolioCompanyLogo();
+                                    },
+                                  ),
+                                )
+                                : _buildPortfolioCompanyLogo(),
                       ),
-                      height: 1,
-                      color: AppColors.dividerColor,
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.work_outline,
-                      title: 'Create Job Opening',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.createJobOpening,
-                        );
-                      },
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.help_outline,
-                      title: 'Help & Support',
-                      onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.helpSupport);
-                      },
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        _userData?['fullName'] ?? 'User',
+                        style: const TextStyle(
+                          color: AppColors.glassWhite,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _companyInfo?['companyName'] ?? 'Company Name',
+                        style: const TextStyle(
+                          color: AppColors.glassGray,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
+              // Menu items with portfolio styling
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      _buildPortfolioDrawerItem(
+                        icon: EvaIcons.grid,
+                        title: 'Dashboard',
+                        isSelected: _selectedIndex == 0,
+                        onTap: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _selectedIndex = 0;
+                          });
+                        },
+                      ),
+                      _buildPortfolioDrawerItem(
+                        icon: EvaIcons.messageCircle,
+                        title: 'Messages',
+                        isSelected: _selectedIndex == 1,
+                        onTap: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _selectedIndex = 1;
+                          });
+                        },
+                      ),
+                      _buildPortfolioDrawerItem(
+                        icon: EvaIcons.barChart,
+                        title: 'Analytics',
+                        isSelected: _selectedIndex == 2,
+                        onTap: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _selectedIndex = 2;
+                          });
+                        },
+                      ),
+                      _buildPortfolioDrawerItem(
+                        icon: EvaIcons.person,
+                        title: 'Profile',
+                        isSelected: _selectedIndex == 3,
+                        onTap: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _selectedIndex = 3;
+                          });
+                        },
+                      ),
+                      Container(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 20,
+                        ),
+                        height: 1,
+                        color: AppColors.dividerColor,
+                      ),
+                      _buildDrawerItem(
+                        icon: Icons.work_outline,
+                        title: 'Create Job Opening',
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.createJobOpening,
+                          );
+                        },
+                      ),
+                      _buildDrawerItem(
+                        icon: Icons.help_outline,
+                        title: 'Help & Support',
+                        onTap: () {
+                          Navigator.pushNamed(context, AppRoutes.helpSupport);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Portfolio-style logout button
+              Container(
+                margin: const EdgeInsets.all(20),
+                child: GlassmorphismUtils.portfolioButton(
+                  onTap: () {
                     Navigator.pop(context);
                     _showLogoutDialog();
                   },
-                  icon: const Icon(Icons.logout, color: AppColors.whiteText),
-                  label: const Text(
-                    'Logout',
-                    style: TextStyle(
-                      color: AppColors.whiteText,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 3,
+                  backgroundColor: AppColors.errorGlass,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.logout, color: AppColors.glassWhite, size: 20),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Logout',
+                        style: TextStyle(
+                          color: AppColors.glassWhite,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDefaultCompanyLogo() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primaryBlue.withOpacity(0.1), AppColors.lightBlue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
+  Widget _buildPortfolioCompanyLogo() {
+    return GlassmorphismUtils.glassContainer(
+      backgroundColor: AppColors.primaryAccent.withValues(alpha: 0.1),
+      borderColor: AppColors.primaryAccent.withValues(alpha: 0.3),
+      borderRadius: 20,
       child: Center(
         child: Text(
           (_companyInfo?['companyName'] ?? 'C').substring(0, 1).toUpperCase(),
-          style: TextStyle(
-            color: AppColors.primaryBlue,
-            fontSize: 32,
+          style: const TextStyle(
+            color: AppColors.primaryAccent,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPortfolioDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isSelected = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: GlassmorphismUtils.portfolioButton(
+        onTap: onTap,
+        backgroundColor:
+            isSelected
+                ? AppColors.primaryAccent.withValues(alpha: 0.1)
+                : AppColors.glass10,
+        borderRadius: 16,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primaryAccent : AppColors.glassGray,
+              size: 22,
+            ),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? AppColors.primaryAccent : AppColors.glassWhite,
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -523,33 +527,162 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
-    bool isSelected = false,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.lightBlue : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: isSelected ? AppColors.primaryBlue : AppColors.grey,
-          size: 24,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? AppColors.primaryBlue : AppColors.primaryText,
-            fontSize: 16,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: GlassmorphismUtils.portfolioButton(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: AppColors.glass10,
+        borderRadius: 16,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.glassGray, size: 22),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppColors.glassWhite,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildHeader() {
+    return GlassmorphismUtils.portfolioCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      borderRadius: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.05,
+            vertical: 16,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    // Profile avatar with glassmorphism
+                    GlassmorphismUtils.glassContainer(
+                      width: 44,
+                      height: 44,
+                      borderRadius: 14,
+                      backgroundColor: AppColors.glass20,
+                      borderColor: AppColors.glassBorder,
+                      child:
+                          _userData?['profilePicture'] != null
+                              ? ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.network(
+                                  _userData!['profilePicture'],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _buildDefaultAvatar();
+                                  },
+                                ),
+                              )
+                              : _buildDefaultAvatar(),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Good ${_getGreeting()}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.glassGray,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _userData?['fullName']?.split(' ').first ?? 'User',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.glassWhite,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  // Notification bell
+                  GlassmorphismUtils.glassContainer(
+                    padding: const EdgeInsets.all(12),
+                    backgroundColor: AppColors.glass15,
+                    borderRadius: 14,
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.glassGray,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Menu button
+                  GestureDetector(
+                    onTap: () {
+                      Scaffold.of(context).openEndDrawer();
+                    },
+                    child: GlassmorphismUtils.glassContainer(
+                      padding: const EdgeInsets.all(12),
+                      backgroundColor: AppColors.glass15,
+                      borderRadius: 14,
+                      child: Icon(
+                        Icons.menu_rounded,
+                        color: AppColors.glassGray,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar() {
+    return GlassmorphismUtils.glassContainer(
+      backgroundColor: AppColors.primaryAccent.withValues(alpha: 0.1),
+      borderColor: AppColors.primaryAccent.withValues(alpha: 0.3),
+      borderRadius: 14,
+      child: Center(
+        child: Text(
+          (_userData?['fullName'] ?? 'U').substring(0, 1).toUpperCase(),
+          style: const TextStyle(
+            color: AppColors.primaryAccent,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
   }
 }
 
@@ -560,12 +693,12 @@ class DashboardPage extends StatefulWidget {
   final VoidCallback onLogout;
 
   const DashboardPage({
-    Key? key,
+    super.key,
     required this.jobs,
     required this.onStatusChanged,
     required this.onIndexChanged,
     required this.onLogout,
-  }) : super(key: key);
+  });
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -575,7 +708,6 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
-  List<Map<String, dynamic>> _recentApplicants = [];
 
   @override
   void initState() {
@@ -649,11 +781,6 @@ class _DashboardPageState extends State<DashboardPage> {
         final bDate = DateTime.parse(b['appliedAt']);
         return bDate.compareTo(aDate);
       });
-
-      // Return only the 3 most recent applicants
-      setState(() {
-        _recentApplicants = allApplicants.take(3).toList();
-      });
     } catch (e) {
       print('Error loading recent applicants: $e');
     }
@@ -664,140 +791,152 @@ class _DashboardPageState extends State<DashboardPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.primaryBlue,
+        backgroundColor: isError ? Colors.red : AppColors.primaryAccent,
         duration: Duration(seconds: isError ? 4 : 2),
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Builder(
-      builder:
-          (context) => Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: MediaQuery.of(context).size.width * 0.05,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0x330066FF),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadowLight,
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: const Color(0xFF0066FF),
-                                  child: const Icon(
-                                    Icons.work_rounded,
-                                    color: AppColors.white,
-                                    size: 24,
-                                  ),
-                                );
-                              },
+    return GlassmorphismUtils.portfolioCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      borderRadius: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.05,
+            vertical: 16,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    // Profile avatar with glassmorphism
+                    GlassmorphismUtils.glassContainer(
+                      width: 44,
+                      height: 44,
+                      borderRadius: 14,
+                      backgroundColor: AppColors.glass20,
+                      borderColor: AppColors.glassBorder,
+                      child:
+                          _userData?['profilePicture'] != null
+                              ? ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.network(
+                                  _userData!['profilePicture'],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _buildDefaultAvatar();
+                                  },
+                                ),
+                              )
+                              : _buildDefaultAvatar(),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Good ${_getGreeting()}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.glassGray,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Welcome back,',
-                                style: TextStyle(
-                                  fontSize:
-                                      MediaQuery.of(context).size.width * 0.035,
-                                  color: AppColors.white.withOpacity(0.9),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _userData?['fullName']?.split(' ').first ??
-                                    'User',
-                                style: TextStyle(
-                                  fontSize:
-                                      MediaQuery.of(context).size.width * 0.05,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.white,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                          const SizedBox(height: 2),
+                          Text(
+                            _userData?['fullName']?.split(' ').first ?? 'User',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.glassWhite,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  // Notification bell
+                  GlassmorphismUtils.glassContainer(
+                    padding: const EdgeInsets.all(12),
+                    backgroundColor: AppColors.glass15,
+                    borderRadius: 14,
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      color: AppColors.glassGray,
+                      size: 22,
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  // Menu button
                   GestureDetector(
                     onTap: () {
                       Scaffold.of(context).openEndDrawer();
                     },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    child: GlassmorphismUtils.glassContainer(
+                      padding: const EdgeInsets.all(12),
+                      backgroundColor: AppColors.glass15,
+                      borderRadius: 14,
                       child: Icon(
                         Icons.menu_rounded,
-                        color: AppColors.white,
-                        size: MediaQuery.of(context).size.width * 0.05,
+                        color: AppColors.glassGray,
+                        size: 22,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
+  }
+
+  Widget _buildDefaultAvatar() {
+    return GlassmorphismUtils.glassContainer(
+      backgroundColor: AppColors.primaryAccent.withValues(alpha: 0.1),
+      borderColor: AppColors.primaryAccent.withValues(alpha: 0.3),
+      borderRadius: 14,
+      child: Center(
+        child: Text(
+          (_userData?['fullName'] ?? 'U').substring(0, 1).toUpperCase(),
+          style: const TextStyle(
+            color: AppColors.primaryAccent,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Morning';
+    if (hour < 17) return 'Afternoon';
+    return 'Evening';
   }
 
   @override
   Widget build(BuildContext context) {
-    final userName = _userData?['fullName'] ?? 'User';
     final screenWidth = MediaQuery.of(context).size.width;
 
     return _isLoading
         ? Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
           ),
         )
         : Column(
@@ -809,6 +948,79 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Portfolio Balance Card (like in reference image)
+                    GlassmorphismUtils.portfolioStatCard(
+                      title: 'Company Portfolio',
+                      value:
+                          '\$${(widget.jobs.length * 1500.0).toStringAsFixed(0)}',
+                      subtitle: '+12.5% from last month',
+                      icon: Icons.trending_up,
+                      accentColor: AppColors.primaryAccent,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Quick Action Buttons (Portfolio Style)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GlassmorphismUtils.portfolioButton(
+                            onTap:
+                                () => Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.createJobOpening,
+                                ),
+                            isPrimary: true,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_circle_outline,
+                                  color: Colors.black,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Post Job',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: GlassmorphismUtils.portfolioButton(
+                            onTap: () => widget.onIndexChanged(1),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  color: AppColors.glassWhite,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Messages',
+                                  style: TextStyle(
+                                    color: AppColors.glassWhite,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Recent Jobs Section
                     RecentJobsCard(
                       jobs: widget.jobs,
                       onSeeAllPressed: () {
@@ -821,6 +1033,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       onStatusChanged: widget.onStatusChanged,
                     ),
                     const SizedBox(height: 24),
+
+                    // Portfolio-style Stats Grid
                     GridView.count(
                       crossAxisCount: screenWidth < 600 ? 2 : 4,
                       crossAxisSpacing: 16,
@@ -830,91 +1044,122 @@ class _DashboardPageState extends State<DashboardPage> {
                       childAspectRatio: screenWidth < 600 ? 1.2 : 1.0,
                       children: [
                         GestureDetector(
-                          onTap:
-                              () => Navigator.pushNamed(
-                                context,
-                                AppRoutes.createJobOpening,
-                              ),
-                          child: _buildDashboardCard(
-                            title: 'Create Job',
-                            subtitle: 'Post new opening',
+                          onTap: () => widget.onIndexChanged(2),
+                          child: GlassmorphismUtils.portfolioStatCard(
+                            title: 'Total Jobs',
+                            value: '${widget.jobs.length}',
+                            subtitle: 'Active positions',
                             icon: Icons.work_outline,
-                            color: AppColors.success,
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.success.withOpacity(0.1),
-                                AppColors.successLight,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
+                            accentColor: AppColors.primaryAccent,
+                            margin: const EdgeInsets.all(0),
                           ),
                         ),
                         GestureDetector(
                           onTap: () => widget.onIndexChanged(1),
-                          child: _buildDashboardCard(
+                          child: GlassmorphismUtils.portfolioStatCard(
                             title: 'Messages',
-                            subtitle: '12 unread',
-                            icon: Icons.chat,
-                            color: AppColors.warning,
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color.fromARGB(
-                                  255,
-                                  255,
-                                  212,
-                                  126,
-                                ).withOpacity(0.8),
-                                const Color.fromARGB(255, 224, 183, 102),
-                              ],
-                            ),
+                            value: '12',
+                            subtitle: 'Unread chats',
+                            icon: Icons.chat_bubble_outline,
+                            accentColor: Colors.orange,
+                            margin: const EdgeInsets.all(0),
                           ),
                         ),
                         GestureDetector(
                           onTap: () => widget.onIndexChanged(2),
-                          child: _buildDashboardCard(
-                            title: 'Reports',
-                            subtitle: 'View analytics',
-                            icon: Icons.bar_chart,
-                            color: AppColors.success,
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color.fromARGB(
-                                  255,
-                                  129,
-                                  249,
-                                  177,
-                                ).withOpacity(0.8),
-                                const Color.fromARGB(255, 132, 255, 181),
-                              ],
-                            ),
+                          child: GlassmorphismUtils.portfolioStatCard(
+                            title: 'Analytics',
+                            value: '89%',
+                            subtitle: 'Success rate',
+                            icon: Icons.trending_up,
+                            accentColor: Colors.blue,
+                            margin: const EdgeInsets.all(0),
                           ),
                         ),
                         GestureDetector(
                           onTap: () => widget.onIndexChanged(3),
-                          child: _buildDashboardCard(
+                          child: GlassmorphismUtils.portfolioStatCard(
                             title: 'Profile',
-                            subtitle: 'Manage account',
-                            icon: Icons.person_4_outlined,
-                            color: AppColors.grey,
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color.fromARGB(
-                                  255,
-                                  184,
-                                  179,
-                                  179,
-                                ).withOpacity(0.8),
-                                const Color.fromARGB(255, 144, 141, 141),
-                              ],
-                            ),
+                            value: '100%',
+                            subtitle: 'Complete',
+                            icon: Icons.person_outline,
+                            accentColor: Colors.purple,
+                            margin: const EdgeInsets.all(0),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    AllApplicantsNavigationCard(
-                      companyName: _companyInfo?['companyName'] ?? '',
+
+                    // All Applicants Card with Glassmorphism
+                    GlassmorphismUtils.portfolioCard(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => AllApplicantsScreen(
+                                    jobId: '',
+                                    companyName:
+                                        _companyInfo?['companyName'] ?? '',
+                                    jobTitle: 'All Jobs',
+                                  ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(24),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            children: [
+                              GlassmorphismUtils.glassContainer(
+                                padding: const EdgeInsets.all(16),
+                                backgroundColor: AppColors.primaryAccent
+                                    .withValues(alpha: 0.1),
+                                borderColor: AppColors.primaryAccent.withValues(
+                                  alpha: 0.3,
+                                ),
+                                borderRadius: 16,
+                                child: Icon(
+                                  Icons.people_outline,
+                                  color: AppColors.primaryAccent,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'View All Applicants',
+                                      style: TextStyle(
+                                        color: AppColors.glassWhite,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Manage and review job applications',
+                                      style: TextStyle(
+                                        color: AppColors.glassGray,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: AppColors.glassGray,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -923,109 +1168,12 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         );
   }
-
-  Widget _buildDashboardCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required Gradient gradient,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryText,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.secondaryText,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatTimeAgo(dynamic timestamp) {
-    if (timestamp == null) return 'Recently';
-
-    final DateTime dateTime =
-        timestamp is Timestamp
-            ? timestamp.toDate()
-            : DateTime.parse(timestamp.toString());
-
-    final difference = DateTime.now().difference(dateTime);
-
-    if (difference.inDays > 7) {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'accepted':
-        return Colors.green;
-      case 'rejected':
-        return Colors.red;
-      case 'shortlisted':
-        return Colors.orange;
-      default:
-        return Colors.blue;
-    }
-  }
 }
 
 class AllApplicantsNavigationCard extends StatelessWidget {
   final String companyName;
 
-  const AllApplicantsNavigationCard({Key? key, required this.companyName})
-    : super(key: key);
+  const AllApplicantsNavigationCard({super.key, required this.companyName});
 
   @override
   Widget build(BuildContext context) {
@@ -1050,14 +1198,14 @@ class AllApplicantsNavigationCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primaryBlue,
-              AppColors.primaryBlue.withOpacity(0.8),
+              AppColors.primaryAccent,
+              AppColors.primaryAccent.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryBlue.withOpacity(0.3),
+              color: AppColors.primaryAccent.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -1072,7 +1220,7 @@ class AllApplicantsNavigationCard extends StatelessWidget {
               child: Icon(
                 Icons.people_alt_rounded,
                 size: 120,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
             // Content
@@ -1084,7 +1232,7 @@ class AllApplicantsNavigationCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -1111,7 +1259,7 @@ class AllApplicantsNavigationCard extends StatelessWidget {
                         Text(
                           'Manage and review all job applications',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 14,
                           ),
                         ),

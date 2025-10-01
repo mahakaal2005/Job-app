@@ -1,12 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get_work_app/models/chat_message.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/user/user_chat_det.dart';
 import 'package:get_work_app/services/chat_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class UserChats extends StatefulWidget {
   const UserChats({super.key});
@@ -21,301 +18,281 @@ class _UserChatsState extends State<UserChats> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // Notification related
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications =
-      FlutterLocalNotificationsPlugin();
-
   @override
   void initState() {
     super.initState();
-    _initializeNotifications();
-    _setupMessageListener();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        title: const Text(
-          'Messages',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        centerTitle: false,
-        actions: [
-          IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
-        ],
-      ),
-      body: Column(
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: AppColors.background,
+      child: Column(
         children: [
-          // Search Bar
+          // Custom header
           Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 16,
+              left: 20,
+              right: 20,
+              bottom: 16,
+            ),
+            child: Row(
+              children: [
+                const Text(
+                  'Messages',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
+          // Search bar
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: TextField(
               controller: _searchController,
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
+              onChanged: (value) => setState(() => _searchQuery = value),
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search messages...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                prefixIcon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.6)),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: AppColors.glass15,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
                 ),
               ),
             ),
           ),
-          // Chat List
+          // Chat list
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _chatService.getUserChats(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Something went wrong',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: Colors.grey[300],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No messages yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Start a conversation with employers',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                // Filter chats based on search query
-                final filteredDocs =
-                    snapshot.data!.docs.where((doc) {
-                      final chatRoom = ChatRoom.fromFirestore(doc);
-                      final otherParticipantIndex =
-                          chatRoom.participants.indexOf(currentUserId!) == 0
-                              ? 1
-                              : 0;
-                      final otherParticipantName =
-                          chatRoom.participantNames[otherParticipantIndex];
-
-                      return _searchQuery.isEmpty ||
-                          otherParticipantName.toLowerCase().contains(
-                            _searchQuery,
-                          ) ||
-                          chatRoom.lastMessage.toLowerCase().contains(
-                            _searchQuery,
-                          );
-                    }).toList();
-
-                if (filteredDocs.isEmpty && _searchQuery.isNotEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No results found',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return Container(
-                  color: Colors.white,
-                  child: ListView.separated(
-                    itemCount: filteredDocs.length,
-                    separatorBuilder:
-                        (context, index) => Divider(
-                          height: 1,
-                          color: Colors.grey[200],
-                          indent: 72,
-                        ),
-                    itemBuilder: (context, index) {
-                      final doc = filteredDocs[index];
-                      final chatRoom = ChatRoom.fromFirestore(doc);
-
-                      // Get the other participant's ID and name
-                      final otherParticipantIndex =
-                          chatRoom.participants.indexOf(currentUserId!) == 0
-                              ? 1
-                              : 0;
-                      final otherParticipantId =
-                          chatRoom.participants[otherParticipantIndex];
-                      final otherParticipantName =
-                          chatRoom.participantNames[otherParticipantIndex];
-
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        leading: CircleAvatar(
-                          radius: 28,
-                          backgroundColor: AppColors.primaryBlue,
-                          child: Text(
-                            otherParticipantName.isNotEmpty
-                                ? otherParticipantName[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          otherParticipantName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            chatRoom.lastMessage,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _formatTimeAgo(chatRoom.lastMessageTime),
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            // Unread count indicator
-                            FutureBuilder<int>(
-                              future: _getUnreadCount(chatRoom.id),
-                              builder: (context, snapshot) {
-                                final unreadCount = snapshot.data ?? 0;
-                                if (unreadCount > 0) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryBlue,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 18,
-                                      minHeight: 18,
-                                    ),
-                                    child: Text(
-                                      unreadCount > 99
-                                          ? '99+'
-                                          : unreadCount.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  );
-                                }
-                                return const SizedBox.shrink();
-                              },
-                            ),
-                          ],
-                        ),
-                        onTap: () async {
-                          // Mark messages as read when opening chat
-                          await _markMessagesAsRead(chatRoom.id);
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => UserChatDetailScreen(
-                                    chatId: chatRoom.id,
-                                    otherUserId: otherParticipantId,
-                                    otherUserName: otherParticipantName,
-                                  ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
+            child: _buildChatList(),
           ),
+          // Bottom spacing for floating navigation
+          SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
         ],
       ),
+    );
+  }
+
+  Widget _buildChatList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _chatService.getUserChats(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Something went wrong',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primaryAccent),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 64,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No messages yet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Start a conversation with employers',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Filter chats based on search query
+        final filteredDocs = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final participants = List<String>.from(data['participants'] ?? []);
+          final participantNames = List<String>.from(data['participantNames'] ?? []);
+          final lastMessage = data['lastMessage'] ?? '';
+          
+          if (participants.isEmpty || participantNames.isEmpty) return false;
+          
+          final otherParticipantIndex = participants.indexOf(currentUserId!) == 0 ? 1 : 0;
+          if (otherParticipantIndex >= participantNames.length) return false;
+          
+          final otherParticipantName = participantNames[otherParticipantIndex];
+
+          return _searchQuery.isEmpty ||
+              otherParticipantName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              lastMessage.toLowerCase().contains(_searchQuery.toLowerCase());
+        }).toList();
+
+        if (filteredDocs.isEmpty && _searchQuery.isNotEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_off,
+                  size: 48,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No results found',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Container(
+          color: AppColors.background,
+          child: ListView.separated(
+            itemCount: filteredDocs.length,
+            separatorBuilder: (context, index) => Divider(
+              height: 1,
+              color: AppColors.border,
+              indent: 72,
+            ),
+            itemBuilder: (context, index) {
+              final doc = filteredDocs[index];
+              final data = doc.data() as Map<String, dynamic>;
+              final participants = List<String>.from(data['participants'] ?? []);
+              final participantNames = List<String>.from(data['participantNames'] ?? []);
+              final lastMessage = data['lastMessage'] ?? '';
+              final lastMessageTime = data['lastMessageTime'] as Timestamp?;
+
+              if (participants.isEmpty || participantNames.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              final otherParticipantIndex = participants.indexOf(currentUserId!) == 0 ? 1 : 0;
+              if (otherParticipantIndex >= participants.length || otherParticipantIndex >= participantNames.length) {
+                return const SizedBox.shrink();
+              }
+
+              final otherParticipantId = participants[otherParticipantIndex];
+              final otherParticipantName = participantNames[otherParticipantIndex];
+
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                leading: CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.primaryAccent,
+                  child: Text(
+                    otherParticipantName.isNotEmpty
+                        ? otherParticipantName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  otherParticipantName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    lastMessage,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      lastMessageTime != null ? _formatTimeAgo(lastMessageTime) : '',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UserChatDetailScreen(
+                        chatId: doc.id,
+                        otherUserId: otherParticipantId,
+                        otherUserName: otherParticipantName,
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -336,238 +313,4 @@ class _UserChatsState extends State<UserChats> {
       return 'Just now';
     }
   }
-
-  // Initialize notifications
-  Future<void> _initializeNotifications() async {
-    // Request permission
-    await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
-    // Initialize local notifications
-    final androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
-    final iosSettings = DarwinInitializationSettings();
-    final initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
-
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-    // Handle notification taps when app is in background
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
-  }
-
-  // Setup message listener for real-time notifications
-  void _setupMessageListener() {
-    if (currentUserId == null) return;
-
-    FirebaseFirestore.instance
-        .collectionGroup('messages')
-        .where('receiverId', isEqualTo: currentUserId)
-        .where('isRead', isEqualTo: false)
-        .snapshots()
-        .listen((snapshot) {
-          for (var change in snapshot.docChanges) {
-            if (change.type == DocumentChangeType.added) {
-              final message = ChatMessage.fromFirestore(change.doc);
-              _showLocalNotification(message);
-            }
-          }
-        });
-  }
-
-  // Handle foreground messages
-  void _handleForegroundMessage(RemoteMessage message) {
-    if (message.data['type'] == 'chat_message') {
-      final senderName = message.data['senderName'] ?? 'Someone';
-      final messageText = message.data['message'] ?? 'New message';
-      final chatId = message.data['chatId'] ?? '';
-
-      _showLocalNotification(
-        ChatMessage(
-          id: '',
-          senderId: message.data['senderId'] ?? '',
-          receiverId: currentUserId!,
-          message: messageText,
-          timestamp: Timestamp.now(),
-        ),
-        senderName: senderName,
-        chatId: chatId,
-      );
-    }
-  }
-
-  // Handle notification tap
-  void _handleNotificationTap(RemoteMessage message) {
-    if (message.data['type'] == 'chat_message') {
-      final chatId = message.data['chatId'];
-      final otherUserId = message.data['senderId'];
-      final otherUserName = message.data['senderName'];
-
-      if (chatId != null && otherUserId != null && otherUserName != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => UserChatDetailScreen(
-                  chatId: chatId,
-                  otherUserId: otherUserId,
-                  otherUserName: otherUserName,
-                ),
-          ),
-        );
-      }
-    }
-  }
-
-  // Handle local notification tap
-  void _onNotificationTapped(NotificationResponse response) {
-    final payload = response.payload;
-    if (payload != null) {
-      final parts = payload.split('|');
-      if (parts.length >= 3) {
-        final chatId = parts[0];
-        final otherUserId = parts[1];
-        final otherUserName = parts[2];
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => UserChatDetailScreen(
-                  chatId: chatId,
-                  otherUserId: otherUserId,
-                  otherUserName: otherUserName,
-                ),
-          ),
-        );
-      }
-    }
-  }
-
-  // Show local notification
-  Future<void> _showLocalNotification(
-    ChatMessage message, {
-    String? senderName,
-    String? chatId,
-  }) async {
-    try {
-      // Get sender info if not provided
-      String displayName = senderName ?? 'Someone';
-      String notificationChatId = chatId ?? '';
-
-      if (senderName == null || chatId == null) {
-        // Get chat room info to find sender name and chat ID
-        final chatRooms =
-            await FirebaseFirestore.instance
-                .collection('chats')
-                .where('participants', arrayContains: currentUserId)
-                .get();
-
-        for (var doc in chatRooms.docs) {
-          final chatRoom = ChatRoom.fromFirestore(doc);
-          if (chatRoom.participants.contains(message.senderId)) {
-            notificationChatId = chatRoom.id;
-            final otherParticipantIndex = chatRoom.participants.indexOf(
-              message.senderId,
-            );
-            if (otherParticipantIndex != -1) {
-              displayName = chatRoom.participantNames[otherParticipantIndex];
-            }
-            break;
-          }
-        }
-      }
-
-      const androidDetails = AndroidNotificationDetails(
-        'chat_messages',
-        'Chat Messages',
-        channelDescription: 'Notifications for new chat messages',
-        importance: Importance.high,
-        priority: Priority.high,
-        showWhen: true,
-      );
-
-      const iosDetails = DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      );
-
-      const notificationDetails = NotificationDetails(
-        android: androidDetails,
-        iOS: iosDetails,
-      );
-
-      await _localNotifications.show(
-        message.hashCode,
-        'New message from $displayName',
-        message.message,
-        notificationDetails,
-        payload: '$notificationChatId|${message.senderId}|$displayName',
-      );
-    } catch (e) {
-      print('Error showing notification: $e');
-    }
-  }
-
-  // Get unread message count for a chat
-  Future<int> _getUnreadCount(String chatId) async {
-    try {
-      final snapshot =
-          await FirebaseFirestore.instance
-              .collection('chats')
-              .doc(chatId)
-              .collection('messages')
-              .where('receiverId', isEqualTo: currentUserId)
-              .where('isRead', isEqualTo: false)
-              .get();
-
-      return snapshot.docs.length;
-    } catch (e) {
-      print('Error getting unread count: $e');
-      return 0;
-    }
-  }
-
-  // Mark messages as read when opening chat
-  Future<void> _markMessagesAsRead(String chatId) async {
-    try {
-      final batch = FirebaseFirestore.instance.batch();
-      final snapshot =
-          await FirebaseFirestore.instance
-              .collection('chats')
-              .doc(chatId)
-              .collection('messages')
-              .where('receiverId', isEqualTo: currentUserId)
-              .where('isRead', isEqualTo: false)
-              .get();
-
-      for (var doc in snapshot.docs) {
-        batch.update(doc.reference, {'isRead': true});
-      }
-
-      await batch.commit();
-    } catch (e) {
-      print('Error marking messages as read: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 }
-

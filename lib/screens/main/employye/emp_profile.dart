@@ -441,7 +441,7 @@ class _EmpProfileState extends State<EmpProfile> {
           const SizedBox(height: 8),
           if (isEditing)
             DropdownButtonFormField<String>(
-              value: _selectedCompanySize,
+              initialValue: _selectedCompanySize,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white,

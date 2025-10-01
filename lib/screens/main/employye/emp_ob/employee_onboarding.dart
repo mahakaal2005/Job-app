@@ -1,14 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
-import 'package:get_work_app/services/auth_services.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_selector/file_selector.dart';
-import 'package:get_work_app/utils/app_colors.dart';
-import 'package:get_work_app/routes/routes.dart';
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
+import 'package:flutter/material.dart';
+import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
+import 'package:get_work_app/services/auth_services.dart';
+import 'package:get_work_app/utils/app_colors.dart';
+import 'package:image_picker/image_picker.dart';
+
 class EmployeeOnboardingScreen extends StatefulWidget {
-  const EmployeeOnboardingScreen({Key? key}) : super(key: key);
+  const EmployeeOnboardingScreen({super.key});
 
   @override
   State<EmployeeOnboardingScreen> createState() =>
@@ -49,7 +50,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
   File? _companyLogo;
   File? _businessLicense;
   File? _employeeIdCard;
-  List<File> _companyDocuments = [];
+  final List<File> _companyDocuments = [];
 
   String? _selectedIndustry;
   String? _selectedCompanySize;
@@ -274,7 +275,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : AppColors.primaryBlue,
+        backgroundColor: isError ? Colors.red : AppColors.primaryAccent,
         duration: Duration(seconds: isError ? 4 : 2),
       ),
     );
@@ -344,8 +345,8 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
       appBar: AppBar(
         title: const Text('Employee Onboarding'),
         elevation: 0,
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.black,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
       ),
       body: Column(
         children: [
@@ -361,8 +362,8 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
                       decoration: BoxDecoration(
                         color:
                             i <= _currentPage
-                                ? AppColors.primaryBlue
-                                : AppColors.grey.withOpacity(0.3),
+                                ? AppColors.primaryAccent
+                                : Colors.grey.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -551,7 +552,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
           const SizedBox(height: 16),
 
           DropdownButtonFormField<String>(
-            value: _selectedIndustry,
+            initialValue: _selectedIndustry,
             decoration: const InputDecoration(labelText: 'Industry *'),
             items:
                 _industries.map((industry) {
@@ -575,7 +576,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
           const SizedBox(height: 16),
 
           DropdownButtonFormField<String>(
-            value: _selectedCompanySize,
+            initialValue: _selectedCompanySize,
             decoration: const InputDecoration(labelText: 'Company Size *'),
             items:
                 _companySizes.map((size) {
@@ -718,7 +719,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
           const SizedBox(height: 16),
 
           DropdownButtonFormField<String>(
-            value: _selectedEmploymentType,
+            initialValue: _selectedEmploymentType,
             decoration: const InputDecoration(labelText: 'Employment Type *'),
             items:
                 _employmentTypes.map((type) {
@@ -859,8 +860,8 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
             icon: const Icon(Icons.add),
             label: const Text('Add Document'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.grey.withOpacity(0.1),
-              foregroundColor: AppColors.primaryBlue,
+              backgroundColor: Colors.grey.withOpacity(0.1),
+              foregroundColor: AppColors.primaryAccent,
               elevation: 0,
             ),
           ),
@@ -939,11 +940,11 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
                 color:
                     isRequired && file == null
                         ? Colors.red
-                        : AppColors.grey.withOpacity(0.3),
+                        : Colors.grey.withOpacity(0.3),
                 style: BorderStyle.solid,
               ),
               borderRadius: BorderRadius.circular(12),
-              color: AppColors.grey.withOpacity(0.05),
+              color: Colors.grey.withOpacity(0.05),
             ),
             child:
                 file != null
@@ -959,14 +960,14 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
                               const Icon(
                                 Icons.description,
                                 size: 24,
-                                color: AppColors.primaryBlue,
+                                color: AppColors.primaryAccent,
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 file.path.split('/').last,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.primaryBlue,
+                                  color: AppColors.primaryAccent,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -979,7 +980,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
                         Icon(
                           isImage ? Icons.image : Icons.upload_file,
                           size: 32,
-                          color: isRequired ? Colors.red : AppColors.grey,
+                          color: isRequired ? Colors.red : Colors.grey,
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -988,7 +989,7 @@ class _EmployeeOnboardingScreenState extends State<EmployeeOnboardingScreen> {
                               : 'Tap to select file',
                           style: TextStyle(
                             fontSize: 14,
-                            color: isRequired ? Colors.red : AppColors.grey,
+                            color: isRequired ? Colors.red : Colors.grey,
                           ),
                         ),
                       ],

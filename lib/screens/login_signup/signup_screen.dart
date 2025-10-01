@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
@@ -72,21 +72,24 @@ class _SignupScreenState extends State<SignupScreen> {
       }
 
       // Create the account
-      UserCredential? userCredential = await AuthService.signUpWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        fullName: _nameController.text.trim(),
-        role: _selectedRole,
-      );
+      UserCredential? userCredential =
+          await AuthService.signUpWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            fullName: _nameController.text.trim(),
+            role: _selectedRole,
+          );
 
       if (mounted && userCredential != null) {
         setState(() {
           _isLoading = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Welcome ${_nameController.text.trim()}! Account created successfully!'),
+            content: Text(
+              'Welcome ${_nameController.text.trim()}! Account created successfully!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -121,10 +124,7 @@ class _SignupScreenState extends State<SignupScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -135,7 +135,7 @@ class _SignupScreenState extends State<SignupScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 40.0), // Extra bottom padding
           child: Form(
             key: _formKey,
             child: Column(
@@ -144,38 +144,53 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 20),
 
                 // Header
-                const Text(
+                Text(
                   'Create Account',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Sign up as ${_selectedRole == 'user' ? 'a User' : 'an Employee'} to get started',
-                  style: const TextStyle(fontSize: 16, color: AppColors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
 
                 const SizedBox(height: 40),
 
                 // Name input
-                const Text(
+                Text(
                   'Full Name',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
                     hintText: 'Enter your full name',
-                    prefixIcon: Icon(Icons.person),
+                    hintStyle: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.person,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -191,21 +206,33 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 20),
 
                 // Email input
-                const Text(
+                Text(
                   'Email',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
                     hintText: 'Enter your email',
-                    prefixIcon: Icon(Icons.email),
+                    hintStyle: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.email,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -223,26 +250,39 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 20),
 
                 // Password input
-                const Text(
+                Text(
                   'Password',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Enter your password',
-                    prefixIcon: const Icon(Icons.lock),
+                    hintStyle: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.lock,
+                      color: AppColors.textSecondary,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: AppColors.textSecondary,
                       ),
                       onPressed: () {
                         setState(() {
@@ -265,26 +305,39 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 20),
 
                 // Confirm Password input
-                const Text(
+                Text(
                   'Confirm Password',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Confirm your password',
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    hintStyle: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.lock_outline,
+                      color: AppColors.textSecondary,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: AppColors.textSecondary,
                       ),
                       onPressed: () {
                         setState(() {
@@ -307,18 +360,18 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 20),
 
                 // Role selection
-                const Text(
+                Text(
                   'I am a',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.black,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+                    border: Border.all(color: AppColors.border),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -358,14 +411,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signUp,
-                    child: _isLoading
-                        ? const CircularProgressIndicator(
-                            color: AppColors.white,
-                          )
-                        : Text(
-                            'Create ${_selectedRole == 'user' ? 'User' : 'Employee'} Account',
-                            style: const TextStyle(fontSize: 16),
-                          ),
+                    child:
+                        _isLoading
+                            ? CircularProgressIndicator(
+                              color: AppColors.textOnAccent,
+                            )
+                            : Text(
+                              'Create ${_selectedRole == 'user' ? 'User' : 'Employee'} Account',
+                              style: const TextStyle(fontSize: 16),
+                            ),
                   ),
                 ),
 
@@ -377,16 +431,20 @@ class _SignupScreenState extends State<SignupScreen> {
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, AppRoutes.login);
                     },
-                    child: const Text.rich(
+                    child: Text.rich(
                       TextSpan(
                         text: 'Already have an account? ',
-                        style: TextStyle(color: AppColors.grey),
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                        ),
                         children: [
                           TextSpan(
                             text: 'Login',
                             style: TextStyle(
-                              color: AppColors.primaryBlue,
+                              color: AppColors.primaryAccent,
                               fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
                         ],
@@ -394,6 +452,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
+                
+                // Add extra bottom padding to prevent cutoff
+                const SizedBox(height: 50),
               ],
             ),
           ),

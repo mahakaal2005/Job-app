@@ -1,15 +1,15 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
-import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+
 import 'skills_list.dart';
-import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
-import 'package:file_selector/file_selector.dart';
 
 class StudentOnboardingScreen extends StatefulWidget {
   const StudentOnboardingScreen({super.key});
@@ -42,16 +42,16 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   DateTime? _selectedDateOfBirth;
 
   // New fields for student model
-  List<String> _selectedSkills = [];
+  final List<String> _selectedSkills = [];
   List<String> _filteredSkills = [];
   int _weeklyHours = 10;
-  List<String> _selectedTimeSlots = [];
+  final List<String> _selectedTimeSlots = [];
   File? _resumeFile;
   String? _resumeFileName;
   String? _resumePreviewUrl;
   File? _profileImage;
   bool _isUploadingResume = false;
-  bool _isUploadingImage = false;
+  final bool _isUploadingImage = false;
 
   // Enhanced education level options
   final List<String> _educationLevels = [
@@ -143,7 +143,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: AppColors.primaryBlue,
+              primary: AppColors.primaryAccent,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
@@ -474,21 +474,26 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.black,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Step ${_currentPage + 1} of 5',
-                    style: const TextStyle(fontSize: 16, color: AppColors.grey),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   // Progress indicator
                   LinearProgressIndicator(
                     value: (_currentPage + 1) / 5,
-                    backgroundColor: AppColors.grey.withOpacity(0.3),
+                    backgroundColor: AppColors.textSecondary.withValues(
+                      alpha: 0.3,
+                    ),
                     valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryBlue,
+                      AppColors.primaryAccent,
                     ),
                   ),
                 ],
@@ -567,7 +572,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.black,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 20),
@@ -597,7 +602,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+              border: Border.all(
+                color: AppColors.textSecondary.withValues(alpha: 0.3),
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -650,12 +657,17 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppColors.textSecondary.withValues(alpha: 0.3),
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: AppColors.grey),
+                  const Icon(
+                    Icons.calendar_today,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     _selectedDateOfBirth != null
@@ -664,8 +676,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     style: TextStyle(
                       color:
                           _selectedDateOfBirth != null
-                              ? AppColors.black
-                              : AppColors.grey,
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -705,7 +717,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.black,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 20),
@@ -811,7 +823,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.black,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 20),
@@ -823,7 +835,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value:
+            initialValue:
                 _selectedEducationLevel.isEmpty
                     ? null
                     : _selectedEducationLevel,
@@ -912,7 +924,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.black,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 20),
@@ -925,7 +937,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           const SizedBox(height: 8),
           const Text(
             'Search and select skills that match your expertise',
-            style: TextStyle(fontSize: 14, color: AppColors.grey),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
 
@@ -965,8 +977,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                           _selectedSkills.remove(skill);
                         });
                       },
-                      backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-                      deleteIconColor: AppColors.primaryBlue,
+                      backgroundColor: AppColors.primaryAccent.withValues(
+                        alpha: 0.1,
+                      ),
+                      deleteIconColor: AppColors.primaryAccent,
                     );
                   }).toList(),
             ),
@@ -978,7 +992,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.grey.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppColors.textSecondary.withValues(alpha: 0.3),
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child:
@@ -987,7 +1003,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         padding: EdgeInsets.all(16),
                         child: Text(
                           'No skills found',
-                          style: TextStyle(color: AppColors.grey),
+                          style: TextStyle(color: AppColors.textSecondary),
                           textAlign: TextAlign.center,
                         ),
                       )
@@ -1021,7 +1037,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           const SizedBox(height: 8),
           const Text(
             'How many hours per week are you available to work?',
-            style: TextStyle(fontSize: 14, color: AppColors.grey),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
 
@@ -1047,14 +1063,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$_weeklyHours hrs/week',
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    color: AppColors.primaryBlue,
+                    color: AppColors.primaryAccent,
                   ),
                 ),
               ),
@@ -1070,7 +1086,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           const SizedBox(height: 8),
           const Text(
             'Select your preferred working hours',
-            style: TextStyle(fontSize: 14, color: AppColors.grey),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
 
@@ -1090,7 +1106,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         }
                       });
                     },
-                    activeColor: AppColors.primaryBlue,
+                    activeColor: AppColors.primaryAccent,
                     controlAffinity: ListTileControlAffinity.leading,
                   );
                 }).toList(),
@@ -1111,13 +1127,13 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.black,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Add a profile photo and upload your resume to stand out',
-            style: TextStyle(fontSize: 14, color: AppColors.grey),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
 
@@ -1136,9 +1152,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.grey.withOpacity(0.2),
+                    color: AppColors.textSecondary.withValues(alpha: 0.2),
                     border: Border.all(
-                      color: AppColors.grey.withOpacity(0.3),
+                      color: AppColors.textSecondary.withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
@@ -1155,7 +1171,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                           : const Icon(
                             Icons.person,
                             size: 60,
-                            color: AppColors.grey,
+                            color: AppColors.textSecondary,
                           ),
                 ),
                 Positioned(
@@ -1168,7 +1184,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       height: 36,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primaryBlue,
+                        color: AppColors.primaryAccent,
                       ),
                       child:
                           _isUploadingImage
@@ -1199,9 +1215,11 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.05),
+              color: AppColors.primaryAccent.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              border: Border.all(
+                color: AppColors.primaryAccent.withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1210,7 +1228,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   children: [
                     Icon(
                       Icons.lightbulb_outline,
-                      color: Colors.blue.shade600,
+                      color: AppColors.primaryAccent,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -1218,7 +1236,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       'Tips for Success',
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        color: Colors.blue.shade600,
+                        color: AppColors.primaryAccent,
                       ),
                     ),
                   ],
@@ -1254,29 +1272,31 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         const SizedBox(height: 8),
         const Text(
           'Upload your resume in PDF format',
-          style: TextStyle(fontSize: 14, color: AppColors.grey),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 12),
         if (_resumeFile != null) ...[
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.lightBlue.withOpacity(0.1),
+              color: AppColors.primaryAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2)),
+              border: Border.all(
+                color: AppColors.primaryAccent.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.description_outlined,
-                  color: AppColors.primaryBlue,
+                  color: AppColors.primaryAccent,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _resumeFileName ?? 'Resume uploaded',
                     style: const TextStyle(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryAccent,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -1306,7 +1326,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              side: BorderSide(color: AppColors.primaryBlue.withOpacity(0.5)),
+              side: BorderSide(
+                color: AppColors.primaryAccent.withValues(alpha: 0.5),
+              ),
             ),
           ),
         ),

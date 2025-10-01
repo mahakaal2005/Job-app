@@ -1,17 +1,36 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:get_work_app/provider/all_applicants_provider.dart';
+import 'package:get_work_app/provider/applicant_provider.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:get_work_app/provider/applicant_provider.dart';
-import 'package:get_work_app/provider/all_applicants_provider.dart';
-import 'package:get_work_app/provider/applicant_status_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set system UI overlay style globally to remove black navigation bar
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      systemNavigationBarColor: AppColors.background, // Match app background
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
+  
+  // Enable edge-to-edge display
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+  );
+  
   await Firebase.initializeApp();
   await dotenv.load(fileName: ".env");
   runApp(const MyApp());
@@ -33,86 +52,145 @@ class MyApp extends StatelessWidget {
         title: 'GetWork App',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.blue,
-          primaryColor: AppColors.primaryBlue,
-          scaffoldBackgroundColor: AppColors.white,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: AppColors.white,
-            foregroundColor: AppColors.black,
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: AppColors.background, // Very dark background
+          primaryColor: AppColors.primaryAccent, // Our brand accent
+          fontFamily: GoogleFonts.inter().fontFamily,
+
+          // Enhanced AppBar theme for portfolio design
+          appBarTheme: AppBarTheme(
+            backgroundColor: Colors.transparent,
             elevation: 0,
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+            scrolledUnderElevation: 0,
+            iconTheme: const IconThemeData(color: AppColors.glassWhite),
+            titleTextStyle: TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.w600,
+              color: AppColors.glassWhite,
+              fontFamily: GoogleFonts.inter().fontFamily,
             ),
           ),
-          outlinedButtonTheme: OutlinedButtonThemeData(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryBlue,
-              side: const BorderSide(color: AppColors.primaryBlue),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+
+          // Portfolio-style text theme
+          textTheme: TextTheme(
+            displayLarge: TextStyle(
+              fontSize: 32.0,
+              fontWeight: FontWeight.bold,
+              color: AppColors.glassWhite,
+              fontFamily: GoogleFonts.inter().fontFamily,
+            ),
+            displayMedium: TextStyle(
+              fontSize: 24.0,
+              fontWeight: FontWeight.w600,
+              color: AppColors.glassWhite,
+              fontFamily: GoogleFonts.inter().fontFamily,
+            ),
+            titleLarge: TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.w600,
+              color: AppColors.glassWhite,
+              fontFamily: GoogleFonts.inter().fontFamily,
+            ),
+            titleMedium: TextStyle(
+              fontSize: 16.0,
+              fontWeight: FontWeight.w500,
+              color: AppColors.glassGray,
+              fontFamily: GoogleFonts.inter().fontFamily,
+            ),
+            bodyLarge: TextStyle(
+              fontSize: 16.0,
+              fontWeight: FontWeight.w400,
+              color: AppColors.glassWhite,
+              height: 1.5,
+              fontFamily: GoogleFonts.inter().fontFamily,
+            ),
+            bodyMedium: TextStyle(
+              fontSize: 14.0,
+              fontWeight: FontWeight.w400,
+              color: AppColors.glassGray,
+              fontFamily: GoogleFonts.inter().fontFamily,
+            ),
+            labelLarge: TextStyle(
+              fontSize: 16.0,
+              fontWeight: FontWeight.w600,
+              color: AppColors.glassWhite,
+              fontFamily: GoogleFonts.inter().fontFamily,
+            ),
+            bodySmall: TextStyle(
+              fontSize: 12.0,
+              fontWeight: FontWeight.w400,
+              color: AppColors.glassGray,
+              fontFamily: GoogleFonts.inter().fontFamily,
             ),
           ),
+
+          // Portfolio-style card theme
+          cardTheme: CardThemeData(
+            color: AppColors.cardGlass,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24.0),
+              side: BorderSide(color: AppColors.glassBorder, width: 1.5),
+            ),
+            margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+          ),
+
+          // Glass-style input decoration
           inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.grey.withOpacity(0.3)),
+            hintStyle: TextStyle(
+              color: AppColors.glassGray,
+              fontFamily: GoogleFonts.inter().fontFamily,
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.grey.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primaryBlue,
-                width: 2,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 2),
-            ),
+            filled: true,
+            fillColor: AppColors.glass15,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
+              horizontal: 20,
               vertical: 16,
             ),
-            hintStyle: TextStyle(color: AppColors.grey.withOpacity(0.7)),
-          ),
-          chipTheme: ChipThemeData(
-            backgroundColor: AppColors.grey.withOpacity(0.1),
-            selectedColor: AppColors.primaryBlue.withOpacity(0.2),
-            disabledColor: AppColors.grey.withOpacity(0.3),
-            labelStyle: const TextStyle(color: AppColors.black),
-            secondaryLabelStyle: const TextStyle(color: AppColors.primaryBlue),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.0),
+              borderSide: BorderSide(color: AppColors.glassBorder, width: 1.5),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          ),
-          checkboxTheme: CheckboxThemeData(
-            fillColor: MaterialStateProperty.resolveWith<Color>((states) {
-              if (states.contains(MaterialState.selected)) {
-                return AppColors.primaryBlue;
-              }
-              return Colors.transparent;
-            }),
-            checkColor: MaterialStateProperty.all(AppColors.white),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.0),
+              borderSide: BorderSide(color: AppColors.glassBorder, width: 1.5),
             ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.0),
+              borderSide: const BorderSide(
+                color: AppColors.primaryAccent,
+                width: 2.0,
+              ),
+            ),
+          ),
+
+          // Portfolio-style elevated button theme
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryAccent,
+              foregroundColor: Colors.black,
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              textStyle: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.w600,
+                fontFamily: GoogleFonts.inter().fontFamily,
+              ),
+            ),
+          ),
+
+          // Custom bottom nav theme (handled by our glass component)
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            selectedItemColor: AppColors.primaryAccent,
+            unselectedItemColor: AppColors.glassGray,
+            showUnselectedLabels: false,
+            type: BottomNavigationBarType.fixed,
           ),
         ),
         initialRoute: AppRoutes.splash,

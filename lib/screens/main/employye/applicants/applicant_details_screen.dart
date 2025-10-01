@@ -1,25 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:get_work_app/utils/app_colors.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart';
-import 'package:get_work_app/provider/all_applicants_provider.dart';
-import 'package:get_work_app/provider/applicant_status_provider.dart';
-import 'package:get_work_app/services/chat_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_work_app/screens/main/employye/emp_chats.dart';
+import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 import 'package:get_work_app/screens/main/employye/applicants/chat_detail_screen.dart'
     as chat;
+import 'package:get_work_app/services/chat_service.dart';
+import 'package:get_work_app/utils/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ApplicantDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> applicant;
   final String jobTitle;
 
   const ApplicantDetailsScreen({
-    Key? key,
+    super.key,
     required this.applicant,
     required this.jobTitle,
-  }) : super(key: key);
+  });
 
   @override
   State<ApplicantDetailsScreen> createState() => _ApplicantDetailsScreenState();
@@ -65,19 +63,19 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.primaryAccent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Applicant Details',
           style: TextStyle(
-            color: AppColors.whiteText,
+            color: AppColors.textOnAccent,
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.whiteText),
+          icon: Icon(Icons.arrow_back, color: AppColors.textOnAccent),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -90,11 +88,11 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.cardBackground,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadowLight,
+                    color: AppColors.background.withValues(alpha: 0.15),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -120,10 +118,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                             ? Text(
                               widget.applicant['applicantName'][0]
                                   .toUpperCase(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primaryBlue,
+                                color: AppColors.primaryAccent,
                               ),
                             )
                             : null,
@@ -131,10 +129,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                   const SizedBox(height: 16),
                   Text(
                     widget.applicant['applicantName'] ?? 'Anonymous',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryText,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -142,7 +140,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                     'Applied for ${widget.jobTitle}',
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryAccent,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -155,7 +153,6 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                             widget.applicant['jobId'],
                             widget.applicant['id'],
                           ) ??
-                          widget.applicant['status'] ??
                           'pending';
                       return Container(
                         padding: const EdgeInsets.symmetric(
@@ -165,7 +162,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                         decoration: BoxDecoration(
                           color: _getStatusColor(
                             currentStatus,
-                          ).withOpacity(0.1),
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -239,13 +236,13 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                             (skill) => Chip(
                               label: Text(
                                 skill,
-                                style: const TextStyle(
-                                  color: AppColors.primaryBlue,
+                                style: TextStyle(
+                                  color: AppColors.primaryAccent,
                                   fontSize: 12,
                                 ),
                               ),
-                              backgroundColor: AppColors.primaryBlue
-                                  .withOpacity(0.1),
+                              backgroundColor: AppColors.primaryAccent
+                                  .withValues(alpha: 0.1),
                             ),
                           )
                           .toList(),
@@ -260,7 +257,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
               _buildSection('Why They Want to Join', Icons.lightbulb_outline, [
                 Text(
                   widget.applicant['whyJoin'],
-                  style: TextStyle(color: AppColors.secondaryText, height: 1.5),
+                  style: TextStyle(color: AppColors.textSecondary, height: 1.5),
                 ),
               ]),
 
@@ -274,12 +271,12 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Preview',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.primaryText,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -304,19 +301,19 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                   print('Stack trace: $stackTrace');
                                   return Container(
                                     padding: const EdgeInsets.all(16),
-                                    child: const Column(
+                                    child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
                                           Icons.error_outline,
-                                          color: AppColors.error,
+                                          color: AppColors.primaryAccent,
                                           size: 32,
                                         ),
-                                        SizedBox(height: 8),
+                                        const SizedBox(height: 8),
                                         Text(
                                           'Failed to load resume preview',
                                           style: TextStyle(
-                                            color: AppColors.error,
+                                            color: AppColors.primaryAccent,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -334,7 +331,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: AppColors.mutedText.withOpacity(0.2),
+                        color: AppColors.textSecondary.withValues(alpha: 0.2),
                         width: 1,
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -353,7 +350,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                       ? loadingProgress.cumulativeBytesLoaded /
                                           loadingProgress.expectedTotalBytes!
                                       : null,
-                              color: AppColors.primaryBlue,
+                              color: AppColors.primaryAccent,
                             ),
                           );
                         },
@@ -362,19 +359,19 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                           print('Stack trace: $stackTrace');
                           return Container(
                             padding: const EdgeInsets.all(16),
-                            child: const Column(
+                            child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.error_outline,
-                                  color: AppColors.error,
+                                  color: AppColors.primaryAccent,
                                   size: 32,
                                 ),
-                                SizedBox(height: 8),
+                                const SizedBox(height: 8),
                                 Text(
                                   'Failed to load resume preview',
                                   style: TextStyle(
-                                    color: AppColors.error,
+                                    color: AppColors.primaryAccent,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -392,22 +389,22 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
+                    color: AppColors.primaryAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.warning_amber_rounded,
-                        color: AppColors.error.withOpacity(0.8),
+                        color: AppColors.primaryAccent.withValues(alpha: 0.8),
                         size: 24,
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Resume preview not available',
                           style: TextStyle(
-                            color: AppColors.error,
+                            color: AppColors.primaryAccent,
                             fontSize: 14,
                           ),
                         ),
@@ -431,7 +428,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                       label: const Text('Accept'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        foregroundColor: AppColors.whiteText,
+                        foregroundColor: AppColors.textOnAccent,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -447,7 +444,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                       label: const Text('Reject'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
-                        foregroundColor: AppColors.whiteText,
+                        foregroundColor: AppColors.textOnAccent,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -474,8 +471,8 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                       icon: const Icon(Icons.phone),
                       label: const Text('Call'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        foregroundColor: AppColors.whiteText,
+                        backgroundColor: AppColors.primaryAccent,
+                        foregroundColor: AppColors.textOnAccent,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -492,8 +489,8 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                     icon: const Icon(Icons.message),
                     label: const Text('Message'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      foregroundColor: AppColors.whiteText,
+                      backgroundColor: AppColors.primaryAccent,
+                      foregroundColor: AppColors.textOnAccent,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -513,8 +510,8 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                       icon: const Icon(Icons.email),
                       label: const Text('Email'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        foregroundColor: AppColors.whiteText,
+                        backgroundColor: AppColors.primaryAccent,
+                        foregroundColor: AppColors.textOnAccent,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -567,15 +564,15 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.mutedText.withOpacity(0.1),
+          color: AppColors.textSecondary.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight.withOpacity(0.1),
+            color: AppColors.background.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -589,18 +586,18 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.royalBlue.withOpacity(0.1),
+                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: AppColors.royalBlue, size: 20),
+                child: Icon(icon, color: AppColors.primaryAccent, size: 20),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primaryText,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -620,10 +617,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withOpacity(0.1),
+              color: AppColors.primaryAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: AppColors.primaryBlue, size: 16),
+            child: Icon(icon, color: AppColors.primaryAccent, size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -634,17 +631,14 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.mutedText,
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primaryText,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.textPrimary),
                 ),
               ],
             ),

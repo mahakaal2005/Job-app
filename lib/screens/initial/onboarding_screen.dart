@@ -68,7 +68,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       'Skip',
                       style: TextStyle(
                         fontSize: 16,
-                        color: AppColors.grey,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -83,8 +83,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 8,
                         decoration: BoxDecoration(
                           color: currentPage == index
-                              ? AppColors.primaryBlue
-                              : AppColors.lightGrey,
+                              ? AppColors.primaryAccent
+                              : AppColors.border,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -103,10 +103,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Navigator.pushReplacementNamed(context, AppRoutes.login);
                       }
                     },
-                    backgroundColor: AppColors.primaryBlue,
+                    backgroundColor: AppColors.primaryAccent,
                     child: const Icon(
                       Icons.arrow_forward,
-                      color: AppColors.white,
+                      color: AppColors.textOnAccent,
                     ),
                   ),
                 ],
@@ -136,13 +136,13 @@ class OnboardingPage extends StatelessWidget {
             width: 250,
             height: 250,
             decoration: BoxDecoration(
-              color: AppColors.lightBlue,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(125),
             ),
             child: Icon(
               data.icon,
               size: 100,
-              color: AppColors.primaryBlue,
+              color: AppColors.primaryAccent,
             ),
           ),
           
@@ -154,7 +154,7 @@ class OnboardingPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: AppColors.black,
+              color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -166,7 +166,7 @@ class OnboardingPage extends StatelessWidget {
             data.description,
             style: const TextStyle(
               fontSize: 16,
-              color: AppColors.grey,
+              color: AppColors.textSecondary,
               height: 1.5,
             ),
             textAlign: TextAlign.center,

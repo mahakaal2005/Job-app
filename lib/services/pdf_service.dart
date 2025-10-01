@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
@@ -138,7 +136,7 @@ class PDFService {
 class PDFViewerWidget extends StatelessWidget {
   final String pdfPath;
 
-  const PDFViewerWidget({Key? key, required this.pdfPath}) : super(key: key);
+  const PDFViewerWidget({super.key, required this.pdfPath});
 
   @override
   Widget build(BuildContext context) {

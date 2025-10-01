@@ -32,7 +32,13 @@ dependencies:
   fl_chart: ^0.65.0
   firebase_messaging: ^15.2.7
   flutter_local_notifications: ^17.0.0
+  google_fonts: ^6.1.0
+  eva_icons_flutter: ^3.1.0
+  animated_notch_bottom_bar: ^1.0.0
+  glass_kit: ^3.0.0
 
+  crypto: any
+  path: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

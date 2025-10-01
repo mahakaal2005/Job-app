@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_work_app/models/chat_message.dart';
+import 'package:get_work_app/screens/main/employye/applicants/chat_detail_screen.dart';
 import 'package:get_work_app/services/chat_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_work_app/screens/main/employye/applicants/chat_detail_screen.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class EmpChats extends StatefulWidget {
   const EmpChats({super.key});
@@ -20,10 +20,11 @@ class _EmpChatsState extends State<EmpChats> {
   final currentUserId = FirebaseAuth.instance.currentUser?.uid;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  
+
   // Notification related
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
@@ -40,19 +41,13 @@ class _EmpChatsState extends State<EmpChats> {
         elevation: 0,
         title: const Text(
           'Messages',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
         ],
       ),
       body: Column(
@@ -94,10 +89,16 @@ class _EmpChatsState extends State<EmpChats> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 16),
-                        Text('Something went wrong',
-                            style: TextStyle(color: Colors.grey[600])),
+                        Text(
+                          'Something went wrong',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
                       ],
                     ),
                   );
@@ -112,7 +113,11 @@ class _EmpChatsState extends State<EmpChats> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[300]),
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 64,
+                          color: Colors.grey[300],
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'No messages yet',
@@ -136,27 +141,40 @@ class _EmpChatsState extends State<EmpChats> {
                 }
 
                 // Filter chats based on search query
-                final filteredDocs = snapshot.data!.docs.where((doc) {
-                  final chatRoom = ChatRoom.fromFirestore(doc);
-                  final otherParticipantIndex =
-                      chatRoom.participants.indexOf(currentUserId!) == 0 ? 1 : 0;
-                  final otherParticipantName =
-                      chatRoom.participantNames[otherParticipantIndex];
-                  
-                  return _searchQuery.isEmpty ||
-                      otherParticipantName.toLowerCase().contains(_searchQuery) ||
-                      chatRoom.lastMessage.toLowerCase().contains(_searchQuery);
-                }).toList();
+                final filteredDocs =
+                    snapshot.data!.docs.where((doc) {
+                      final chatRoom = ChatRoom.fromFirestore(doc);
+                      final otherParticipantIndex =
+                          chatRoom.participants.indexOf(currentUserId!) == 0
+                              ? 1
+                              : 0;
+                      final otherParticipantName =
+                          chatRoom.participantNames[otherParticipantIndex];
+
+                      return _searchQuery.isEmpty ||
+                          otherParticipantName.toLowerCase().contains(
+                            _searchQuery,
+                          ) ||
+                          chatRoom.lastMessage.toLowerCase().contains(
+                            _searchQuery,
+                          );
+                    }).toList();
 
                 if (filteredDocs.isEmpty && _searchQuery.isNotEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+                        Icon(
+                          Icons.search_off,
+                          size: 48,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 16),
-                        Text('No results found',
-                            style: TextStyle(color: Colors.grey[600])),
+                        Text(
+                          'No results found',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
                       ],
                     ),
                   );
@@ -166,18 +184,21 @@ class _EmpChatsState extends State<EmpChats> {
                   color: Colors.white,
                   child: ListView.separated(
                     itemCount: filteredDocs.length,
-                    separatorBuilder: (context, index) => Divider(
-                      height: 1,
-                      color: Colors.grey[200],
-                      indent: 72,
-                    ),
+                    separatorBuilder:
+                        (context, index) => Divider(
+                          height: 1,
+                          color: Colors.grey[200],
+                          indent: 72,
+                        ),
                     itemBuilder: (context, index) {
                       final doc = filteredDocs[index];
                       final chatRoom = ChatRoom.fromFirestore(doc);
 
                       // Get the other participant's ID and name
                       final otherParticipantIndex =
-                          chatRoom.participants.indexOf(currentUserId!) == 0 ? 1 : 0;
+                          chatRoom.participants.indexOf(currentUserId!) == 0
+                              ? 1
+                              : 0;
                       final otherParticipantId =
                           chatRoom.participants[otherParticipantIndex];
                       final otherParticipantName =
@@ -190,7 +211,7 @@ class _EmpChatsState extends State<EmpChats> {
                         ),
                         leading: CircleAvatar(
                           radius: 28,
-                          backgroundColor: AppColors.primaryBlue,
+                          backgroundColor: AppColors.primaryAccent,
                           child: Text(
                             otherParticipantName.isNotEmpty
                                 ? otherParticipantName[0].toUpperCase()
@@ -245,7 +266,7 @@ class _EmpChatsState extends State<EmpChats> {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryBlue,
+                                      color: AppColors.primaryAccent,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     constraints: const BoxConstraints(
@@ -253,7 +274,9 @@ class _EmpChatsState extends State<EmpChats> {
                                       minHeight: 18,
                                     ),
                                     child: Text(
-                                      unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                      unreadCount > 99
+                                          ? '99+'
+                                          : unreadCount.toString(),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
@@ -271,15 +294,16 @@ class _EmpChatsState extends State<EmpChats> {
                         onTap: () async {
                           // Mark messages as read when opening chat
                           await _markMessagesAsRead(chatRoom.id);
-                          
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ChatDetailScreen(
-                                chatId: chatRoom.id,
-                                otherUserId: otherParticipantId,
-                                otherUserName: otherParticipantName,
-                              ),
+                              builder:
+                                  (context) => ChatDetailScreen(
+                                    chatId: chatRoom.id,
+                                    otherUserId: otherParticipantId,
+                                    otherUserName: otherParticipantName,
+                                  ),
                             ),
                           );
                         },
@@ -323,7 +347,9 @@ class _EmpChatsState extends State<EmpChats> {
     );
 
     // Initialize local notifications
-    final androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    final androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     final iosSettings = DarwinInitializationSettings();
     final initSettings = InitializationSettings(
       android: androidSettings,
@@ -337,7 +363,7 @@ class _EmpChatsState extends State<EmpChats> {
 
     // Handle foreground messages
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    
+
     // Handle notification taps when app is in background
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
   }
@@ -352,13 +378,13 @@ class _EmpChatsState extends State<EmpChats> {
         .where('isRead', isEqualTo: false)
         .snapshots()
         .listen((snapshot) {
-      for (var change in snapshot.docChanges) {
-        if (change.type == DocumentChangeType.added) {
-          final message = ChatMessage.fromFirestore(change.doc);
-          _showLocalNotification(message);
-        }
-      }
-    });
+          for (var change in snapshot.docChanges) {
+            if (change.type == DocumentChangeType.added) {
+              final message = ChatMessage.fromFirestore(change.doc);
+              _showLocalNotification(message);
+            }
+          }
+        });
   }
 
   // Handle foreground messages
@@ -367,14 +393,18 @@ class _EmpChatsState extends State<EmpChats> {
       final senderName = message.data['senderName'] ?? 'Someone';
       final messageText = message.data['message'] ?? 'New message';
       final chatId = message.data['chatId'] ?? '';
-      
-      _showLocalNotification(ChatMessage(
-        id: '',
-        senderId: message.data['senderId'] ?? '',
-        receiverId: currentUserId!,
-        message: messageText,
-        timestamp: Timestamp.now(),
-      ), senderName: senderName, chatId: chatId);
+
+      _showLocalNotification(
+        ChatMessage(
+          id: '',
+          senderId: message.data['senderId'] ?? '',
+          receiverId: currentUserId!,
+          message: messageText,
+          timestamp: Timestamp.now(),
+        ),
+        senderName: senderName,
+        chatId: chatId,
+      );
     }
   }
 
@@ -384,16 +414,17 @@ class _EmpChatsState extends State<EmpChats> {
       final chatId = message.data['chatId'];
       final otherUserId = message.data['senderId'];
       final otherUserName = message.data['senderName'];
-      
+
       if (chatId != null && otherUserId != null && otherUserName != null) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChatDetailScreen(
-              chatId: chatId,
-              otherUserId: otherUserId,
-              otherUserName: otherUserName,
-            ),
+            builder:
+                (context) => ChatDetailScreen(
+                  chatId: chatId,
+                  otherUserId: otherUserId,
+                  otherUserName: otherUserName,
+                ),
           ),
         );
       }
@@ -409,15 +440,16 @@ class _EmpChatsState extends State<EmpChats> {
         final chatId = parts[0];
         final otherUserId = parts[1];
         final otherUserName = parts[2];
-        
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChatDetailScreen(
-              chatId: chatId,
-              otherUserId: otherUserId,
-              otherUserName: otherUserName,
-            ),
+            builder:
+                (context) => ChatDetailScreen(
+                  chatId: chatId,
+                  otherUserId: otherUserId,
+                  otherUserName: otherUserName,
+                ),
           ),
         );
       }
@@ -425,25 +457,31 @@ class _EmpChatsState extends State<EmpChats> {
   }
 
   // Show local notification
-  Future<void> _showLocalNotification(ChatMessage message, {String? senderName, String? chatId}) async {
+  Future<void> _showLocalNotification(
+    ChatMessage message, {
+    String? senderName,
+    String? chatId,
+  }) async {
     try {
       // Get sender info if not provided
       String displayName = senderName ?? 'Someone';
       String notificationChatId = chatId ?? '';
-      
+
       if (senderName == null || chatId == null) {
         // Get chat room info to find sender name and chat ID
-        final chatRooms = await FirebaseFirestore.instance
-            .collection('chats')
-            .where('participants', arrayContains: currentUserId)
-            .get();
-            
+        final chatRooms =
+            await FirebaseFirestore.instance
+                .collection('chats')
+                .where('participants', arrayContains: currentUserId)
+                .get();
+
         for (var doc in chatRooms.docs) {
           final chatRoom = ChatRoom.fromFirestore(doc);
           if (chatRoom.participants.contains(message.senderId)) {
             notificationChatId = chatRoom.id;
-            final otherParticipantIndex = 
-                chatRoom.participants.indexOf(message.senderId);
+            final otherParticipantIndex = chatRoom.participants.indexOf(
+              message.senderId,
+            );
             if (otherParticipantIndex != -1) {
               displayName = chatRoom.participantNames[otherParticipantIndex];
             }
@@ -487,14 +525,15 @@ class _EmpChatsState extends State<EmpChats> {
   // Get unread message count for a chat
   Future<int> _getUnreadCount(String chatId) async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .where('receiverId', isEqualTo: currentUserId)
-          .where('isRead', isEqualTo: false)
-          .get();
-      
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection('chats')
+              .doc(chatId)
+              .collection('messages')
+              .where('receiverId', isEqualTo: currentUserId)
+              .where('isRead', isEqualTo: false)
+              .get();
+
       return snapshot.docs.length;
     } catch (e) {
       print('Error getting unread count: $e');
@@ -506,13 +545,14 @@ class _EmpChatsState extends State<EmpChats> {
   Future<void> _markMessagesAsRead(String chatId) async {
     try {
       final batch = FirebaseFirestore.instance.batch();
-      final snapshot = await FirebaseFirestore.instance
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .where('receiverId', isEqualTo: currentUserId)
-          .where('isRead', isEqualTo: false)
-          .get();
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection('chats')
+              .doc(chatId)
+              .collection('messages')
+              .where('receiverId', isEqualTo: currentUserId)
+              .where('isRead', isEqualTo: false)
+              .get();
 
       for (var doc in snapshot.docs) {
         batch.update(doc.reference, {'isRead': true});
