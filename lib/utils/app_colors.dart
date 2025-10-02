@@ -2,110 +2,133 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Canvas & surfaces - Deep, rich backgrounds for luxury feel
-  static const Color background = Color(0xFF0B0A0A);           // deep near-black
-  static const Color surface = Color(0xFF141313);             // primary card surface
-  static const Color surfaceElevated = Color(0xFF1F1716);     // elevated surfaces
+  // Canvas & surfaces - Black base for Red+Black+Gray scheme
+  static const Color background = Color(0xFF000000);       // Pure black background
+  static const Color surface = Color(0xFF0A0A0A);          // Very dark gray surface
+  static const Color surfaceElevated = Color(0xFF1A1A1A);  // Elevated dark gray
 
-  // Reddish-orange family - Rich, warm accent colors
-  static const Color accentPop = Color(0xFFFF5E3A);          // vivid decorative (use sparingly)
-  static const Color primaryAccent = Color(0xFFE14A2B);      // main brand red-orange (decorative / headings)
-  static const Color accentLight = Color(0xFFE14A2B);        // alias for compatibility
-  static const Color accentDeep = Color(0xFFB73A24);         // functional accent (white text passes)
-  static const Color accentCore = Color(0xFF9A2E20);         // primary CTA / very safe for white text
-  static const Color accentDark = Color(0xFF9A2E20);         // alias for compatibility
+  // Brand accent family - SMOOTH RED gradient (like green app's elegance)
+  static const Color accentDark = Color(0xFF7F1D3A);      // Deep burgundy red - header top
+  static const Color accentCore = Color(0xFF991B1B);      // Rich red - header upper
+  static const Color primaryAccent = Color(0xFFDC2626);   // True red - header middle
+  static const Color accentDeep = Color(0xFFE53E3E);      // Medium red - header lower
+  static const Color accentLight = Color(0xFFEF4444);     // Light red - subtle highlights
+  static const Color accentPop = Color(0xFFF87171);       // Very light red - accents (muted)
 
-  // Metallic sheen for premium surfaces
-  static const Color sheenStart = Color(0xFFD9774C);
-  static const Color sheenEnd = Color(0xFF9C4B2D);
+  // Metallic sheen for premium surfaces (true red metallic)
+  static const Color sheenStart = Color(0xFFF87171);      // Light red metallic
+  static const Color sheenEnd = Color(0xFFDC2626);        // True red metallic
 
-  // Text - High contrast for readability
-  static const Color textPrimary = Color(0xFFF6F4F3);        // high contrast white
-  static const Color textSecondary = Color(0xFFB19D98);      // muted text
-  static const Color textHigh = Color(0xFFF6F4F3);           // alias for textPrimary
-  static const Color textMuted = Color(0xFFB19D98);          // alias for textSecondary
-  static const Color textOnAccent = Color(0xFFFFFFFF);       // white text on accents
+  // Text - Gray scale for Red+Black+Gray scheme
+  static const Color textPrimary = Color(0xFFFFFFFF);      // Pure white text
+  static const Color textSecondary = Color(0xFFC4C4C4);    // Light gray text
+  static const Color textHigh = Color(0xFFFFFFFF);         // High contrast white
+  static const Color textMuted = Color(0xFF808080);        // Medium gray text
+  static const Color textOnAccent = Color(0xFFFFFFFF);     // White on red
 
-  // Glass / tint (warm reddish tint) - Sophisticated glassmorphism
-  static const Color glass05 = Color(0x0F0F0D0C);           // very subtle glass
-  static const Color glass10 = Color(0x1A0F0D0C);           // light glass overlay
-  static const Color glass15 = Color(0x260F0D0C);           // card backgrounds
-  static const Color glass20 = Color(0x330F0D0C);           // prominent cards
-  static const Color glass25 = Color(0x400F0D0C);           // active elements
-  static const Color glass30 = Color(0x4D0F0D0C);           // strong glass effect
-  
-  static const Color glassTint05 = Color(0x0F0F0D0C);       // very subtle
-  static const Color glassTint12 = Color(0x29130F1E);       // stronger overlay
-  static const Color glassBorder = Color(0x33FFFFFF);       // soft border
-  static const Color glassSpecular = Color(0x2FFFFFFF);     // tiny highlight
+  // Glass / tint (brand-based) - Red-black tints for seamless flow
+  static const Color glass05 = Color(0x0D1A0808);
+  static const Color glass10 = Color(0x1A1A0808);
+  static const Color glass15 = Color(0x261A0808);
+  static const Color glass20 = Color(0x331A0808);
+  static const Color glass25 = Color(0x401A0808);
+  static const Color glass30 = Color(0x4D1A0808);
 
-  // Glass borders and effects
-  static const Color glassBorderLight = Color(0x26FFFFFF);   // 15% white border
-  static const Color glassBorderStrong = Color(0x66FFFFFF); // 40% white border
+  static const Color glassTint05 = Color(0x0D1A0808);
+  static const Color glassTint12 = Color(0x1F1A0808);
+  static const Color glassBorder = Color(0x33F7EFEE);
+  static const Color glassSpecular = Color(0x28F7EFEE);
 
-  // Dark glass variants
-  static const Color glassDark05 = Color(0x0D000000);       // 5% black
-  static const Color glassDark10 = Color(0x1A000000);       // 10% black
-  static const Color glassDark15 = Color(0x26000000);       // 15% black
-  static const Color glassDark20 = Color(0x33000000);       // 20% black
+  static const Color glassBorderLight = Color(0x26F7EFEE);
+  static const Color glassBorderStrong = Color(0x66F7EFEE);
 
-  // Legacy glass colors for compatibility
-  static const Color glassWhite = Color(0x2AFFFFFF);
-  static const Color glassBlack = Color(0x1A000000);
-  static const Color glassGray = Color(0xFFB19D98);         // Updated to match textMuted for consistency
-  static const Color cardGlass = Color(0x1A0F0D0C);         // 10% warm tint for main cards
-  static const Color cardGlassSecondary = Color(0x0D0F0D0C); // 5% warm tint for secondary cards
-  static const Color cardGlassActive = Color(0x260F0D0C);   // 15% warm tint for active/hover
+  static const Color glassDark05 = Color(0x0D0C0807);
+  static const Color glassDark10 = Color(0x1A0C0807);
+  static const Color glassDark15 = Color(0x260C0807);
+  static const Color glassDark20 = Color(0x330C0807);
+  static const Color glassDark25 = Color(0x400C0807);
 
-  // States - Refined state colors
-  static const Color success = Color(0xFF3E8E60);
-  static const Color successColor = Color(0xFF3E8E60);      // alias for compatibility
-  static const Color warning = Color(0xFFC38F1A);
-  static const Color warningColor = Color(0xFFC38F1A);      // alias for compatibility
-  static const Color error = Color(0xFFD94B4B);
-  static const Color errorColor = Color(0xFFD94B4B);        // alias for compatibility
+  static const Color glassWhite = Color(0x26F7EFEE);
+  static const Color glassBlack = Color(0x1A0C0807);
+  static const Color glassGray = Color(0xFFB8A9A7);
+  static const Color cardGlass = Color(0x1A1A0808);
+  static const Color cardGlassSecondary = Color(0x0D1A0808);
+  static const Color cardGlassActive = Color(0x26E53E3E);  // Active cards use true red tint
 
-  // Status colors with glass effect
-  static const Color errorGlass = Color(0x26D94B4B);        // Error red with glass
-  static const Color successGlass = Color(0x263E8E60);      // Success green with glass
-  static const Color warningGlass = Color(0x26C38F1A);      // Warning yellow with glass
+  // ---- RED-ONLY State Tokens (replaced green/yellow/blue) ----
+  // These are distinct tints of your red so they are visually different
+  // but remain within the single-red brand system.
 
-  // Shadows - Soft, sophisticated shadows
-  static const Color shadowLight = Color(0x20000000);
-  static const Color shadowSoft = Color(0x20000000);        // alias for shadowLight
-  static const Color shadowMedium = Color(0x30000000);      // medium shadow
-  static const Color blueShadow = Color(0x20E14A2B);        // accent-colored shadow
+  // "Positive" state - Using corrected red variations
+  static const Color statePositive = Color(0xFFDC2626); // true red
+  static const Color statePositiveGlass = Color(
+    0x26DC2626,
+  ); // glass overlay variant
+
+  // "Warning" state - Using lighter red
+  static const Color stateWarning = Color(0xFFF87171); // light red
+  static const Color stateWarningGlass = Color(0x26F87171); // glass overlay
+
+  // "Error" state - Using deep red
+  static const Color stateError = Color(
+    0xFFB91C3C,
+  ); // deep red
+  static const Color stateErrorGlass = Color(0x26B91C3C); // error glass
+
+  // "Info" state - Using gray for neutral info
+  static const Color stateInfo = Color(0xFF808080); // medium gray
+  static const Color stateInfoGlass = Color(0x26808080); // info glass
+
+  // Backwards compatible aliases kept but mapped to the red-only tokens:
+  static const Color success = statePositive;
+  static const Color successColor = statePositive;
+  static const Color successGlass = statePositiveGlass;
+
+  static const Color warning = stateWarning;
+  static const Color warningColor = stateWarning;
+  static const Color warningGlass = stateWarningGlass;
+
+  static const Color error = stateError;
+  static const Color errorColor = stateError;
+  static const Color errorGlass = stateErrorGlass;
+
+  static const Color info = stateInfo;
+  static const Color infoGlass = stateInfoGlass;
+
+  // Shadows - subtle, red accent shadow for premium glow
+  static const Color shadowLight = Color(0x22000000);
+  static const Color shadowSoft = Color(0x22000000);
+  static const Color shadowMedium = Color(0x33000000);
+  static const Color accentShadow = Color(0x20DC2626);  // True red shadow
 
   // UI Elements - Supporting colors
-  static const Color border = Color(0xFF2C2C2C);
-  static const Color dividerColor = Color(0xFF3C3C3C);
-  static const Color surfaceColor = Color(0xFF141313);      // alias for surface
+  static const Color border = Color(0xFF151313);
+  static const Color dividerColor = Color(0xFF261E1D);
+  static const Color surfaceColor = Color(0xFF050101);
 
-  // Gradient combinations for luxury effects
+  // Gradients (Red-tinted for seamless flow)
   static const List<Color> glassGradient = [
-    Color(0x260F0D0C), // 15% warm tint
-    Color(0x0D0F0D0C), // 5% warm tint
+    Color(0x261A0808),
+    Color(0x0D1A0808),
   ];
 
   static const List<Color> glassGradientStrong = [
-    Color(0x400F0D0C), // 25% warm tint
-    Color(0x1A0F0D0C), // 10% warm tint
+    Color(0x401A0808),
+    Color(0x1A1A0808),
   ];
 
-  // Premium metallic gradients
   static const List<Color> metallicGradient = [
-    Color(0xFFD9774C), // sheenStart
-    Color(0xFF9C4B2D), // sheenEnd
+    Color(0xFFFF8A75),
+    Color(0xFFB33A2C),
   ];
 
-  // Accent gradients for luxury feel
   static const List<Color> accentGradient = [
-    Color(0xFFE14A2B), // primaryAccent
-    Color(0xFFB73A24), // accentDeep
+    Color(0xFFDC2626),  // True red
+    Color(0xFFB91C3C),  // Deep red
   ];
 
   static const List<Color> accentGradientVibrant = [
-    Color(0xFFFF5E3A), // accentPop
-    Color(0xFFE14A2B), // primaryAccent
+    Color(0xFFF87171),  // Light red
+    Color(0xFFDC2626),  // True red
   ];
 }

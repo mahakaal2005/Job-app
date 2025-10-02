@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:get_work_app/utils/app_colors.dart';
 
 class IOSFloatingBottomNav extends StatefulWidget {
   final int currentIndex;
@@ -22,69 +21,74 @@ class _IOSFloatingBottomNavState extends State<IOSFloatingBottomNav> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Transparent background - no black background
       color: Colors.transparent,
-      // Position lower with reduced bottom padding
+      // Shorter horizontal margins for more compact width
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: MediaQuery.of(context).padding.bottom + 8, // Reduced from 20 to 8
+        left: 45,
+        right: 45,
+        bottom: MediaQuery.of(context).padding.bottom + 16,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(35),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20), // Increased blur for better glass effect
-          child: Container(
-            height: 70,
-            decoration: BoxDecoration(
-              // More translucent for better glassmorphism
-              color: Colors.white.withValues(alpha: 0.15), // Reduced from 0.95 to 0.15
-              borderRadius: BorderRadius.circular(35),
-              // Enhanced glass border
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3), // Increased border opacity
-                width: 1.0, // Increased border width
-              ),
-              // Multiple gradient layers for glass effect
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.25), // Top highlight
-                  Colors.white.withValues(alpha: 0.10), // Bottom shadow
-                ],
-                stops: const [0.0, 1.0],
-              ),
-              // Enhanced shadow for floating effect
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2), // Increased shadow opacity
-                  blurRadius: 30, // Increased blur
-                  offset: const Offset(0, 15), // Increased offset
-                  spreadRadius: -2,
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 60,
-                  offset: const Offset(0, 30),
-                  spreadRadius: -5,
-                ),
-                // Additional inner glow
-                BoxShadow(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                  spreadRadius: 0,
-                ),
-              ],
+      child: Container(
+        height: 66, // Slightly increased height
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(33),
+          // Premium floating effect with multiple shadow layers
+          boxShadow: [
+            // Main elevated shadow
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 35,
+              offset: const Offset(0, 15),
+              spreadRadius: 0,
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(
-                  widget.items.length,
-                  (index) => _buildNavItem(index),
+            // Closer definition shadow
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+              spreadRadius: -2,
+            ),
+            // Ambient glow shadow
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 50,
+              offset: const Offset(0, 25),
+              spreadRadius: -8,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(33),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                // Optimized glassmorphism gradient for background visibility
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.75),
+                    Colors.white.withValues(alpha: 0.65),
+                    Colors.grey.shade50.withValues(alpha: 0.7),
+                  ],
+                  stops: const [0.0, 0.6, 1.0],
+                ),
+                borderRadius: BorderRadius.circular(33),
+                // Subtle glossy border for background visibility
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  width: 1.0,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8), // Much tighter spacing
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // Better edge alignment
+                  children: List.generate(
+                    widget.items.length,
+                    (index) => _buildNavItem(index),
+                  ),
                 ),
               ),
             ),
@@ -97,45 +101,52 @@ class _IOSFloatingBottomNavState extends State<IOSFloatingBottomNav> {
   Widget _buildNavItem(int index) {
     final isSelected = widget.currentIndex == index;
     final item = widget.items[index];
+    final isFirstItem = index == 0;
+    final isLastItem = index == widget.items.length - 1;
 
     return GestureDetector(
       onTap: () => widget.onTap(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        width: 54,
-        height: 54,
-        decoration: BoxDecoration(
-          // Enhanced selected state with glassmorphism
-          color: isSelected 
-              ? const Color(0xFF1A1A1A).withValues(alpha: 0.9) // Darker with transparency
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(27),
-          // Add subtle border for selected state
-          border: isSelected 
-              ? Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  width: 0.5,
-                )
-              : null,
-          // Add subtle shadow for selected state
-          boxShadow: isSelected 
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+      child: Container(
+        // Minimal padding for tighter spacing between icons
+        padding: EdgeInsets.only(
+          left: isFirstItem ? 0 : 2,
+          right: isLastItem ? 0 : 2,
         ),
-        child: Center(
-          child: Icon(
-            isSelected ? item.activeIcon : item.inactiveIcon,
-            color: isSelected 
-                ? Colors.white // White icon on dark background
-                : Colors.white.withValues(alpha: 0.7), // More visible on translucent background
-            size: 24,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          width: 58, // Slightly larger selection pill
+          height: 58,
+          decoration: BoxDecoration(
+            // Pure black circle like green app - solid, not gradient
+            color: isSelected ? Colors.black : Colors.transparent,
+            borderRadius: BorderRadius.circular(29),
+            // Enhanced shadow for selected pill
+            boxShadow: isSelected 
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                      spreadRadius: -1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Icon(
+              isSelected ? item.activeIcon : item.inactiveIcon,
+              color: isSelected 
+                  ? Colors.white // White icon on black circle
+                  : Colors.grey.shade600, // Gray outline icons like green app
+              size: 24, // Slightly larger icon for bigger pill
+            ),
           ),
         ),
       ),
