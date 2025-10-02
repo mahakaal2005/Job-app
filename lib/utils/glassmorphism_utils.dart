@@ -527,16 +527,16 @@ class GlassmorphismUtils {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(borderRadius - 1),
-                // Subtle glossy highlight for premium effect
+                // Removed excessive glossy highlight that was creating brightness rectangles
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    Colors.white.withValues(alpha: 0.08),
-                    Colors.white.withValues(alpha: 0.03),
+                    Colors.white.withOpacity(0.02), // Much more subtle
+                    Colors.white.withOpacity(0.01), // Barely visible
                     Colors.transparent,
                   ],
-                  stops: const [0.0, 0.4, 1.0],
+                  stops: const [0.0, 0.3, 1.0], // Shorter highlight area
                 ),
               ),
               child: child,

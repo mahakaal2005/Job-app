@@ -256,7 +256,11 @@ class _UserHomeScreenState extends State<UserHomeScreen>
         setState(() => _isLoadingJobs = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading jobs: $e')));
+        ).showSnackBar(SnackBar(
+          content: Text('Error loading jobs: $e'),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        ));
       }
     }
   }
@@ -298,7 +302,11 @@ class _UserHomeScreenState extends State<UserHomeScreen>
         setState(() => _isLoadingJobs = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading more jobs: $e')));
+        ).showSnackBar(SnackBar(
+          content: Text('Error loading more jobs: $e'),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        ));
       }
     }
   }
@@ -333,7 +341,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
         backgroundColor: AppColors.primaryAccent,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 100), // Extra bottom margin to clear navigation bar
         duration: const Duration(seconds: 2),
       ),
     );
@@ -505,7 +513,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
               SliverToBoxAdapter(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: const SizedBox(height: 16), // Extra breathing room
+                  child: const SizedBox(height: 8), // Reduced spacing for closer visual connection
                 ),
               ),
               _buildJobsList(),
@@ -525,7 +533,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
 
   double _getHeaderHeight() {
     // Calculate header height including SafeArea, curves, and proper spacing
-    return MediaQuery.of(context).padding.top + 320; // Extra 20px for breathing room
+    return MediaQuery.of(context).padding.top + 290; // Reduced for closer visual connection
   }
 
   // ROLLBACK: If you want to revert, uncomment the method below and change the call above
@@ -1669,32 +1677,32 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  // Selected: Luxurious white with subtle shadow
+                  // Selected: White fill but softer, less harsh brightness
                   color:
                       isSelected
-                          ? Colors.white.withValues(alpha: 0.9)
-                          : Colors.white.withValues(alpha: 0.08),
+                          ? Colors.white.withOpacity(0.75) // White fill but not blindingly bright
+                          : Colors.white.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
                     color:
                         isSelected
-                            ? Colors.white.withValues(alpha: 0.3)
-                            : Colors.white.withValues(alpha: 0.12),
-                    width: 1,
+                            ? Colors.white.withOpacity(0.6) // Stronger border for definition
+                            : Colors.white.withOpacity(0.12),
+                    width: isSelected ? 1.5 : 1, // Slightly thicker border when selected
                   ),
                   // Luxurious shadow effects
                   boxShadow: [
                     if (isSelected) ...[
-                      // Selected chip gets elegant white glow
+                      // Selected chip gets subtle elevation, not bright glow
                       BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: Colors.black.withOpacity(0.15),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                         spreadRadius: 0,
                       ),
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 6,
                         offset: const Offset(0, 2),
                         spreadRadius: -1,
                       ),
@@ -1715,7 +1723,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                     color:
                         isSelected
                             ? AppColors.primaryAccent
-                            : Colors.white.withValues(alpha: 0.8),
+                            : Colors.white.withOpacity(0.8),
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     letterSpacing: 0.1,
@@ -1749,15 +1757,32 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                   ),
                 ],
               ),
-              child: CircleAvatar(
-                radius: 22, // Smaller, more refined like green app
-                backgroundColor: Colors.white.withValues(alpha: 0.95),
-                child: Text(
-                  _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
-                  style: TextStyle(
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.3),
+                  border: Border.all(
                     color: AppColors.primaryAccent,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                    style: TextStyle(
+                      color: AppColors.primaryAccent,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -1802,22 +1827,22 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(alpha: 0.3),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.25),
-                      width: 1,
+                      color: AppColors.primaryAccent,
+                      width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 6,
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Icon(
                     Icons.notifications_outlined,
-                    color: const Color(0xFFB0B0B0), // Light grey as specified
+                    color: AppColors.primaryAccent,
                     size: 20,
                   ),
                 ),
@@ -1981,37 +2006,37 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                 duration: const Duration(milliseconds: 300),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  // Selected: Bright white with red text
+                  // Selected: White fill but softer, less harsh brightness
                   color: isSelected 
-                    ? Colors.white.withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.1),
+                    ? Colors.white.withOpacity(0.75) // White fill but not blindingly bright
+                    : Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
                     color: isSelected
-                      ? Colors.white.withValues(alpha: 0.4)
-                      : Colors.white.withValues(alpha: 0.15),
-                    width: 1,
+                      ? Colors.white.withOpacity(0.6) // Stronger border for definition
+                      : Colors.white.withOpacity(0.15),
+                    width: isSelected ? 1.5 : 1, // Slightly thicker border when selected
                   ),
-                  // Enhanced shadow effects for fixed header
+                  // Refined shadow effects - no harsh brightness
                   boxShadow: [
                     if (isSelected) ...[
-                      // Selected chip gets bright white glow
+                      // Selected chip gets subtle elevation, not bright glow
                       BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        blurRadius: 15,
-                        offset: const Offset(0, 6),
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                         spreadRadius: 0,
                       ),
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 6,
                         offset: const Offset(0, 2),
                         spreadRadius: -1,
                       ),
                     ] else ...[
                       // Unselected chips get subtle depth
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
+                        color: Colors.black.withOpacity(0.08),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                         spreadRadius: -1,

@@ -1,11 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_application_form.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:intl/intl.dart';
+import 'package:get_work_app/widgets/glass_card.dart';
 
 class JobDetailScreen extends StatefulWidget {
   final Job job;
@@ -28,7 +27,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   late ScrollController _scrollController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  bool _isScrolled = false;
+  // Removed _isScrolled since we're using fixed header now
   late bool _isBookmarked;
   String _companyDescription = '';
   bool _hasAlreadyApplied = false;
@@ -47,13 +46,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 100 && !_isScrolled) {
-        setState(() => _isScrolled = true);
-      } else if (_scrollController.offset <= 100 && _isScrolled) {
-        setState(() => _isScrolled = false);
-      }
-    });
+    // Scroll listener removed since we're using fixed header now
 
     _animationController.forward();
     _fetchCompanyDescription();
@@ -113,7 +106,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
         });
       }
     } catch (e) {
-      print('Error checking application status: $e');
+      // Error checking application status - handled silently
       if (mounted) {
         setState(() => _isCheckingApplication = false);
       }
@@ -130,170 +123,147 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              _buildModernAppBar(),
-              SliverToBoxAdapter(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: _buildContent(),
-                ),
-              ),
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      body: Container(
+        // Synchronized gradient - same as user home screen
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF5A5A5A), // Light gray (matches header bottom)
+              const Color(0xFF505050), // Slightly darker gray
+              const Color(0xFF454545), // Medium gray
+              const Color(0xFF3A3A3A), // Darker gray
+              const Color(0xFF303030), // Even darker gray
+              const Color(0xFF252525), // Deep gray
+              const Color(0xFF1A1A1A), // Very deep gray
+              const Color(0xFF151515), // Dark gray-black
+              const Color(0xFF101010), // Very dark gray
+              const Color(0xFF0A0A0A), // Almost black gray
+              const Color(0xFF050505), // Nearly black
+              AppColors.background, // Pure black at bottom
+            ],
+            stops: const [
+              0.0,
+              0.08,
+              0.16,
+              0.24,
+              0.32,
+              0.4,
+              0.5,
+              0.6,
+              0.7,
+              0.8,
+              0.9,
+              1.0,
             ],
           ),
-          _buildFloatingHeader(),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.border,
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+        ),
+        child: Stack(
+          children: [
+            // Scrollable content with top padding for fixed header
+            SingleChildScrollView(
+              controller: _scrollController,
+              child: Column(
+                children: [
+                  // Add padding at top for fixed header space
+                  SizedBox(height: _getJobHeaderHeight()),
+                  // Match spacing between consecutive cards (20px)
+                  SizedBox(height: 20),
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: _buildContent(),
+                  ),
+                ],
+              ),
+            ),
+            // Fixed header that stays on top - like home screen
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _buildFixedJobHeader(),
             ),
           ],
         ),
-        child: Row(children: [_buildApplyButton()]),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        child: _buildApplyButton(),
       ),
     );
   }
 
-  Widget _buildModernAppBar() {
-    return SliverAppBar(
-      expandedHeight: 280,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      systemOverlayStyle: SystemUiOverlayStyle.light,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(color: AppColors.primaryAccent),
-          child: Stack(
-            children: [
-              // Animated background pattern
-              Positioned.fill(
-                child: CustomPaint(painter: BackgroundPatternPainter()),
-              ),
-              // Content
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 100, 20, 30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _buildEnhancedCompanyLogo(),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: AppColors.textOnAccent.withOpacity(0.3),
-                                  ),
-                                ),
-                                child: Text(
-                                  widget.job.companyName,
-                                  style: const TextStyle(
-                                    color: AppColors.textOnAccent,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                widget.job.title,
-                                style: const TextStyle(
-                                  color: AppColors.textOnAccent,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.2,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    _buildQuickInfo(),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  double _getJobHeaderHeight() {
+    // Proper scroll padding to prevent overlap
+    return MediaQuery.of(context).padding.top +
+        280; // Sufficient space to prevent salary card overlap
+  }
+
+  Widget _buildFixedJobHeader() {
+    return Container(
+      // Minimal margins like home screen
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        // Sophisticated gray-red gradient - same as user home screen
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(
+              0xFF2A1A1A,
+            ), // Deep dark gray with subtle red undertone at TOP
+            const Color(0xFF3A2525), // Medium dark gray with red hint
+            const Color(0xFF4A3535), // Medium gray with subtle red
+            const Color(0xFF4A4A4A), // Medium light gray
+            const Color(0xFF5A5A5A), // Light sophisticated gray at BOTTOM
+          ],
+          stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+        // Premium shadow system
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 25,
+            offset: const Offset(0, 10),
+            spreadRadius: -3,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+            spreadRadius: -1,
+          ),
+        ],
       ),
-      leading: const SizedBox.shrink(), // Remove default leading
-    );
-  }
-
-  Widget _buildFloatingHeader() {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          color: _isScrolled ? AppColors.primaryAccent : null,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Column(
               children: [
-                _buildBackButton(),
-                if (_isScrolled) ...[
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          widget.job.title,
-                          style: const TextStyle(
-                            color: AppColors.textOnAccent,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          widget.job.companyName,
-                          style: TextStyle(
-                            color: AppColors.textOnAccent.withOpacity(0.7),
-                            fontSize: 12,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                _buildHeaderActions(),
+                // Navigation row - moved down for better accessibility
+                Row(
+                  children: [
+                    _buildProperBackButton(),
+                    const Spacer(),
+                    _buildProperHeaderActions(),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                // Job info section
+                _buildJobHeaderContent(),
               ],
             ),
           ),
@@ -302,20 +272,34 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     );
   }
 
-  Widget _buildBackButton() {
+  // Old SliverAppBar method removed - now using fixed header like home screen
+
+  // Old floating header removed - now using fixed header like home screen
+
+  Widget _buildProperBackButton() {
     return Container(
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.textOnAccent.withOpacity(0.3)),
+        color: Colors.black.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.primaryAccent,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: IconButton(
         icon: const Icon(
           Icons.arrow_back_ios_new,
-          color: AppColors.textOnAccent,
-          size: 18,
+          color: AppColors.primaryAccent,
+          size: 20,
         ),
         onPressed: () => Navigator.pop(context),
         padding: EdgeInsets.zero,
@@ -323,38 +307,147 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     );
   }
 
-  Widget _buildHeaderActions() {
+  Widget _buildProperHeaderActions() {
     return Row(
       children: [
-        _buildActionButton(
+        _buildProperActionButton(
           icon: _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+          isSelected: _isBookmarked,
           onPressed: () {
             setState(() => _isBookmarked = !_isBookmarked);
             widget.onBookmarkToggled(widget.job.id);
           },
         ),
-        const SizedBox(width: 8),
-        _buildActionButton(icon: Icons.share_outlined, onPressed: () {}),
+        const SizedBox(width: 12),
+        _buildProperActionButton(
+          icon: Icons.share_outlined,
+          onPressed: () {
+            // Add share functionality here
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildActionButton({
+  Widget _buildProperActionButton({
     required IconData icon,
     required VoidCallback onPressed,
+    bool isSelected = false,
   }) {
     return Container(
-      width: 44,
-      height: 44,
+      width: 48,
+      height: 48,
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.textOnAccent.withOpacity(0.3)),
+        color: Colors.black.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.primaryAccent,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: IconButton(
-        icon: Icon(icon, color: AppColors.textOnAccent, size: 20),
+        icon: Icon(
+          icon, 
+          color: AppColors.primaryAccent, 
+          size: 22
+        ),
         onPressed: onPressed,
         padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  Widget _buildJobHeaderContent() {
+    return Row(
+      children: [
+        _buildEnhancedCompanyLogo(),
+        const SizedBox(width: 20),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  widget.job.companyName,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.job.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _buildJobInfoChip(
+                    Icons.location_on_outlined,
+                    widget.job.location,
+                  ),
+                  const SizedBox(width: 12),
+                  _buildJobInfoChip(
+                    Icons.access_time,
+                    widget.job.employmentType,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildJobInfoChip(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 16),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -402,51 +495,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     );
   }
 
-  Widget _buildQuickInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.textOnAccent.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          _buildQuickInfoItem(Icons.location_on, widget.job.location),
-          const SizedBox(width: 20),
-          _buildQuickInfoItem(
-            Icons.access_time,
-            _formatDate(widget.job.createdAt),
-          ),
-          const SizedBox(width: 20),
-          _buildQuickInfoItem(Icons.work_outline, widget.job.employmentType),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickInfoItem(IconData icon, String text) {
-    return Expanded(
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.textOnAccent, size: 16),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: AppColors.textOnAccent,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Removed unused _buildQuickInfo methods
 
   Widget _buildContent() {
     return Column(
@@ -467,35 +516,26 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   }
 
   Widget _buildSalaryCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+    return GlassCard(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primaryAccent, AppColors.primaryAccent.withOpacity(0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.border,
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      elevation: 20, // Dramatic floating effect like home screen
+      borderRadius: 24.0,
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surface.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: const Icon(
               Icons.attach_money,
-              color: AppColors.textOnAccent,
+              color: AppColors.primaryAccent,
               size: 24,
             ),
           ),
@@ -507,7 +547,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                 Text(
                   'Salary Range',
                   style: TextStyle(
-                    color: AppColors.textOnAccent.withOpacity(0.7),
+                    color: AppColors.textSecondary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -516,7 +556,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
                 Text(
                   '₹${widget.job.salaryRange}/month',
                   style: const TextStyle(
-                    color: AppColors.textOnAccent,
+                    color: AppColors.textPrimary,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -616,12 +656,14 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryAccent.withOpacity(0.1),
-            AppColors.primaryAccent.withOpacity(0.1),
+            AppColors.primaryAccent.withValues(alpha: 0.1),
+            AppColors.primaryAccent.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: AppColors.primaryAccent.withOpacity(0.3)),
+        border: Border.all(
+          color: AppColors.primaryAccent.withValues(alpha: 0.3),
+        ),
       ),
       child: Text(
         skill,
@@ -670,46 +712,44 @@ class _JobDetailScreenState extends State<JobDetailScreen>
     required Color iconColor,
     required Widget child,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+    return GlassCard(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.border,
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
+      elevation: 20, // Dramatic floating effect like home screen
+      borderRadius: 24.0,
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                width: 1,
               ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+            ),
+            child: Icon(icon, color: AppColors.primaryAccent, size: 24),
           ),
-          const SizedBox(height: 20),
-          child,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                child,
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -717,67 +757,72 @@ class _JobDetailScreenState extends State<JobDetailScreen>
 
   Widget _buildApplyButton() {
     if (_isCheckingApplication) {
-      return const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryAccent),
-          strokeWidth: 2,
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.primaryAccent.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            strokeWidth: 2,
+          ),
         ),
       );
     }
 
-    return Expanded(
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: _hasAlreadyApplied ? AppColors.primaryAccent.withOpacity(0.1) : AppColors.primaryAccent,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow:
-              _hasAlreadyApplied
-                  ? null
-                  : [
-                    BoxShadow(
-                      color: AppColors.border,
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        color:
+            _hasAlreadyApplied
+                ? AppColors.primaryAccent.withValues(alpha: 0.2)
+                : AppColors.primaryAccent,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow:
+            _hasAlreadyApplied
+                ? null
+                : [
+                  BoxShadow(
+                    color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+      ),
+      child: ElevatedButton(
+        onPressed: _hasAlreadyApplied ? null : _showApplyDialog,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
         ),
-        child: ElevatedButton(
-          onPressed: _showApplyDialog,
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                _hasAlreadyApplied ? Colors.transparent : Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_hasAlreadyApplied) ...[
-                Icon(
-                  Icons.check_circle_outline,
-                  color: AppColors.primaryAccent,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                _hasAlreadyApplied ? 'Applied' : 'Apply Now',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color:
-                      _hasAlreadyApplied
-                          ? AppColors.primaryAccent
-                          : AppColors.textOnAccent,
-                ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_hasAlreadyApplied) ...[
+              Icon(
+                Icons.check_circle_outline,
+                color: AppColors.primaryAccent,
+                size: 20,
               ),
+              const SizedBox(width: 8),
             ],
-          ),
+            Text(
+              _hasAlreadyApplied ? 'Applied' : 'Apply Now',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color:
+                    _hasAlreadyApplied ? AppColors.primaryAccent : Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -812,10 +857,6 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       builder: (context) => JobApplicationForm(job: widget.job),
     );
   }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('dd MMM yyyy').format(date);
-  }
 }
 
 class BackgroundPatternPainter extends CustomPainter {
@@ -823,7 +864,7 @@ class BackgroundPatternPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint =
         Paint()
-          ..color = AppColors.textOnAccent.withOpacity(0.1)
+          ..color = AppColors.textOnAccent.withValues(alpha: 0.1)
           ..strokeWidth = 1;
 
     for (int i = 0; i < 20; i++) {

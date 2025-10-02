@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
+import 'package:get_work_app/widgets/glass_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -426,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.successColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: EdgeInsets.all(16),
+        margin: EdgeInsets.fromLTRB(16, 16, 16, 100), // Extra bottom margin to clear navigation bar
       ),
     );
   }
@@ -444,6 +445,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.errorColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: EdgeInsets.fromLTRB(16, 16, 16, 100), // Extra bottom margin to clear navigation bar
       ),
     );
   }
@@ -467,26 +469,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
           GestureDetector(
             onTap: _isEditing ? _uploadResume : null,
-            child: Container(
+            child: GlassCard(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _isEditing ? AppColors.glass15 : AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color:
-                      _isEditing
-                          ? AppColors.primaryAccent
-                          : AppColors.dividerColor,
-                  width: 1,
-                ),
-              ),
+              margin: EdgeInsets.zero,
+              elevation: _isEditing ? 15 : 8, // Higher elevation when editing
+              borderRadius: 20.0,
+              isActive: false, // Keep consistent gray appearance
               child: Row(
                 children: [
-                  Icon(
-                    Icons.insert_drive_file_rounded,
-                    color:
-                        _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
-                    size: 24,
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.insert_drive_file_rounded,
+                      color: AppColors.primaryAccent,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -636,51 +641,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Container(
+      // Add horizontal margins to match home screen spacing (4px like home screen)
+      margin: EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        gradient:
-            _isEditing
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.sheenStart.withValues(alpha: 0.85),
-                      AppColors.primaryAccent.withValues(alpha: 0.75),
-                      AppColors.accentDeep.withValues(alpha: 0.65),
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  )
-                : LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.sheenStart.withValues(alpha: 0.9),
-                      AppColors.primaryAccent.withValues(alpha: 0.8),
-                      AppColors.accentDeep.withValues(alpha: 0.7),
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        // Sophisticated gray-red gradient - same as user home screen
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF2A1A1A),     // Deep dark gray with subtle red undertone at TOP
+            const Color(0xFF3A2525),     // Medium dark gray with red hint
+            const Color(0xFF4A3535),     // Medium gray with subtle red
+            const Color(0xFF4A4A4A),     // Medium light gray
+            const Color(0xFF5A5A5A),     // Light sophisticated gray at BOTTOM
+          ],
+          stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ), // Match home screen border radius exactly
+        // Premium shadow system - same as user home screen
         boxShadow: [
-          // Primary luxury shadow
           BoxShadow(
-            color: AppColors.accentDeep.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 25,
+            offset: const Offset(0, 12),
+            spreadRadius: -2,
           ),
-          // Soft ambient shadow
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 15,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 24), // Reduced padding to match home screen
           child: Column(
             children: [
               Row(
@@ -689,15 +687,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     'My Profile',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 26, // Slightly reduced to match home screen proportions
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
                   Container(
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: AppColors.primaryAccent,
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: IconButton(
                       onPressed: () {
@@ -707,13 +718,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           setState(() => _isEditing = true);
                         }
                       },
+                      padding: EdgeInsets.zero,
                       icon:
                           _isSaving
                               ? SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: AppColors.primaryAccent,
                                     strokeWidth: 2,
                                   ),
                                 )
@@ -721,13 +733,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   _isEditing
                                       ? Icons.save_rounded
                                       : Icons.edit_rounded,
-                                  color: Colors.white,
+                                  color: AppColors.primaryAccent,
+                                  size: 22,
                                 ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 18), // Reduced spacing
               Stack(
                 children: [
                   GestureDetector(
@@ -746,7 +759,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       child: CircleAvatar(
-                        radius: 50,
+                        radius: 42, // Reduced from 50 to 42 for more compact header
                         backgroundColor: AppColors.primaryAccent,
                         backgroundImage:
                             _selectedImage != null
@@ -764,7 +777,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ? Text(
                                         (_userData['fullName'] ?? 'U')[0].toUpperCase(),
                                         style: TextStyle(
-                                          fontSize: 32,
+                                          fontSize: 28, // Reduced font size to match smaller avatar
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
@@ -793,16 +806,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                 ],
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 12), // Reduced spacing
               Text(
                 _userData['fullName'] ?? 'User Name',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 22, // Slightly reduced for more compact header
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 6), // Reduced spacing
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
@@ -825,21 +838,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsRow() {
-    return Container(
-      margin: EdgeInsets.all(20),
+    return GlassCard(
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.glass15,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.glassBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowLight,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
+      elevation: 20, // Increased elevation for dramatic floating effect like home screen
+      borderRadius: 24.0, // Consistent with home screen cards
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -879,10 +882,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.primaryAccent.withValues(alpha: 0.3),
+              width: 1,
+            ),
           ),
-          child: Icon(icon, color: color, size: 24),
+          child: Icon(icon, color: AppColors.primaryAccent, size: 24),
         ),
         SizedBox(height: 8),
         Text(
@@ -911,23 +918,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required List<Widget> children,
     required String sectionKey,
   }) {
-    return Container(
+    return GlassCard(
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.glass15,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.glassBorder),
-        boxShadow: [
-          BoxShadow(
-            color:
-                _isEditing
-                    ? AppColors.shadowLight.withValues(alpha: 0.2)
-                    : AppColors.shadowLight,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(0), // No padding since ExpansionTile handles its own
+      elevation: 20, // Increased elevation for dramatic floating effect like home screen
+      borderRadius: 24.0, // Consistent with home screen cards
+      isActive: false, // Keep consistent gray appearance when expanded
       child: ExpansionTile(
         key: Key(sectionKey),
         initiallyExpanded: _expandedSections[sectionKey] ?? false,
@@ -941,15 +937,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color:
-                    _isEditing
-                        ? AppColors.primaryAccent.withValues(alpha: 0.2)
-                        : AppColors.surface,
+                color: Colors.black.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               child: Icon(
                 icon,
-                color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
+                color: AppColors.primaryAccent,
                 size: 24,
               ),
             ),
@@ -1001,15 +998,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color:
-                  _isEditing
-                      ? AppColors.primaryAccent.withValues(alpha: 0.1)
-                      : AppColors.surface,
+              color: Colors.black.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Icon(
               icon,
-              color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
+              color: AppColors.primaryAccent,
               size: 20,
             ),
           ),
@@ -1064,15 +1062,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color:
-                  _isEditing
-                      ? AppColors.primaryAccent.withValues(alpha: 0.1)
-                      : AppColors.surface,
+              color: Colors.black.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Icon(
               icon,
-              color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
+              color: AppColors.primaryAccent,
               size: 20,
             ),
           ),
@@ -1526,12 +1525,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: AppColors.background,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            _buildStatsRow(),
+      // Synchronized gradient - seamless flow from header bottom to black (same as user home screen)
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF5A5A5A),     // Light gray (MATCHES header bottom exactly)
+            const Color(0xFF505050),     // Slightly darker gray
+            const Color(0xFF454545),     // Medium gray
+            const Color(0xFF3A3A3A),     // Darker gray
+            const Color(0xFF303030),     // Even darker gray
+            const Color(0xFF252525),     // Deep gray
+            const Color(0xFF1A1A1A),     // Very deep gray
+            const Color(0xFF151515),     // Dark gray-black
+            const Color(0xFF101010),     // Very dark gray
+            const Color(0xFF0A0A0A),     // Almost black gray
+            const Color(0xFF050505),     // Nearly black
+            AppColors.background,        // Pure black at bottom
+          ],
+          stops: const [0.0, 0.08, 0.16, 0.24, 0.32, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Scrollable content with top padding for fixed header
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Add padding at top for fixed header space
+                SizedBox(height: _getProfileHeaderHeight()),
+                // Add subtle visual separator for better UX
+                SizedBox(height: 12), // Reduced spacing for closer visual connection
+                _buildStatsRow(),
             // Basic Information
             _buildSectionCard(
               title: 'Basic Information',
@@ -1670,6 +1696,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
+      // Fixed header that stays on top
+      Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        child: _buildProfileHeader(),
+      ),
+    ],
+  ),
+);
+  }
+
+  double _getProfileHeaderHeight() {
+    // Calculate header height including SafeArea and proper spacing
+    // Optimized to match home screen header height with compact design
+    return MediaQuery.of(context).padding.top + 290; // Reduced to match home screen header height
   }
 }
