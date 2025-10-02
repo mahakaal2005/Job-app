@@ -409,23 +409,23 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       extendBodyBehindAppBar: true,
       drawer: _buildDrawer(),
       body: Container(
-        // Seamless blending - EXACTLY like green app's perfect flow
+        // Synchronized gradient - seamless flow from header bottom to black (like green app)
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppColors.accentDeep,        // Medium red (matches header bottom exactly)
-              const Color(0xFFD73527),     // Slightly darker red
-              const Color(0xFFCA2E20),     // Darker red
-              const Color(0xFFBD2719),     // Even darker red
-              const Color(0xFFB02012),     // Deep red
-              const Color(0xFFA3190B),     // Very deep red
-              const Color(0xFF961204),     // Dark red-brown
-              const Color(0xFF7A0F03),     // Very dark red
-              const Color(0xFF5E0C02),     // Almost black red
-              const Color(0xFF420901),     // Nearly black
-              const Color(0xFF260600),     // Very dark
+              const Color(0xFF5A5A5A),     // Light gray (MATCHES header bottom exactly)
+              const Color(0xFF505050),     // Slightly darker gray
+              const Color(0xFF454545),     // Medium gray
+              const Color(0xFF3A3A3A),     // Darker gray
+              const Color(0xFF303030),     // Even darker gray
+              const Color(0xFF252525),     // Deep gray
+              const Color(0xFF1A1A1A),     // Very deep gray
+              const Color(0xFF151515),     // Dark gray-black
+              const Color(0xFF101010),     // Very dark gray
+              const Color(0xFF0A0A0A),     // Almost black gray
+              const Color(0xFF050505),     // Nearly black
               AppColors.background,        // Pure black at bottom
             ],
             stops: const [0.0, 0.08, 0.16, 0.24, 0.32, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
@@ -564,10 +564,10 @@ class _UserHomeScreenState extends State<UserHomeScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.sheenStart.withValues(alpha: 0.9),
-              AppColors.primaryAccent.withValues(alpha: 0.8),
-              AppColors.accentDeep.withValues(alpha: 0.7),
-              AppColors.sheenEnd.withValues(alpha: 0.6),
+              const Color(0xFF2A1A1A).withValues(alpha: 0.9), // Dark gray-red metallic at TOP-LEFT
+              const Color(0xFF3A2525).withValues(alpha: 0.8), // Medium gray with red hint
+              AppColors.headerLight.withValues(alpha: 0.7),   // Medium light gray
+              AppColors.sheenStart.withValues(alpha: 0.6),    // Light gray metallic at BOTTOM-RIGHT
             ],
             stops: const [0.0, 0.3, 0.7, 1.0],
           ),
@@ -577,13 +577,13 @@ class _UserHomeScreenState extends State<UserHomeScreen>
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.accentDeep.withValues(alpha: 0.3),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 25,
               offset: const Offset(0, 12),
               spreadRadius: -2,
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 15,
               offset: const Offset(0, 6),
             ),
@@ -707,29 +707,36 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       // Minimal margins like green app - almost edge-to-edge
       margin: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        // Sophisticated red gradient - darker, more elegant
+        // Sophisticated gray-red gradient - subtle red undertones (like green app's approach)
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.accentDark,        // Deep burgundy red at top
-            AppColors.accentCore,        // Rich red
-            AppColors.primaryAccent,     // True red
-            AppColors.accentDeep,        // Medium red - stays in red family
+            const Color(0xFF2A1A1A),     // Deep dark gray with subtle red undertone at TOP
+            const Color(0xFF3A2525),     // Medium dark gray with red hint
+            const Color(0xFF4A3535),     // Medium gray with subtle red
+            AppColors.headerLight,       // Medium light gray
+            const Color(0xFF5A5A5A),     // Light sophisticated gray at BOTTOM
           ],
-          stops: const [0.0, 0.3, 0.6, 1.0],
+          stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(28),
           bottomRight: Radius.circular(28),
         ),
-        // Single, clean shadow
+        // Premium shadow system for gray gradient
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: -2,
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 25,
+            offset: const Offset(0, 10),
+            spreadRadius: -3,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+            spreadRadius: -1,
           ),
         ],
       ),
@@ -768,15 +775,15 @@ class _UserHomeScreenState extends State<UserHomeScreen>
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            // Luxurious subtle gradient - not too bright
+            // Luxurious gray-red gradient - subtle red undertones (like green app)
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppColors.primaryAccent.withValues(alpha: 0.85), // Subtle red
-                AppColors.accentDeep.withValues(alpha: 0.75), // Deeper red
-                AppColors.accentCore.withValues(alpha: 0.65), // Dark red
-                AppColors.accentDark.withValues(alpha: 0.55), // Very dark red
+                const Color(0xFF2A1A1A).withValues(alpha: 0.85), // Deep dark gray-red at TOP
+                const Color(0xFF3A2525).withValues(alpha: 0.75), // Medium gray with red hint
+                AppColors.headerLight.withValues(alpha: 0.65), // Medium light gray
+                const Color(0xFF6A6A6A).withValues(alpha: 0.55), // Light gray at BOTTOM
               ],
               stops: const [0.0, 0.4, 0.7, 1.0],
             ),
@@ -784,25 +791,25 @@ class _UserHomeScreenState extends State<UserHomeScreen>
               bottomLeft: Radius.circular(36),
               bottomRight: Radius.circular(36),
             ),
-            // Luxurious 3D shadow system
+            // Luxurious 3D shadow system for gray gradient
             boxShadow: [
               // Primary depth shadow
               BoxShadow(
-                color: AppColors.accentDeep.withValues(alpha: 0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
                 spreadRadius: -3,
               ),
               // Secondary floating shadow
               BoxShadow(
-                color: AppColors.primaryAccent.withValues(alpha: 0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 50,
                 offset: const Offset(0, 25),
                 spreadRadius: -8,
               ),
-              // Subtle inner glow
+              // Subtle inner glow with gray metallic
               BoxShadow(
-                color: AppColors.sheenStart.withValues(alpha: 0.15),
+                color: AppColors.sheenStart.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
                 spreadRadius: -2,
@@ -1765,63 +1772,80 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                 Text(
                   'Welcome back,',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: const Color(0xFF9E9E9E), // Mid-grey as specified
                     fontSize: 15,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w400, // Regular weight
                     letterSpacing: 0.2,
-                    // Subtle text glow
-                    shadows: [
-                      Shadow(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 0),
-                      ),
-                    ],
                   ),
                 ),
                 const SizedBox(height: 4), // Tighter spacing
                 Text(
                   _userName.isNotEmpty ? _userName.split(' ').first : 'User',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24, // More reasonable size
-                    fontWeight: FontWeight.w700,
+                    color: Colors.white, // Pure white for maximum contrast
+                    fontSize: 26, // Slightly larger than greeting
+                    fontWeight: FontWeight.w600, // Semi-bold as specified
                     letterSpacing: -0.3,
-                    // No glow effects - clean and elegant
                   ),
                 ),
               ],
             ),
           ),
-          // Subtle, elegant notification button (like green app)
+          // Smart notification button with red dot indicator
           GestureDetector(
             onTap: () {
               // Add notification functionality
             },
-            child: Container(
-              padding: const EdgeInsets.all(12), // Smaller, more refined
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.15), // Subtle background
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.25), // Subtle border
-                  width: 1,
-                ),
-                // Simple, clean shadow
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.15),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: const Icon(
-                Icons.notifications_outlined,
-                color: Colors.white,
-                size: 20, // Smaller, more elegant
-                // No glow effects - clean design
-              ),
+                  child: Icon(
+                    Icons.notifications_outlined,
+                    color: const Color(0xFFB0B0B0), // Light grey as specified
+                    size: 20,
+                  ),
+                ),
+                // Smart red dot indicator - properly positioned on bell icon
+                Positioned(
+                  top: 6,  // Positioned on the bell icon itself
+                  right: 6, // Positioned on the bell icon itself
+                  child: Container(
+                    width: 12, // Larger size like standard apps
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryAccent, // Minimal red usage
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1.5, // White border for better visibility
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryAccent.withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

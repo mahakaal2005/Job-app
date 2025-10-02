@@ -580,7 +580,6 @@ class GlassmorphismUtils {
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: AppColors.glass20,
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
                 color: AppColors.glassBorderStrong,
@@ -590,10 +589,12 @@ class GlassmorphismUtils {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.glassWhite.withValues(alpha: 0.15),
-                  AppColors.glass15,
-                  AppColors.glassDark05,
+                  AppColors.headerDark.withValues(alpha: 0.95),
+                  AppColors.headerCore.withValues(alpha: 0.9),
+                  AppColors.headerMid.withValues(alpha: 0.85),
+                  AppColors.headerLight.withValues(alpha: 0.8),
                 ],
+                stops: const [0.0, 0.3, 0.7, 1.0],
               ),
             ),
             child: child,

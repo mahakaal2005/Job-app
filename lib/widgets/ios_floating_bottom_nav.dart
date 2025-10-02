@@ -63,21 +63,21 @@ class _IOSFloatingBottomNavState extends State<IOSFloatingBottomNav> {
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
               decoration: BoxDecoration(
-                // Optimized glassmorphism gradient for background visibility
+                // Sophisticated gray glassmorphism gradient - syncs with color palette
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withValues(alpha: 0.75),
-                    Colors.white.withValues(alpha: 0.65),
-                    Colors.grey.shade50.withValues(alpha: 0.7),
+                    const Color(0xFF6A6A6A).withValues(alpha: 0.75), // Light gray metallic
+                    const Color(0xFF5A5A5A).withValues(alpha: 0.65), // Medium light gray
+                    const Color(0xFF4A4A4A).withValues(alpha: 0.7),  // Medium gray
                   ],
                   stops: const [0.0, 0.6, 1.0],
                 ),
                 borderRadius: BorderRadius.circular(33),
-                // Subtle glossy border for background visibility
+                // Sophisticated gray border for premium appearance
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: const Color(0xFF7A7A7A).withValues(alpha: 0.6),
                   width: 1.0,
                 ),
               ),

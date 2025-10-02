@@ -7,17 +7,25 @@ class AppColors {
   static const Color surface = Color(0xFF0A0A0A);          // Very dark gray surface
   static const Color surfaceElevated = Color(0xFF1A1A1A);  // Elevated dark gray
 
-  // Brand accent family - SMOOTH RED gradient (like green app's elegance)
-  static const Color accentDark = Color(0xFF7F1D3A);      // Deep burgundy red - header top
-  static const Color accentCore = Color(0xFF991B1B);      // Rich red - header upper
-  static const Color primaryAccent = Color(0xFFDC2626);   // True red - header middle
-  static const Color accentDeep = Color(0xFFE53E3E);      // Medium red - header lower
-  static const Color accentLight = Color(0xFFEF4444);     // Light red - subtle highlights
-  static const Color accentPop = Color(0xFFF87171);       // Very light red - accents (muted)
+  // Header gradient family - SOPHISTICATED GRAY gradient for header
+  static const Color headerDark = Color(0xFF1A1A1A);      // Deep dark gray - header top
+  static const Color headerCore = Color(0xFF2A2A2A);      // Medium dark gray - header upper
+  static const Color headerMid = Color(0xFF3A3A3A);       // Medium gray - header middle
+  static const Color headerLight = Color(0xFF4A4A4A);     // Light gray - header lower
+  
+  // Brand accent family - MINIMAL RED for buttons and accents only
+  static const Color primaryAccent = Color(0xFFDC2626);   // True red - buttons and accents
+  static const Color accentDeep = Color(0xFFB91C3C);      // Deep red - pressed states
+  static const Color accentLight = Color(0xFFEF4444);     // Light red - hover states
+  static const Color accentPop = Color(0xFFF87171);       // Very light red - subtle highlights
+  
+  // Backwards compatibility aliases for existing code
+  static const Color accentDark = accentDeep;             // Alias for accentDeep
+  static const Color accentCore = primaryAccent;          // Alias for primaryAccent
 
-  // Metallic sheen for premium surfaces (true red metallic)
-  static const Color sheenStart = Color(0xFFF87171);      // Light red metallic
-  static const Color sheenEnd = Color(0xFFDC2626);        // True red metallic
+  // Metallic sheen for premium surfaces (gray metallic for header)
+  static const Color sheenStart = Color(0xFF6A6A6A);      // Light gray metallic
+  static const Color sheenEnd = Color(0xFF3A3A3A);        // Dark gray metallic
 
   // Text - Gray scale for Red+Black+Gray scheme
   static const Color textPrimary = Color(0xFFFFFFFF);      // Pure white text
