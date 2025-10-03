@@ -21,7 +21,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> 
+    with TickerProviderStateMixin {
   bool _isEditing = false;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -31,6 +32,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _skillSearchController = TextEditingController();
   List<String> _filteredSkills = [];
   bool _showSkillSuggestions = false;
+
+  // Header animation variables
+  AnimationController? _headerAnimationController;
+  Animation<double>? _headerAnimation;
+  bool _isHeaderCollapsed = false;
+  ScrollController? _scrollController;
 
   // Track expanded sections
   final Map<String, bool> _expandedSections = {
@@ -94,6 +101,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Initialize scroll controller and animation
+    _scrollController = ScrollController();
+    _headerAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _headerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _headerAnimationController!, curve: Curves.easeInOut),
+    );
+    
+    // Add scroll listener for header animation
+    _scrollController!.addListener(_scrollListener);
+    
     _loadUserData();
   }
 
@@ -115,7 +136,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _portfolioController.dispose();
     _twitterController.dispose();
     _skillSearchController.dispose();
+    _scrollController?.dispose();
+    _headerAnimationController?.dispose();
     super.dispose();
+  }
+
+  void _scrollListener() {
+    // Safety check for scroll controller
+    if (_scrollController == null || !_scrollController!.hasClients) return;
+    
+    // Smooth header animation with reduced scroll distance for faster response
+    const double maxScrollForAnimation = 120.0; // Reduced for quicker animation
+    final double rawScrollOffset = _scrollController!.offset.clamp(0.0, maxScrollForAnimation);
+    final double normalizedProgress = rawScrollOffset / maxScrollForAnimation;
+    final double easedProgress = Curves.easeOutQuart.transform(normalizedProgress); // Smoother curve
+    
+    // More frequent updates for smoother animation
+    const double threshold = 0.005; // Reduced threshold for smoother updates
+    if (_headerAnimationController != null && (easedProgress - _headerAnimationController!.value).abs() > threshold) {
+      // Use controller.value directly - no setState to avoid rebuilding entire widget tree
+      _headerAnimationController!.value = easedProgress;
+      
+      // Update collapsed state efficiently
+      final bool newCollapsedState = easedProgress > 0.2; // Earlier threshold
+      if (_isHeaderCollapsed != newCollapsedState) {
+        _isHeaderCollapsed = newCollapsedState;
+      }
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -630,6 +677,308 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildAnimatedProfileHeader() {
+    // Safety check for initialization
+    if (_headerAnimationController == null) {
+      return _buildProfileHeader();
+    }
+    
+    return AnimatedBuilder(
+      animation: _headerAnimationController!,
+      builder: (context, child) {
+        final double progress = _headerAnimationController!.value;
+        
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFF2A1A1A),
+                const Color(0xFF3A2525),
+                const Color(0xFF4A3535),
+                AppColors.headerLight,
+                const Color(0xFF5A5A5A),
+              ],
+              stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(28 * (1 - progress * 0.5)),
+              bottomRight: Radius.circular(28 * (1 - progress * 0.5)),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 25 * (1 - progress * 0.6),
+                offset: Offset(0, 10 * (1 - progress * 0.8)),
+                spreadRadius: -3,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 15 * (1 - progress * 0.6),
+                offset: Offset(0, 5 * (1 - progress * 0.8)),
+                spreadRadius: -1,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(28 * (1 - progress * 0.5)),
+              bottomRight: Radius.circular(28 * (1 - progress * 0.5)),
+            ),
+            child: SafeArea(
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                  16, 
+                  20 * (1 - progress * 0.5), 
+                  16, 
+                  28 * (1 - progress * 0.8)
+                ),
+                child: _buildOptimizedProfileTransitionHeader(progress),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOptimizedProfileTransitionHeader(double progress) {
+    final double fadeProgress = Curves.easeOutQuart.transform(progress);
+    final double scaleProgress = Curves.easeOutCubic.transform(progress);
+    final double heightProgress = Curves.easeOutExpo.transform(progress);
+    
+    return Column(
+      children: [
+        // Always show the main row (title + edit button)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Profile title
+            Text(
+              'My Profile',
+              style: TextStyle(
+                fontSize: 28 + (progress * 4), // Larger when collapsed
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: progress * 0.5,
+              ),
+            ),
+            // Edit button - enhanced with animation
+            Transform.scale(
+              scale: 1.0 + (scaleProgress * 0.05),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3 + (progress * 0.1)),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: AppColors.primaryAccent,
+                    width: 1.5 + (progress * 0.5),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryAccent.withValues(alpha: progress * 0.2),
+                      blurRadius: 8 * progress,
+                      spreadRadius: 1 * progress,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: () {
+                    if (_isEditing) {
+                      _saveProfile();
+                    } else {
+                      setState(() => _isEditing = true);
+                    }
+                  },
+                  padding: EdgeInsets.zero,
+                  icon: _isSaving
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: AppColors.primaryAccent,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          _isEditing ? Icons.save_rounded : Icons.edit_rounded,
+                          color: AppColors.primaryAccent,
+                          size: 22 + (progress * 2),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        
+        // Profile content that fades out
+        ClipRect(
+          child: Container(
+            height: (190 * (1 - heightProgress)).clamp(0.0, 190.0), // Increased to show full chip
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: Transform.translate(
+                offset: Offset(0, -20 * fadeProgress),
+                child: Opacity(
+                  opacity: (1 - fadeProgress * 1.8).clamp(0.0, 1.0),
+                  child: Column(
+                    children: [
+                      SizedBox(height: (16 * (1 - heightProgress)).clamp(0.0, 16.0)), // Further reduced spacing
+                      Transform.scale(
+                        scale: (1 - scaleProgress * 0.4).clamp(0.6, 1.0),
+                        child: Transform.translate(
+                          offset: Offset(0, 10 * scaleProgress),
+                          child: _buildProfileContent(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileContent() {
+    return Column(
+      children: [
+        // Profile image and info
+        Stack(
+          children: [
+            GestureDetector(
+              onTap: _isEditing ? _uploadImage : null,
+              child: Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadowLight,
+                      blurRadius: 16,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 35, // Further reduced to create more space for chip
+                  backgroundColor: AppColors.primaryAccent,
+                  backgroundImage: _selectedImage != null
+                      ? FileImage(_selectedImage!)
+                      : (_userData['profileImageUrl'] != null
+                          ? NetworkImage(_userData['profileImageUrl'])
+                          : null) as ImageProvider?,
+                  child: (_selectedImage == null && _userData['profileImageUrl'] == null)
+                      ? Icon(
+                          Icons.person,
+                          size: 40, // Reduced icon size
+                          color: Colors.white,
+                        )
+                      : null,
+                ),
+              ),
+            ),
+            if (_isEditing)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryAccent,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadowLight,
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _isUploadingImage
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          Icons.camera_alt_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                ),
+              ),
+          ],
+        ),
+        SizedBox(height: 8), // Further reduced spacing
+        // User name and availability
+        Text(
+          _userData['fullName'] ?? 'User Name',
+          style: TextStyle(
+            fontSize: 18, // Further reduced font size
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        SizedBox(height: 6), // Further reduced spacing
+        // Availability chip styled exactly like reference image
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            // Transparent gray background like in reference image
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          child: Text(
+            _getAvailabilityText(),
+            style: TextStyle(
+              color: Colors.white, // White text like in reference
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              letterSpacing: 0.1,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getAvailabilityText() {
+    // Handle different data structures for availability
+    if (_userData['availability'] != null) {
+      if (_userData['availability'] is String) {
+        return _userData['availability'];
+      } else if (_userData['availability'] is Map) {
+        return _userData['availability']['type'] ?? 'Full-time';
+      }
+    }
+    
+    // Fallback to selectedAvailability or default
+    return _selectedAvailability.isNotEmpty ? _selectedAvailability : 'Full-time';
   }
 
   Widget _buildProfileHeader() {
@@ -1549,14 +1898,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Stack(
         children: [
-          // Scrollable content with top padding for fixed header
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                // Add padding at top for fixed header space
-                SizedBox(height: _getProfileHeaderHeight()),
-                // Add subtle visual separator for better UX
-                SizedBox(height: 12), // Reduced spacing for closer visual connection
+          // Scrollable content with dynamic padding for animated header
+          AnimatedBuilder(
+            animation: _headerAnimationController ?? AnimationController(vsync: this, duration: Duration.zero),
+            builder: (context, child) {
+              return SingleChildScrollView(
+                controller: _scrollController,
+                child: Column(
+                  children: [
+                    // Dynamic padding that adjusts with header animation
+                    SizedBox(height: _getProfileHeaderHeight()),
+                    // Tighter spacing between header and first card
+                    SizedBox(height: 24), // Reduced by another 4px for optimal layout
                 _buildStatsRow(),
             // Basic Information
             _buildSectionCard(
@@ -1691,17 +2044,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             
-            // Extra spacing for floating bottom navigation
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
-          ],
-        ),
-      ),
-      // Fixed header that stays on top
+                    // Extra spacing for floating bottom navigation
+                    SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
+                  ],
+                ),
+              );
+            },
+          ),
+      // Animated header that transforms based on scroll
       Positioned(
         top: 0,
         left: 0,
         right: 0,
-        child: _buildProfileHeader(),
+        child: _buildAnimatedProfileHeader(),
       ),
     ],
   ),
@@ -1709,8 +2064,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   double _getProfileHeaderHeight() {
-    // Calculate header height including SafeArea and proper spacing
-    // Optimized to match home screen header height with compact design
-    return MediaQuery.of(context).padding.top + 290; // Reduced to match home screen header height
+    // Dynamic header height based on animation progress - matched to user home screen
+    final double baseHeight = MediaQuery.of(context).padding.top;
+    final double progress = _headerAnimationController?.value ?? 0.0;
+    
+    // Adjusted to match user home screen: 290px full, 80px collapsed
+    final double fullHeaderHeight = 290.0; // Matches user home screen exactly
+    final double collapsedHeaderHeight = 80.0;
+    
+    // Interpolate between full and collapsed height
+    final double animatedHeight = fullHeaderHeight - ((fullHeaderHeight - collapsedHeaderHeight) * progress);
+    
+    return baseHeight + animatedHeight;
   }
 }

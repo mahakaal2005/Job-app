@@ -27,17 +27,18 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   late ScrollController _scrollController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  // Removed _isScrolled since we're using fixed header now
   late bool _isBookmarked;
   String _companyDescription = '';
   bool _hasAlreadyApplied = false;
   bool _isCheckingApplication = true;
+  double _scrollProgress = 0.0; // 0.0 = full header, 1.0 = compact app bar
 
   @override
   void initState() {
     super.initState();
     _isBookmarked = widget.isBookmarked;
     _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -46,11 +47,24 @@ class _JobDetailScreenState extends State<JobDetailScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    // Scroll listener removed since we're using fixed header now
-
     _animationController.forward();
     _fetchCompanyDescription();
     _checkIfAlreadyApplied();
+  }
+
+  void _onScroll() {
+    // Transition happens between 0 and 150 pixels of scroll
+    const double transitionStart = 0.0;
+    const double transitionEnd = 150.0;
+    
+    final double offset = _scrollController.offset;
+    final double progress = ((offset - transitionStart) / (transitionEnd - transitionStart)).clamp(0.0, 1.0);
+    
+    if (_scrollProgress != progress) {
+      setState(() {
+        _scrollProgress = progress;
+      });
+    }
   }
 
   Future<void> _fetchCompanyDescription() async {
@@ -115,6 +129,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _animationController.dispose();
     super.dispose();
@@ -170,9 +185,7 @@ class _JobDetailScreenState extends State<JobDetailScreen>
               child: Column(
                 children: [
                   // Add padding at top for fixed header space
-                  SizedBox(height: _getJobHeaderHeight()),
-                  // Match spacing between consecutive cards (20px)
-                  SizedBox(height: 20),
+                  SizedBox(height: _getJobHeaderHeight() - 8),
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: _buildContent(),
@@ -198,36 +211,42 @@ class _JobDetailScreenState extends State<JobDetailScreen>
   }
 
   double _getJobHeaderHeight() {
-    // Proper scroll padding to prevent overlap
-    return MediaQuery.of(context).padding.top +
-        280; // Sufficient space to prevent salary card overlap
+    // FIXED height - never changes to keep content position stable
+    const double fullHeaderHeight = 280.0;
+    return MediaQuery.of(context).padding.top + fullHeaderHeight;
   }
 
   Widget _buildFixedJobHeader() {
+    // Calculate actual header height (shrinks from 280 to 93)
+    const double fullHeaderHeight = 280.0;
+    const double compactHeaderHeight = 93.0;
+    final double currentHeaderHeight = fullHeaderHeight - ((fullHeaderHeight - compactHeaderHeight) * _scrollProgress);
+    
+    // Border radius: 28px → 16px (maintain rounded look)
+    final double borderRadius = 28.0 - (12.0 * _scrollProgress);
+    
+    // Margin: 4px → 2px (subtle change)
+    final double horizontalMargin = 4.0 - (2.0 * _scrollProgress);
+    
     return Container(
-      // Minimal margins like home screen
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
       decoration: BoxDecoration(
-        // Sophisticated gray-red gradient - same as user home screen
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            const Color(
-              0xFF2A1A1A,
-            ), // Deep dark gray with subtle red undertone at TOP
-            const Color(0xFF3A2525), // Medium dark gray with red hint
-            const Color(0xFF4A3535), // Medium gray with subtle red
-            const Color(0xFF4A4A4A), // Medium light gray
-            const Color(0xFF5A5A5A), // Light sophisticated gray at BOTTOM
+            const Color(0xFF2A1A1A),
+            const Color(0xFF3A2525),
+            const Color(0xFF4A3535),
+            const Color(0xFF4A4A4A),
+            const Color(0xFF5A5A5A),
           ],
           stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
         ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
-        // Premium shadow system
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.25),
@@ -244,26 +263,81 @@ class _JobDetailScreenState extends State<JobDetailScreen>
         ],
       ),
       child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(borderRadius),
+          bottomRight: Radius.circular(borderRadius),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: Column(
+          bottom: false,
+          child: SizedBox(
+            height: currentHeaderHeight,
+            child: Stack(
               children: [
-                // Navigation row - moved down for better accessibility
-                Row(
-                  children: [
-                    _buildProperBackButton(),
-                    const Spacer(),
-                    _buildProperHeaderActions(),
-                  ],
+                // Full header content (fades out)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Opacity(
+                    opacity: 1.0 - _scrollProgress,
+                    child: IgnorePointer(
+                      ignoring: _scrollProgress > 0.5,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                _buildProperBackButton(),
+                                const Spacer(),
+                                _buildProperHeaderActions(),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+                            _buildJobHeaderContent(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 18),
-                // Job info section
-                _buildJobHeaderContent(),
+                // Compact app bar (fades in)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Opacity(
+                    opacity: _scrollProgress,
+                    child: IgnorePointer(
+                      ignoring: _scrollProgress < 0.5,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                        child: Row(
+                          children: [
+                            _buildProperBackButton(),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  widget.job.title,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.3,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            _buildProperHeaderActions(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

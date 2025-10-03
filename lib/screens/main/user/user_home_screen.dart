@@ -41,6 +41,11 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   late Animation<double> _fadeAnimation;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Header animation variables
+  late AnimationController _headerAnimationController;
+  late Animation<double> _headerAnimation;
+  bool _isHeaderCollapsed = false;
+
   // Job data with lazy loading
   List<Job> _jobs = [];
   List<Job> _filteredJobs = [];
@@ -69,6 +74,15 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    
+    // Header animation controller
+    _headerAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _headerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _headerAnimationController, curve: Curves.easeInOut),
+    );
     _scrollController.addListener(_scrollListener);
     _loadUserData();
     _loadJobs();
@@ -81,16 +95,41 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     _cityController.dispose();
     _skillController.dispose();
     _animationController.dispose();
+    _headerAnimationController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   void _scrollListener() {
+    // Handle infinite scroll
     if (_scrollController.offset >=
             _scrollController.position.maxScrollExtent &&
         !_scrollController.position.outOfRange) {
       if (!_isLoadingJobs && _hasMoreJobs) {
         _loadMoreJobs();
+      }
+    }
+
+    // EXACT COPY from profile screen - the "almost perfect" implementation
+    // Safety check for scroll controller
+    if (!_scrollController.hasClients) return;
+    
+    // Smooth header animation with reduced scroll distance for faster response
+    const double maxScrollForAnimation = 120.0; // Reduced for quicker animation
+    final double rawScrollOffset = _scrollController.offset.clamp(0.0, maxScrollForAnimation);
+    final double normalizedProgress = rawScrollOffset / maxScrollForAnimation;
+    final double easedProgress = Curves.easeOutQuart.transform(normalizedProgress); // Smoother curve
+    
+    // More frequent updates for smoother animation
+    const double threshold = 0.005; // Reduced threshold for smoother updates
+    if ((easedProgress - _headerAnimationController.value).abs() > threshold) {
+      // Use controller.value directly - no setState to avoid rebuilding entire widget tree
+      _headerAnimationController.value = easedProgress;
+      
+      // Update collapsed state efficiently
+      final bool newCollapsedState = easedProgress > 0.2; // Earlier threshold
+      if (_isHeaderCollapsed != newCollapsedState) {
+        _isHeaderCollapsed = newCollapsedState;
       }
     }
   }
@@ -502,29 +541,28 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       child: Stack(
         children: [
           // Scrollable content with top padding for fixed header
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              // Add padding at top for fixed header space
-              SliverToBoxAdapter(
-                child: SizedBox(height: _getHeaderHeight()),
-              ),
-              // Add subtle visual separator for better UX
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: const SizedBox(height: 8), // Reduced spacing for closer visual connection
-                ),
-              ),
-              _buildJobsList(),
-            ],
+          // Scrollable content with dynamic padding for animated header
+          AnimatedBuilder(
+            animation: _headerAnimationController,
+            builder: (context, child) {
+              return CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  // Dynamic padding that adjusts with header animation - includes spacing
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: _getHeaderHeight()),
+                  ),
+                  _buildJobsList(),
+                ],
+              );
+            },
           ),
-          // Fixed header that stays on top
+          // Animated header that transforms based on scroll
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            child: _buildFixedGradientHeader(),
+            child: _buildAnimatedHeader(),
           ),
         ],
       ),
@@ -532,8 +570,20 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   }
 
   double _getHeaderHeight() {
-    // Calculate header height including SafeArea, curves, and proper spacing
-    return MediaQuery.of(context).padding.top + 290; // Reduced for closer visual connection
+    // Dynamic header height based on animation progress - MATCHED to actual header structure
+    final double baseHeight = MediaQuery.of(context).padding.top;
+    final double progress = _headerAnimationController.value;
+    
+    // EXACT MATCH to actual header structure:
+    // - Padding top: 20px + Row: 48px + Padding bottom: 28px = 96px (fixed)
+    // - ClipRect content = 190px * (1 - progress) (animated)
+    final double fixedHeaderHeight = 96.0; // Correct measurement of always visible part
+    final double animatedContentHeight = 190.0 * (1 - progress); // Collapsible content
+    
+    // Include consistent spacing in the height calculation for perfect synchronization
+    final double consistentSpacing = 26.0; // Fine-tuned spacing for optimal visual balance (24 + 2)
+    
+    return baseHeight + fixedHeaderHeight + animatedContentHeight + consistentSpacing;
   }
 
   // ROLLBACK: If you want to revert, uncomment the method below and change the call above
@@ -707,6 +757,317 @@ class _UserHomeScreenState extends State<UserHomeScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAnimatedHeader() {
+    return AnimatedBuilder(
+      animation: _headerAnimationController, // Listen to controller directly
+      builder: (context, child) {
+        final double progress = _headerAnimationController.value;
+        
+        return Container(
+          // Minimal margins like green app - almost edge-to-edge
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            // Sophisticated gray-red gradient - subtle red undertones (like green app's approach)
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFF2A1A1A),     // Deep dark gray with subtle red undertone at TOP
+                const Color(0xFF3A2525),     // Medium dark gray with red hint
+                const Color(0xFF4A3535),     // Medium gray with subtle red
+                AppColors.headerLight,       // Medium light gray
+                const Color(0xFF5A5A5A),     // Light sophisticated gray at BOTTOM
+              ],
+              stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+            ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(28 * (1 - progress * 0.5)),
+              bottomRight: Radius.circular(28 * (1 - progress * 0.5)),
+            ),
+            // Premium shadow system for gray gradient
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 25 * (1 - progress * 0.6),
+                offset: Offset(0, 10 * (1 - progress * 0.8)),
+                spreadRadius: -3,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 15 * (1 - progress * 0.6),
+                offset: Offset(0, 5 * (1 - progress * 0.8)),
+                spreadRadius: -1,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(28 * (1 - progress * 0.5)),
+              bottomRight: Radius.circular(28 * (1 - progress * 0.5)),
+            ),
+            child: SafeArea(
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                  16, 
+                  20 * (1 - progress * 0.5), 
+                  16, 
+                  28 * (1 - progress * 0.8)
+                ),
+                child: _buildOptimizedTransitionHeader(progress),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFullHeader() {
+    return Column(
+      children: [
+        // Welcome section
+        _buildFixedHeaderWelcomeContent(),
+        const SizedBox(height: 20),
+        // Portfolio stats
+        _buildFixedHeaderPortfolioStats(),
+        const SizedBox(height: 20),
+        // Filter chips
+        _buildFixedHeaderFilterChips(),
+        const SizedBox(height: 8), // Extra spacing at bottom
+      ],
+    );
+  }
+
+  Widget _buildOptimizedTransitionHeader(double progress) {
+    // EXACT COPY from profile screen - simple curves like the "almost perfect" implementation
+    final double fadeProgress = Curves.easeOutQuart.transform(progress);
+    final double scaleProgress = Curves.easeOutCubic.transform(progress);
+    final double heightProgress = Curves.easeOutExpo.transform(progress);
+    
+    return Column(
+      children: [
+        // Always show the main row (profile + name + notification)
+        Row(
+          children: [
+            // Profile icon - enhanced with animation like profile screen
+            Transform.scale(
+              scale: 1.0 + (scaleProgress * 0.05),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.3 + (progress * 0.1)),
+                  border: Border.all(
+                    color: AppColors.primaryAccent,
+                    width: 1.5 + (progress * 0.5),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryAccent.withValues(alpha: progress * 0.2),
+                      blurRadius: 8 * progress,
+                      spreadRadius: 1 * progress,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                    style: TextStyle(
+                      color: AppColors.primaryAccent,
+                      fontSize: 18 + (progress * 2),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // User name and greeting
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Welcome back',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _userName.isNotEmpty ? _userName.split(' ').first : 'User',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22 + (progress * 4),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: progress * 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            // Notification icon
+            Transform.scale(
+              scale: 1.0 + (scaleProgress * 0.05),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.3 + (progress * 0.1)),
+                  border: Border.all(
+                    color: AppColors.primaryAccent,
+                    width: 1.5 + (progress * 0.5),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryAccent.withValues(alpha: progress * 0.2),
+                      blurRadius: 8 * progress,
+                      spreadRadius: 1 * progress,
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.notifications_outlined,
+                    color: AppColors.primaryAccent,
+                    size: 22 + (progress * 2),
+                  ),
+                  onPressed: () {
+                    // Add notification functionality
+                  },
+                  padding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+          ],
+        ),
+        
+        // Content that fades out - EXACT SAME STRUCTURE as profile screen
+        ClipRect(
+          child: Container(
+            height: (190 * (1 - heightProgress)).clamp(0.0, 190.0), // Same as profile
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: Transform.translate(
+                offset: Offset(0, -20 * fadeProgress),
+                child: Opacity(
+                  opacity: (1 - fadeProgress * 1.8).clamp(0.0, 1.0),
+                  child: Column(
+                    children: [
+                      SizedBox(height: (16 * (1 - heightProgress)).clamp(0.0, 16.0)),
+                      Transform.scale(
+                        scale: (1 - scaleProgress * 0.4).clamp(0.6, 1.0),
+                        child: Transform.translate(
+                          offset: Offset(0, 10 * scaleProgress),
+                          child: Column(
+                            children: [
+                              _buildFixedHeaderPortfolioStats(),
+                              const SizedBox(height: 20),
+                              _buildFixedHeaderFilterChips(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCollapsedHeader() {
+    return Row(
+      children: [
+        // Profile icon (A)
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black.withValues(alpha: 0.3),
+            border: Border.all(
+              color: AppColors.primaryAccent,
+              width: 1.5,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+              style: TextStyle(
+                color: AppColors.primaryAccent,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // User name and greeting
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Welcome back',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              Text(
+                _userName.isNotEmpty ? _userName.split(' ').first : 'User',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+        // Notification icon
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black.withValues(alpha: 0.3),
+            border: Border.all(
+              color: AppColors.primaryAccent,
+              width: 1.5,
+            ),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.notifications_outlined,
+              color: AppColors.primaryAccent,
+              size: 18,
+            ),
+            onPressed: () {
+              // Add notification functionality
+            },
+            padding: EdgeInsets.zero,
+          ),
+        ),
+      ],
     );
   }
 
