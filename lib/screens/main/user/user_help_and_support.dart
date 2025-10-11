@@ -12,7 +12,7 @@ class UserHelpAndSupport extends StatelessWidget {
   }) {
     return Card(
       elevation: 4,
-      shadowColor: AppColors.border,
+      shadowColor: AppColors.shadowLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -21,12 +21,12 @@ class UserHelpAndSupport extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (iconColor ?? AppColors.primaryAccent).withOpacity(0.1),
+                color: (iconColor ?? AppColors.primaryBlue).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: iconColor ?? AppColors.primaryAccent,
+                color: iconColor ?? AppColors.primaryBlue,
                 size: 24,
               ),
             ),
@@ -40,7 +40,7 @@ class UserHelpAndSupport extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.black,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -48,7 +48,7 @@ class UserHelpAndSupport extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: AppColors.secondaryText,
                     ),
                   ),
                 ],
@@ -64,9 +64,9 @@ class UserHelpAndSupport extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.textOnAccent,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.dividerColor),
       ),
       child: ExpansionTile(
         title: Text(
@@ -74,7 +74,7 @@ class UserHelpAndSupport extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: AppColors.black,
           ),
         ),
         children: [
@@ -84,7 +84,7 @@ class UserHelpAndSupport extends StatelessWidget {
               answer,
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: AppColors.secondaryText,
                 height: 1.5,
               ),
             ),
@@ -97,23 +97,17 @@ class UserHelpAndSupport extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
         title: const Text(
           'Help & Support',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: AppColors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: AppColors.textOnAccent,
+        backgroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
-          ),
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -126,7 +120,7 @@ class UserHelpAndSupport extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
-                color: AppColors.textOnAccent,
+                color: AppColors.white,
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -137,12 +131,12 @@ class UserHelpAndSupport extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryAccent,
+                      gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
                       Icons.support_agent_rounded,
-                      color: AppColors.textOnAccent,
+                      color: AppColors.white,
                       size: 48,
                     ),
                   ),
@@ -152,7 +146,7 @@ class UserHelpAndSupport extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.black,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -160,7 +154,7 @@ class UserHelpAndSupport extends StatelessWidget {
                     'We\'re here to help you with any questions or concerns',
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.textSecondary,
+                      color: AppColors.secondaryText,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -179,7 +173,7 @@ class UserHelpAndSupport extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.black,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -187,14 +181,14 @@ class UserHelpAndSupport extends StatelessWidget {
                     icon: Icons.email_rounded,
                     title: 'Email Support',
                     subtitle: 'support@getwork.com',
-                    iconColor: AppColors.primaryAccent,
+                    iconColor: AppColors.success,
                   ),
                   const SizedBox(height: 12),
                   _buildSupportCard(
                     icon: Icons.phone_rounded,
                     title: 'Phone Support',
                     subtitle: '+91 98765 43210',
-                    iconColor: AppColors.primaryAccent,
+                    iconColor: AppColors.primaryBlue,
                   ),
                 ],
               ),
@@ -211,7 +205,7 @@ class UserHelpAndSupport extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: AppColors.black,
                     ),
                   ),
                   const SizedBox(height: 16),

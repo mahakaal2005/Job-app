@@ -76,7 +76,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.primaryAccent,
+              backgroundColor: AppColors.primaryBlue,
               child: Text(
                 widget.otherUserName.isNotEmpty
                     ? widget.otherUserName[0].toUpperCase()
@@ -236,7 +236,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primaryAccent : Colors.white,
+          color: isMe ? AppColors.primaryBlue : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -314,7 +314,7 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
             const SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.primaryAccent,
+                color: AppColors.primaryBlue,
                 shape: BoxShape.circle,
               ),
               child: IconButton(

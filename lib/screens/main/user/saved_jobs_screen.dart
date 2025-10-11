@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
-import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
-import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_job_detail.dart';
+import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
+import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 
 class SavedJobsScreen extends StatefulWidget {
   const SavedJobsScreen({super.key});
@@ -27,18 +27,12 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
   Future<void> _loadSavedJobs() async {
     try {
       setState(() => _isLoading = true);
-
+      
       final allJobs = await AllJobsService.getAllJobs(limit: 100);
-      final bookmarkProvider = Provider.of<BookmarkProvider>(
-        context,
-        listen: false,
-      );
-
+      final bookmarkProvider = Provider.of<BookmarkProvider>(context, listen: false);
+      
       setState(() {
-        _savedJobs =
-            allJobs
-                .where((job) => bookmarkProvider.isBookmarked(job.id))
-                .toList();
+        _savedJobs = allJobs.where((job) => bookmarkProvider.isBookmarked(job.id)).toList();
         _isLoading = false;
         _isRefreshing = false;
       });
@@ -47,9 +41,9 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
         _isLoading = false;
         _isRefreshing = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading saved jobs: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading saved jobs: $e')),
+      );
     }
   }
 
@@ -92,26 +86,22 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
     return Consumer<BookmarkProvider>(
       builder: (context, bookmarkProvider, child) {
         final isBookmarked = bookmarkProvider.isBookmarked(job.id);
-
+        
         return Card(
           elevation: 4,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (context) => JobDetailScreen(
-                        job: job,
-                        isBookmarked: isBookmarked,
-                        onBookmarkToggled:
-                            (jobId) => bookmarkProvider.toggleBookmark(jobId),
-                      ),
+                  builder: (context) => JobDetailScreen(
+                    job: job,
+                    isBookmarked: isBookmarked,
+                    onBookmarkToggled: (jobId) => bookmarkProvider.toggleBookmark(jobId),
+                  ),
                 ),
               );
             },
@@ -127,22 +117,19 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                         height: 50,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border, width: 1),
+                          border: Border.all(color: AppColors.lightGrey, width: 1),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(11),
-                          child:
-                              job.companyLogo.isNotEmpty
-                                  ? Image.network(
-                                    job.companyLogo,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return _buildCompanyLogoFallback(
-                                        job.companyName,
-                                      );
-                                    },
-                                  )
-                                  : _buildCompanyLogoFallback(job.companyName),
+                          child: job.companyLogo.isNotEmpty
+                              ? Image.network(
+                                  job.companyLogo,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _buildCompanyLogoFallback(job.companyName);
+                                  },
+                                )
+                              : _buildCompanyLogoFallback(job.companyName),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -155,7 +142,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
+                                color: AppColors.black,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -165,7 +152,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                               job.companyName,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppColors.primaryAccent,
+                                color: AppColors.primaryBlue,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -182,10 +169,8 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                           }
                         },
                         icon: Icon(
-                          isBookmarked
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          color: AppColors.primaryAccent,
+                          isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                          color: AppColors.primaryBlue,
                           size: 28,
                         ),
                       ),
@@ -198,7 +183,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                         : job.description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: AppColors.secondaryText,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -209,28 +194,28 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                       Icon(
                         Icons.location_on_outlined,
                         size: 16,
-                        color: AppColors.textSecondary,
+                        color: AppColors.grey,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         job.location,
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.textSecondary,
+                          color: AppColors.grey,
                         ),
                       ),
                       const Spacer(),
                       Icon(
                         Icons.access_time_rounded,
                         size: 16,
-                        color: AppColors.textSecondary,
+                        color: AppColors.grey,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _getTimeAgo(job.createdAt.toIso8601String()),
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.textSecondary,
+                          color: AppColors.grey,
                         ),
                       ),
                     ],
@@ -241,7 +226,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                       Icon(
                         Icons.currency_rupee_rounded,
                         size: 18,
-                        color: AppColors.primaryAccent,
+                        color: AppColors.success,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -249,7 +234,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primaryAccent,
+                          color: AppColors.success,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -257,7 +242,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                         '/year',
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: AppColors.grey,
                         ),
                       ),
                       const Spacer(),
@@ -266,27 +251,19 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (context) => JobDetailScreen(
-                                    job: job,
-                                    isBookmarked: isBookmarked,
-                                    onBookmarkToggled:
-                                        (jobId) => bookmarkProvider
-                                            .toggleBookmark(jobId),
-                                  ),
+                              builder: (context) => JobDetailScreen(
+                                job: job,
+                                isBookmarked: isBookmarked,
+                                onBookmarkToggled: (jobId) => bookmarkProvider.toggleBookmark(jobId),
+                              ),
                             ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryAccent,
-                          foregroundColor: AppColors.textOnAccent,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          backgroundColor: AppColors.primaryBlue,
+                          foregroundColor: AppColors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text('Apply Now'),
                       ),
@@ -303,12 +280,12 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
 
   Widget _buildCompanyLogoFallback(String companyName) {
     return Container(
-      color: AppColors.primaryAccent.withOpacity(0.1),
+      color: AppColors.primaryBlue.withOpacity(0.1),
       child: Center(
         child: Text(
           companyName.isNotEmpty ? companyName[0].toUpperCase() : 'C',
           style: const TextStyle(
-            color: AppColors.primaryAccent,
+            color: AppColors.primaryBlue,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -327,62 +304,60 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
         actions: [
           IconButton(
             onPressed: _refreshJobs,
-            icon:
-                _isRefreshing
-                    ? const CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    )
-                    : const Icon(Icons.refresh_rounded),
+            icon: _isRefreshing
+                ? const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  )
+                : const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryAccent,
-                ),
-              )
-              : _savedJobs.isEmpty
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.bookmark_rounded,
-                      size: 60,
-                      color: AppColors.primaryAccent.withOpacity(0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No saved jobs yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Bookmark jobs to see them here',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-              : RefreshIndicator(
-                onRefresh: _refreshJobs,
-                color: AppColors.primaryAccent,
-                child: ListView.builder(
-                  itemCount: _savedJobs.length,
-                  itemBuilder: (context, index) {
-                    return _buildJobCard(_savedJobs[index]);
-                  },
-                ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primaryBlue,
               ),
+            )
+          : _savedJobs.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.bookmark_rounded,
+                        size: 60,
+                        color: AppColors.primaryBlue.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No saved jobs yet',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: AppColors.secondaryText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Bookmark jobs to see them here',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.hintText,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _refreshJobs,
+                  color: AppColors.primaryBlue,
+                  child: ListView.builder(
+                    itemCount: _savedJobs.length,
+                    itemBuilder: (context, index) {
+                      return _buildJobCard(_savedJobs[index]);
+                    },
+                  ),
+                ),
     );
   }
 }

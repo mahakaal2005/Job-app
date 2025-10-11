@@ -1,10 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_application_model.dart';
-import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/services/auth_services.dart';
 
 class JobApplicationForm extends StatefulWidget {
   final Job job;
@@ -158,7 +158,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
         builder: (context, scrollController) {
           return Container(
             decoration: const BoxDecoration(
-              color: AppColors.background,
+              color: AppColors.backgroundColor,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
@@ -167,7 +167,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                 Icon(
                   Icons.check_circle_outline,
                   size: 64,
-                  color: AppColors.primaryAccent,
+                  color: AppColors.success,
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -175,7 +175,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.primaryText,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -183,7 +183,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                   'You have already applied for this position.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: AppColors.textSecondary,
+                    color: AppColors.secondaryText,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -191,7 +191,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryAccent,
+                    backgroundColor: AppColors.primaryBlue,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
                       vertical: 16,
@@ -223,7 +223,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
-            color: AppColors.background,
+            color: AppColors.backgroundColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -240,7 +240,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
@@ -261,7 +261,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.3),
+                    color: AppColors.mutedText.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -271,7 +271,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.primaryText,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -279,7 +279,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                   'at ${widget.job.companyName}',
                   style: const TextStyle(
                     fontSize: 18,
-                    color: AppColors.textSecondary,
+                    color: AppColors.mutedText,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -318,15 +318,15 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.textSecondary.withValues(alpha: 0.1),
+          color: AppColors.mutedText.withOpacity(0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight.withValues(alpha: 0.1),
+            color: AppColors.shadowLight.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -340,12 +340,12 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
+                  color: AppColors.royalBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.description_outlined,
-                  color: AppColors.primaryAccent,
+                  color: AppColors.royalBlue,
                   size: 20,
                 ),
               ),
@@ -355,7 +355,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AppColors.primaryText,
                 ),
               ),
             ],
@@ -368,7 +368,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
               'Current Resume: ${_userData!['resumeFileName']}',
               style: const TextStyle(
                 fontSize: 14,
-                color: AppColors.textPrimary,
+                color: AppColors.primaryText,
               ),
             ),
             const SizedBox(height: 12),
@@ -384,7 +384,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                    color: AppColors.primaryText,
                   ),
                 ),
               ],
@@ -395,7 +395,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
               width: double.infinity,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppColors.textSecondary.withValues(alpha: 0.2),
+                  color: AppColors.mutedText.withOpacity(0.2),
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(8),
@@ -414,7 +414,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                                 ? loadingProgress.cumulativeBytesLoaded /
                                     loadingProgress.expectedTotalBytes!
                                 : null,
-                        color: AppColors.primaryAccent,
+                        color: AppColors.primaryBlue,
                       ),
                     );
                   },
@@ -426,14 +426,14 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                         children: [
                           Icon(
                             Icons.error_outline,
-                            color: AppColors.primaryAccent,
+                            color: AppColors.error,
                             size: 32,
                           ),
                           SizedBox(height: 8),
                           Text(
                             'Failed to load resume preview',
                             style: TextStyle(
-                              color: AppColors.primaryAccent,
+                              color: AppColors.error,
                               fontSize: 14,
                             ),
                           ),
@@ -449,24 +449,21 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.primaryAccent.withValues(alpha: 0.1),
+                color: AppColors.error.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.warning_amber_rounded,
-                    color: AppColors.primaryAccent.withValues(alpha: 0.8),
+                    color: AppColors.error.withOpacity(0.8),
                     size: 24,
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'Please upload your resume in your profile before applying',
-                      style: TextStyle(
-                        color: AppColors.primaryAccent,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: AppColors.error, fontSize: 14),
                     ),
                   ),
                 ],
@@ -482,15 +479,15 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.textSecondary.withValues(alpha: 0.1),
+          color: AppColors.mutedText.withOpacity(0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight.withValues(alpha: 0.1),
+            color: AppColors.shadowLight.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -504,12 +501,12 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
+                  color: AppColors.royalBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.edit_outlined,
-                  color: AppColors.primaryAccent,
+                  color: AppColors.royalBlue,
                   size: 20,
                 ),
               ),
@@ -519,7 +516,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AppColors.primaryText,
                 ),
               ),
             ],
@@ -534,15 +531,15 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: AppColors.textSecondary.withValues(alpha: 0.3),
+                  color: AppColors.mutedText.withOpacity(0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primaryAccent),
+                borderSide: const BorderSide(color: AppColors.primaryBlue),
               ),
               filled: true,
-              fillColor: AppColors.background,
+              fillColor: AppColors.backgroundColor,
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -563,15 +560,15 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: AppColors.textSecondary.withValues(alpha: 0.3),
+                  color: AppColors.mutedText.withOpacity(0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primaryAccent),
+                borderSide: const BorderSide(color: AppColors.primaryBlue),
               ),
               filled: true,
-              fillColor: AppColors.background,
+              fillColor: AppColors.backgroundColor,
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -593,7 +590,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryAccent.withValues(alpha: 0.3),
+            color: AppColors.primaryBlue.withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -602,7 +599,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
       child: ElevatedButton(
         onPressed: !_isSubmitting ? _submitApplication : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryAccent,
+          backgroundColor: AppColors.primaryBlue,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),

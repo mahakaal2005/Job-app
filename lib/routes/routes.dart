@@ -3,6 +3,9 @@ import 'package:get_work_app/screens/initial/onboarding_screen.dart';
 import 'package:get_work_app/screens/initial/splash_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
 import 'package:get_work_app/screens/login_signup/signup_screen.dart';
+import 'package:get_work_app/screens/login_signup/forgot_password_screen.dart';
+import 'package:get_work_app/screens/login_signup/password_reset_success_screen.dart';
+import 'package:get_work_app/screens/login_signup/password_reset_complete_screen.dart';
 import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
 import 'package:get_work_app/screens/main/employye/emp_chats.dart';
 import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
@@ -21,6 +24,9 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String signup = '/signup';
+  static const String forgotPassword = '/forgot-password';
+  static const String passwordResetSuccess = '/password-reset-success';
+  static const String passwordResetComplete = '/password-reset-complete';
   static const String home = '/home';
   static const String userHome = '/user-home';
   static const String employeeHome = '/employee-home';
@@ -47,6 +53,22 @@ class AppRoutes {
       case signup:
         return MaterialPageRoute(
           builder: (_) => const SignupScreen(),
+          settings: settings,
+        );
+      case forgotPassword:
+        return MaterialPageRoute(
+          builder: (_) => const ForgotPasswordScreen(),
+          settings: settings,
+        );
+      case passwordResetSuccess:
+        final email = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          builder: (_) => PasswordResetSuccessScreen(email: email),
+          settings: settings,
+        );
+      case passwordResetComplete:
+        return MaterialPageRoute(
+          builder: (_) => const PasswordResetCompleteScreen(),
           settings: settings,
         );
       case onboarding:

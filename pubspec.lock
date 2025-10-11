@@ -9,14 +9,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.56"
-  animated_notch_bottom_bar:
-    dependency: "direct main"
-    description:
-      name: animated_notch_bottom_bar
-      sha256: adc389a39e7b015883bba22de57e691eb6445c98c055b2438d6593a7f68017fe
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.3"
   archive:
     dependency: transitive
     description:
@@ -161,14 +153,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.7"
-  eva_icons_flutter:
-    dependency: "direct main"
-    description:
-      name: eva_icons_flutter
-      sha256: "6d48a10b93590ab83eb092bee5adacdeb14f3d83f527a4b9e4092c363d56e2a8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
   fake_async:
     dependency: transitive
     description:
@@ -398,6 +382,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.28"
+  flutter_svg:
+    dependency: "direct main"
+    description:
+      name: flutter_svg
+      sha256: b9c2ad5872518a27507ab432d1fb97e8813b05f0fc693f9d40fad06d073e0678
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -456,22 +448,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.5"
-  glass_kit:
-    dependency: "direct main"
-    description:
-      name: glass_kit
-      sha256: "5cbf3c979089ebac808856a0f8e6161f0d302b71dfc18766fa40c25b87dfc304"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
-  google_fonts:
-    dependency: "direct main"
-    description:
-      name: google_fonts
-      sha256: "517b20870220c48752eafa0ba1a797a092fb22df0d89535fd9991e86ee2cdd9c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.3.2"
   http:
     dependency: "direct main"
     description:
@@ -712,6 +688,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
+  path_parsing:
+    dependency: transitive
+    description:
+      name: path_parsing
+      sha256: "883402936929eac138ee0a45da5b0f2c80f89913e6dc3bf77eb65b84b409c6ca"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   path_provider:
     dependency: "direct main"
     description:
@@ -1005,6 +989,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.1"
+  vector_graphics:
+    dependency: transitive
+    description:
+      name: vector_graphics
+      sha256: a4f059dc26fc8295b5921376600a194c4ec7d55e72f2fe4c7d2831e103d461e6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.19"
+  vector_graphics_codec:
+    dependency: transitive
+    description:
+      name: vector_graphics_codec
+      sha256: "99fd9fbd34d9f9a32efd7b6a6aae14125d8237b10403b422a6a6dfeac2806146"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.13"
+  vector_graphics_compiler:
+    dependency: transitive
+    description:
+      name: vector_graphics_compiler
+      sha256: d354a7ec6931e6047785f4db12a1f61ec3d43b207fc0790f863818543f8ff0dc
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.19"
   vector_math:
     dependency: transitive
     description:

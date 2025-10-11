@@ -12,7 +12,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
-import 'package:get_work_app/widgets/glass_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,8 +20,7 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> 
-    with TickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditing = false;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -32,12 +30,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   final _skillSearchController = TextEditingController();
   List<String> _filteredSkills = [];
   bool _showSkillSuggestions = false;
-
-  // Header animation variables
-  AnimationController? _headerAnimationController;
-  Animation<double>? _headerAnimation;
-  bool _isHeaderCollapsed = false;
-  ScrollController? _scrollController;
 
   // Track expanded sections
   final Map<String, bool> _expandedSections = {
@@ -101,20 +93,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
-    
-    // Initialize scroll controller and animation
-    _scrollController = ScrollController();
-    _headerAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _headerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _headerAnimationController!, curve: Curves.easeInOut),
-    );
-    
-    // Add scroll listener for header animation
-    _scrollController!.addListener(_scrollListener);
-    
     _loadUserData();
   }
 
@@ -136,33 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     _portfolioController.dispose();
     _twitterController.dispose();
     _skillSearchController.dispose();
-    _scrollController?.dispose();
-    _headerAnimationController?.dispose();
     super.dispose();
-  }
-
-  void _scrollListener() {
-    // Safety check for scroll controller
-    if (_scrollController == null || !_scrollController!.hasClients) return;
-    
-    // Smooth header animation with reduced scroll distance for faster response
-    const double maxScrollForAnimation = 120.0; // Reduced for quicker animation
-    final double rawScrollOffset = _scrollController!.offset.clamp(0.0, maxScrollForAnimation);
-    final double normalizedProgress = rawScrollOffset / maxScrollForAnimation;
-    final double easedProgress = Curves.easeOutQuart.transform(normalizedProgress); // Smoother curve
-    
-    // More frequent updates for smoother animation
-    const double threshold = 0.005; // Reduced threshold for smoother updates
-    if (_headerAnimationController != null && (easedProgress - _headerAnimationController!.value).abs() > threshold) {
-      // Use controller.value directly - no setState to avoid rebuilding entire widget tree
-      _headerAnimationController!.value = easedProgress;
-      
-      // Update collapsed state efficiently
-      final bool newCollapsedState = easedProgress > 0.2; // Earlier threshold
-      if (_isHeaderCollapsed != newCollapsedState) {
-        _isHeaderCollapsed = newCollapsedState;
-      }
-    }
   }
 
   Future<void> _loadUserData() async {
@@ -172,8 +124,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         final role = await AuthService.getUserRole();
         final collectionName =
             role == 'employee' ? 'employees' : 'users_specific';
+
         final doc =
-            await FirebaseFirestore.instance.collection(collectionName).doc(user.uid).get();
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .get();
 
         if (doc.exists && mounted) {
           setState(() {
@@ -254,23 +210,26 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       try {
         final url = await _uploadToCloudinary(_selectedImage!);
+
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
           final role = await AuthService.getUserRole();
           final collectionName =
               role == 'employee' ? 'employees' : 'users_specific';
+
           await FirebaseFirestore.instance
               .collection(collectionName)
               .doc(user.uid)
               .update({
-            'profileImageUrl': url,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+                'profileImageUrl': url,
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
 
           setState(() {
             _userData['profileImageUrl'] = url;
             _isUploadingImage = false;
           });
+
           _showSuccessSnackBar('Profile picture updated successfully!');
         }
       } catch (e) {
@@ -283,6 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _uploadResume() async {
     try {
       final typeGroup = XTypeGroup(label: 'PDFs', extensions: ['pdf']);
+
       final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
 
       if (file != null) {
@@ -293,7 +253,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
         // Use PDFService to handle the upload and preview generation
         final uploadResult = await PDFService.uploadResumePDF(_selectedResume!);
-
         if (uploadResult['pdfUrl'] == null) {
           throw Exception('Failed to upload resume');
         }
@@ -466,15 +425,15 @@ class _ProfileScreenState extends State<ProfileScreen>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            Icon(Icons.check_circle_rounded, color: AppColors.white, size: 20),
             SizedBox(width: 12),
             Text(message, style: TextStyle(fontWeight: FontWeight.w600)),
           ],
         ),
-        backgroundColor: AppColors.successColor,
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: EdgeInsets.fromLTRB(16, 16, 16, 100), // Extra bottom margin to clear navigation bar
+        margin: EdgeInsets.all(16),
       ),
     );
   }
@@ -484,15 +443,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_rounded, color: Colors.white, size: 20),
+            Icon(Icons.error_rounded, color: AppColors.white, size: 20),
             SizedBox(width: 12),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: AppColors.errorColor,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        margin: EdgeInsets.fromLTRB(16, 16, 16, 100), // Extra bottom margin to clear navigation bar
       ),
     );
   }
@@ -510,35 +468,32 @@ class _ProfileScreenState extends State<ProfileScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: AppColors.hintText,
             ),
           ),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: _isEditing ? _uploadResume : null,
-            child: GlassCard(
+            child: Container(
               padding: const EdgeInsets.all(16),
-              margin: EdgeInsets.zero,
-              elevation: _isEditing ? 15 : 8, // Higher elevation when editing
-              borderRadius: 20.0,
-              isActive: false, // Keep consistent gray appearance
+              decoration: BoxDecoration(
+                color: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color:
+                      _isEditing
+                          ? AppColors.primaryBlue
+                          : AppColors.dividerColor,
+                  width: 1,
+                ),
+              ),
               child: Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.primaryAccent.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.insert_drive_file_rounded,
-                      color: AppColors.primaryAccent,
-                      size: 24,
-                    ),
+                  Icon(
+                    Icons.insert_drive_file_rounded,
+                    color:
+                        _isEditing ? AppColors.primaryBlue : AppColors.hintText,
+                    size: 24,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -546,12 +501,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _userData['resumeFileName'] != null
-                              ? _userData['resumeFileName']
-                              : 'No resume uploaded',
+                          _userData['resumeFileName'] ?? 'No resume uploaded',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: AppColors.black,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -561,7 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                             'Tap to change',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: AppColors.hintText,
                             ),
                           ),
                       ],
@@ -573,7 +526,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.primaryAccent,
+                        color: AppColors.primaryBlue,
                       ),
                     )
                   else if (hasResume)
@@ -592,14 +545,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                           },
                           icon: const Icon(
                             Icons.visibility_rounded,
-                            color: AppColors.primaryAccent,
+                            color: AppColors.primaryBlue,
                             size: 20,
                           ),
                           tooltip: 'View Resume',
                         ),
                         const Icon(
                           Icons.check_circle_rounded,
-                          color: AppColors.successColor,
+                          color: AppColors.success,
                           size: 20,
                         ),
                       ],
@@ -615,7 +568,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
+                color: AppColors.hintText,
               ),
             ),
             const SizedBox(height: 8),
@@ -624,7 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               width: double.infinity,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppColors.textSecondary.withValues(alpha: 0.2),
+                  color: AppColors.mutedText.withOpacity(0.2),
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(8),
@@ -643,7 +596,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 ? loadingProgress.cumulativeBytesLoaded /
                                     loadingProgress.expectedTotalBytes!
                                 : null,
-                        color: AppColors.primaryAccent,
+                        color: AppColors.primaryBlue,
                       ),
                     );
                   },
@@ -655,14 +608,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           Icon(
                             Icons.error_outline,
-                            color: AppColors.errorColor,
+                            color: AppColors.error,
                             size: 32,
                           ),
                           SizedBox(height: 8),
                           Text(
                             'Failed to load resume preview',
                             style: TextStyle(
-                              color: AppColors.errorColor,
+                              color: AppColors.error,
                               fontSize: 14,
                             ),
                           ),
@@ -679,308 +632,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildAnimatedProfileHeader() {
-    // Safety check for initialization
-    if (_headerAnimationController == null) {
-      return _buildProfileHeader();
-    }
-    
-    return AnimatedBuilder(
-      animation: _headerAnimationController!,
-      builder: (context, child) {
-        final double progress = _headerAnimationController!.value;
-        
-        return Container(
-          margin: EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                const Color(0xFF2A1A1A),
-                const Color(0xFF3A2525),
-                const Color(0xFF4A3535),
-                AppColors.headerLight,
-                const Color(0xFF5A5A5A),
-              ],
-              stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(28 * (1 - progress * 0.5)),
-              bottomRight: Radius.circular(28 * (1 - progress * 0.5)),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 25 * (1 - progress * 0.6),
-                offset: Offset(0, 10 * (1 - progress * 0.8)),
-                spreadRadius: -3,
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 15 * (1 - progress * 0.6),
-                offset: Offset(0, 5 * (1 - progress * 0.8)),
-                spreadRadius: -1,
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(28 * (1 - progress * 0.5)),
-              bottomRight: Radius.circular(28 * (1 - progress * 0.5)),
-            ),
-            child: SafeArea(
-              child: Container(
-                padding: EdgeInsets.fromLTRB(
-                  16, 
-                  20 * (1 - progress * 0.5), 
-                  16, 
-                  28 * (1 - progress * 0.8)
-                ),
-                child: _buildOptimizedProfileTransitionHeader(progress),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildOptimizedProfileTransitionHeader(double progress) {
-    final double fadeProgress = Curves.easeOutQuart.transform(progress);
-    final double scaleProgress = Curves.easeOutCubic.transform(progress);
-    final double heightProgress = Curves.easeOutExpo.transform(progress);
-    
-    return Column(
-      children: [
-        // Always show the main row (title + edit button)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Profile title
-            Text(
-              'My Profile',
-              style: TextStyle(
-                fontSize: 28 + (progress * 4), // Larger when collapsed
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: progress * 0.5,
-              ),
-            ),
-            // Edit button - enhanced with animation
-            Transform.scale(
-              scale: 1.0 + (scaleProgress * 0.05),
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.3 + (progress * 0.1)),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: AppColors.primaryAccent,
-                    width: 1.5 + (progress * 0.5),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryAccent.withValues(alpha: progress * 0.2),
-                      blurRadius: 8 * progress,
-                      spreadRadius: 1 * progress,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    if (_isEditing) {
-                      _saveProfile();
-                    } else {
-                      setState(() => _isEditing = true);
-                    }
-                  },
-                  padding: EdgeInsets.zero,
-                  icon: _isSaving
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryAccent,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Icon(
-                          _isEditing ? Icons.save_rounded : Icons.edit_rounded,
-                          color: AppColors.primaryAccent,
-                          size: 22 + (progress * 2),
-                        ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        
-        // Profile content that fades out
-        ClipRect(
-          child: Container(
-            height: (190 * (1 - heightProgress)).clamp(0.0, 190.0), // Increased to show full chip
-            child: SingleChildScrollView(
-              physics: const NeverScrollableScrollPhysics(),
-              child: Transform.translate(
-                offset: Offset(0, -20 * fadeProgress),
-                child: Opacity(
-                  opacity: (1 - fadeProgress * 1.8).clamp(0.0, 1.0),
-                  child: Column(
-                    children: [
-                      SizedBox(height: (16 * (1 - heightProgress)).clamp(0.0, 16.0)), // Further reduced spacing
-                      Transform.scale(
-                        scale: (1 - scaleProgress * 0.4).clamp(0.6, 1.0),
-                        child: Transform.translate(
-                          offset: Offset(0, 10 * scaleProgress),
-                          child: _buildProfileContent(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfileContent() {
-    return Column(
-      children: [
-        // Profile image and info
-        Stack(
-          children: [
-            GestureDetector(
-              onTap: _isEditing ? _uploadImage : null,
-              child: Container(
-                padding: EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadowLight,
-                      blurRadius: 16,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: CircleAvatar(
-                  radius: 35, // Further reduced to create more space for chip
-                  backgroundColor: AppColors.primaryAccent,
-                  backgroundImage: _selectedImage != null
-                      ? FileImage(_selectedImage!)
-                      : (_userData['profileImageUrl'] != null
-                          ? NetworkImage(_userData['profileImageUrl'])
-                          : null) as ImageProvider?,
-                  child: (_selectedImage == null && _userData['profileImageUrl'] == null)
-                      ? Icon(
-                          Icons.person,
-                          size: 40, // Reduced icon size
-                          color: Colors.white,
-                        )
-                      : null,
-                ),
-              ),
-            ),
-            if (_isEditing)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryAccent,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadowLight,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: _isUploadingImage
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Icon(
-                          Icons.camera_alt_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                ),
-              ),
-          ],
-        ),
-        SizedBox(height: 8), // Further reduced spacing
-        // User name and availability
-        Text(
-          _userData['fullName'] ?? 'User Name',
-          style: TextStyle(
-            fontSize: 18, // Further reduced font size
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        SizedBox(height: 6), // Further reduced spacing
-        // Availability chip styled exactly like reference image
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          decoration: BoxDecoration(
-            // Transparent gray background like in reference image
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: Text(
-            _getAvailabilityText(),
-            style: TextStyle(
-              color: Colors.white, // White text like in reference
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-              letterSpacing: 0.1,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _getAvailabilityText() {
-    // Handle different data structures for availability
-    if (_userData['availability'] != null) {
-      if (_userData['availability'] is String) {
-        return _userData['availability'];
-      } else if (_userData['availability'] is Map) {
-        return _userData['availability']['type'] ?? 'Full-time';
-      }
-    }
-    
-    // Fallback to selectedAvailability or default
-    return _selectedAvailability.isNotEmpty ? _selectedAvailability : 'Full-time';
-  }
-
   Widget _buildProfileHeader() {
     String availabilityText = 'Available';
     if (_userData['availability'] is String) {
@@ -990,44 +641,33 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     return Container(
-      // Add horizontal margins to match home screen spacing (4px like home screen)
-      margin: EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        // Sophisticated gray-red gradient - same as user home screen
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF2A1A1A),     // Deep dark gray with subtle red undertone at TOP
-            const Color(0xFF3A2525),     // Medium dark gray with red hint
-            const Color(0xFF4A3535),     // Medium gray with subtle red
-            const Color(0xFF4A4A4A),     // Medium light gray
-            const Color(0xFF5A5A5A),     // Light sophisticated gray at BOTTOM
-          ],
-          stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
-        ),
+        gradient:
+            _isEditing
+                ? LinearGradient(
+                  colors: [
+                    AppColors.primaryBlue.withOpacity(0.9),
+                    AppColors.neonBlue.withOpacity(0.9),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+                : AppColors.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ), // Match home screen border radius exactly
-        // Premium shadow system - same as user home screen
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 25,
-            offset: const Offset(0, 12),
-            spreadRadius: -2,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
+            color: AppColors.blueShadow,
+            blurRadius: 20,
+            offset: Offset(0, 8),
           ),
         ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(20, 16, 20, 24), // Reduced padding to match home screen
+          padding: EdgeInsets.all(24),
           child: Column(
             children: [
               Row(
@@ -1036,28 +676,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                   Text(
                     'My Profile',
                     style: TextStyle(
-                      fontSize: 26, // Slightly reduced to match home screen proportions
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.white,
                     ),
                   ),
                   Container(
-                    width: 48,
-                    height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: AppColors.primaryAccent,
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      color: AppColors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
                       onPressed: () {
@@ -1067,29 +694,27 @@ class _ProfileScreenState extends State<ProfileScreen>
                           setState(() => _isEditing = true);
                         }
                       },
-                      padding: EdgeInsets.zero,
                       icon:
                           _isSaving
                               ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primaryAccent,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  _isEditing
-                                      ? Icons.save_rounded
-                                      : Icons.edit_rounded,
-                                  color: AppColors.primaryAccent,
-                                  size: 22,
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.white,
+                                  strokeWidth: 2,
                                 ),
+                              )
+                              : Icon(
+                                _isEditing
+                                    ? Icons.save_rounded
+                                    : Icons.edit_rounded,
+                                color: AppColors.white,
+                              ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 18), // Reduced spacing
+              SizedBox(height: 24),
               Stack(
                 children: [
                   GestureDetector(
@@ -1097,41 +722,42 @@ class _ProfileScreenState extends State<ProfileScreen>
                     child: Container(
                       padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.shadowLight,
+                            color: AppColors.shadowMedium,
                             blurRadius: 16,
                             offset: Offset(0, 8),
                           ),
                         ],
                       ),
                       child: CircleAvatar(
-                        radius: 42, // Reduced from 50 to 42 for more compact header
-                        backgroundColor: AppColors.primaryAccent,
+                        radius: 50,
+                        backgroundColor: AppColors.neonBlue,
                         backgroundImage:
                             _selectedImage != null
                                 ? FileImage(_selectedImage!)
                                 : _userData['profileImageUrl'] != null
-                                    ? NetworkImage(_userData['profileImageUrl'])
-                                    : null,
+                                ? NetworkImage(_userData['profileImageUrl'])
+                                : null,
                         child:
                             _isUploadingImage
                                 ? CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
+                                  color: AppColors.white,
+                                )
                                 : _selectedImage == null &&
-                                        _userData['profileImageUrl'] == null
-                                    ? Text(
-                                        (_userData['fullName'] ?? 'U')[0].toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 28, // Reduced font size to match smaller avatar
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : null,
+                                    _userData['profileImageUrl'] == null
+                                ? Text(
+                                  (_userData['fullName'] ?? 'U')[0]
+                                      .toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.white,
+                                  ),
+                                )
+                                : null,
                       ),
                     ),
                   ),
@@ -1142,39 +768,39 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: Container(
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryAccent,
+                          color: AppColors.neonBlue,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(color: AppColors.white, width: 2),
                         ),
                         child: Icon(
                           Icons.camera_alt_rounded,
-                          color: Colors.white,
+                          color: AppColors.white,
                           size: 16,
                         ),
                       ),
                     ),
                 ],
               ),
-              SizedBox(height: 12), // Reduced spacing
+              SizedBox(height: 16),
               Text(
                 _userData['fullName'] ?? 'User Name',
                 style: TextStyle(
-                  fontSize: 22, // Slightly reduced for more compact header
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.white,
                 ),
               ),
-              SizedBox(height: 6), // Reduced spacing
+              SizedBox(height: 8),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: AppColors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   availabilityText,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1187,11 +813,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildStatsRow() {
-    return GlassCard(
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    return Container(
+      margin: EdgeInsets.all(20),
       padding: EdgeInsets.all(20),
-      elevation: 20, // Increased elevation for dramatic floating effect like home screen
-      borderRadius: 24.0, // Consistent with home screen cards
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowLight,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -1199,21 +834,21 @@ class _ProfileScreenState extends State<ProfileScreen>
             icon: Icons.work_outline_rounded,
             value: '${_userData['totalEarned'] ?? 0}',
             label: 'Total Earned',
-            color: AppColors.successColor,
+            color: AppColors.success,
           ),
           Container(width: 1, height: 40, color: AppColors.dividerColor),
           _buildStatItem(
             icon: Icons.schedule_rounded,
             value: '${_userData['weeklyHours'] ?? 0}h',
             label: 'Weekly Hours',
-            color: AppColors.primaryAccent,
+            color: AppColors.primaryBlue,
           ),
           Container(width: 1, height: 40, color: AppColors.dividerColor),
           _buildStatItem(
             icon: Icons.star_rounded,
             value: '4.8',
             label: 'Rating',
-            color: AppColors.warningColor,
+            color: AppColors.warning,
           ),
         ],
       ),
@@ -1231,14 +866,10 @@ class _ProfileScreenState extends State<ProfileScreen>
         Container(
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.4),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.primaryAccent.withValues(alpha: 0.3),
-              width: 1,
-            ),
           ),
-          child: Icon(icon, color: AppColors.primaryAccent, size: 24),
+          child: Icon(icon, color: color, size: 24),
         ),
         SizedBox(height: 8),
         Text(
@@ -1246,14 +877,14 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.black,
           ),
         ),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: AppColors.hintText,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1267,12 +898,22 @@ class _ProfileScreenState extends State<ProfileScreen>
     required List<Widget> children,
     required String sectionKey,
   }) {
-    return GlassCard(
+    return Container(
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: EdgeInsets.all(0), // No padding since ExpansionTile handles its own
-      elevation: 20, // Increased elevation for dramatic floating effect like home screen
-      borderRadius: 24.0, // Consistent with home screen cards
-      isActive: false, // Keep consistent gray appearance when expanded
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color:
+                _isEditing
+                    ? AppColors.blueShadow.withOpacity(0.2)
+                    : AppColors.shadowLight,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: ExpansionTile(
         key: Key(sectionKey),
         initiallyExpanded: _expandedSections[sectionKey] ?? false,
@@ -1286,16 +927,15 @@ class _ProfileScreenState extends State<ProfileScreen>
             Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color:
+                    _isEditing
+                        ? AppColors.primaryBlue.withOpacity(0.2)
+                        : AppColors.softGrey,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.3),
-                  width: 1,
-                ),
               ),
               child: Icon(
                 icon,
-                color: AppColors.primaryAccent,
+                color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
                 size: 24,
               ),
             ),
@@ -1305,7 +945,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: _isEditing ? AppColors.primaryAccent : Colors.white,
+                color: _isEditing ? AppColors.primaryBlue : AppColors.black,
               ),
             ),
           ],
@@ -1338,7 +978,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         validator: validator,
         style: TextStyle(
           fontSize: 16,
-          color: Colors.white,
+          color: AppColors.black,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -1347,25 +987,24 @@ class _ProfileScreenState extends State<ProfileScreen>
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.4),
+              color:
+                  _isEditing
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : AppColors.softGrey,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.primaryAccent.withValues(alpha: 0.3),
-                width: 1,
-              ),
             ),
             child: Icon(
               icon,
-              color: AppColors.primaryAccent,
+              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
               size: 20,
             ),
           ),
           labelStyle: TextStyle(
-            color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
+            color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
             fontWeight: FontWeight.w600,
           ),
           filled: true,
-          fillColor: _isEditing ? AppColors.glass15 : AppColors.surface,
+          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -1376,7 +1015,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.primaryAccent, width: 2),
+            borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
@@ -1402,7 +1041,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         onChanged: _isEditing ? onChanged : null,
         style: TextStyle(
           fontSize: 16,
-          color: Colors.white,
+          color: AppColors.black,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -1411,25 +1050,24 @@ class _ProfileScreenState extends State<ProfileScreen>
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.4),
+              color:
+                  _isEditing
+                      ? AppColors.primaryBlue.withOpacity(0.1)
+                      : AppColors.softGrey,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.primaryAccent.withValues(alpha: 0.3),
-                width: 1,
-              ),
             ),
             child: Icon(
               icon,
-              color: AppColors.primaryAccent,
+              color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
               size: 20,
             ),
           ),
           labelStyle: TextStyle(
-            color: _isEditing ? AppColors.primaryAccent : AppColors.textSecondary,
+            color: _isEditing ? AppColors.primaryBlue : AppColors.hintText,
             fontWeight: FontWeight.w600,
           ),
           filled: true,
-          fillColor: _isEditing ? AppColors.glass15 : AppColors.surface,
+          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -1440,15 +1078,16 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: AppColors.primaryAccent, width: 2),
+            borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
           ),
         ),
-        items: options.map((String option) {
-          return DropdownMenuItem<String>(
-            value: option,
-            child: Text(option),
-          );
-        }).toList(),
+        items:
+            options.map((String option) {
+              return DropdownMenuItem<String>(
+                value: option,
+                child: Text(option),
+              );
+            }).toList(),
       ),
     );
   }
@@ -1459,12 +1098,15 @@ class _ProfileScreenState extends State<ProfileScreen>
         _filteredSkills = [];
         _showSkillSuggestions = false;
       } else {
-        _filteredSkills = allSkills
-            .where((skill) =>
-                skill.toLowerCase().contains(query.toLowerCase()) &&
-                !_skills.contains(skill))
-            .take(5)
-            .toList();
+        _filteredSkills =
+            allSkills
+                .where(
+                  (skill) =>
+                      skill.toLowerCase().contains(query.toLowerCase()) &&
+                      !_skills.contains(skill),
+                )
+                .take(5)
+                .toList();
         _showSkillSuggestions = _filteredSkills.isNotEmpty;
       }
     });
@@ -1503,27 +1145,27 @@ class _ProfileScreenState extends State<ProfileScreen>
                 margin: const EdgeInsets.all(12),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
+                  color: AppColors.primaryBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.search_rounded,
-                  color: AppColors.primaryAccent,
+                  color: AppColors.primaryBlue,
                   size: 20,
                 ),
               ),
               suffixIcon:
                   _skillSearchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _skillSearchController.clear();
-                            _filterSkills('');
-                          },
-                        )
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _skillSearchController.clear();
+                          _filterSkills('');
+                        },
+                      )
                       : null,
               filled: true,
-              fillColor: AppColors.glass15,
+              fillColor: AppColors.lightBlue,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -1534,7 +1176,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: AppColors.primaryAccent, width: 2),
+                borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
               ),
             ),
           ),
@@ -1543,9 +1185,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: AppColors.glass15,
+                color: AppColors.cardBackground,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.glassBorder),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.shadowLight,
@@ -1564,17 +1205,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                     title: Text(
                       skill,
                       style: const TextStyle(
-                        color: AppColors.textPrimary,
+                        color: AppColors.primaryText,
                         fontSize: 14,
                       ),
                     ),
                     leading: const Icon(
                       Icons.add_circle_outline,
-                      color: AppColors.primaryAccent,
+                      color: AppColors.primaryBlue,
                       size: 20,
                     ),
                     onTap: () => _addSkill(skill),
-                    hoverColor: AppColors.primaryAccent.withValues(alpha: 0.1),
+                    hoverColor: AppColors.primaryBlue.withOpacity(0.1),
                   );
                 },
               ),
@@ -1586,72 +1227,73 @@ class _ProfileScreenState extends State<ProfileScreen>
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _skills.map((skill) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.primaryAccent.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      skill,
-                      style: TextStyle(
-                        color: AppColors.primaryAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+            children:
+                _skills.map((skill) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.primaryBlue.withOpacity(0.3),
                       ),
                     ),
-                    if (_isEditing) ...[
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: () => _removeSkill(skill),
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryAccent.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.close,
-                            size: 14,
-                            color: AppColors.primaryAccent,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          skill,
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }).toList(),
+                        if (_isEditing) ...[
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => _removeSkill(skill),
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryBlue.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: AppColors.primaryBlue,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }).toList(),
           ),
         ] else ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.glass15,
+              color: AppColors.lightBlue,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: AppColors.primaryAccent.withValues(alpha: 0.7),
+                  color: AppColors.primaryBlue.withOpacity(0.7),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
                     'Add your skills to help employers find you',
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: AppColors.primaryText,
                       fontSize: 14,
                     ),
                   ),
@@ -1692,7 +1334,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           controller: _portfolioController,
           label: 'Portfolio',
           icon: Icons.web_rounded,
-          color: AppColors.primaryAccent,
+          color: AppColors.primaryBlue,
         ),
         _buildSocialMediaField(
           controller: _twitterController,
@@ -1717,7 +1359,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         enabled: _isEditing,
         style: TextStyle(
           fontSize: 16,
-          color: Colors.white,
+          color: AppColors.black,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
@@ -1726,17 +1368,17 @@ class _ProfileScreenState extends State<ProfileScreen>
             margin: EdgeInsets.all(12),
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
           ),
           labelStyle: TextStyle(
-            color: _isEditing ? color : AppColors.textSecondary,
+            color: _isEditing ? color : AppColors.hintText,
             fontWeight: FontWeight.w600,
           ),
           filled: true,
-          fillColor: _isEditing ? AppColors.glass15 : AppColors.surface,
+          fillColor: _isEditing ? AppColors.lightBlue : AppColors.softGrey,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -1784,37 +1426,38 @@ class _ProfileScreenState extends State<ProfileScreen>
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
-            color: Colors.white,
+            color: AppColors.black,
           ),
         ),
         SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _timeSlots.map((slot) {
-            final isSelected = _preferredSlots.contains(slot);
-            return FilterChip(
-              label: Text(slot),
-              selected: isSelected,
-              onSelected:
-                  _isEditing
-                      ? (selected) {
-                          setState(() {
-                            if (selected) {
-                              _preferredSlots.add(slot);
-                            } else {
-                              _preferredSlots.remove(slot);
-                            }
-                          });
-                        }
-                      : null,
-              selectedColor: AppColors.primaryAccent,
-              checkmarkColor: Colors.white,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.white,
-              ),
-            );
-          }).toList(),
+          children:
+              _timeSlots.map((slot) {
+                final isSelected = _preferredSlots.contains(slot);
+                return FilterChip(
+                  label: Text(slot),
+                  selected: isSelected,
+                  onSelected:
+                      _isEditing
+                          ? (selected) {
+                            setState(() {
+                              if (selected) {
+                                _preferredSlots.add(slot);
+                              } else {
+                                _preferredSlots.remove(slot);
+                              }
+                            });
+                          }
+                          : null,
+                  selectedColor: AppColors.primaryBlue,
+                  checkmarkColor: AppColors.white,
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.white : AppColors.black,
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
@@ -1863,54 +1506,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Container(
-        color: AppColors.background,
-        child: const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryAccent),
-        ),
-      );
+      return Center(child: CircularProgressIndicator());
     }
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      // Synchronized gradient - seamless flow from header bottom to black (same as user home screen)
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFF5A5A5A),     // Light gray (MATCHES header bottom exactly)
-            const Color(0xFF505050),     // Slightly darker gray
-            const Color(0xFF454545),     // Medium gray
-            const Color(0xFF3A3A3A),     // Darker gray
-            const Color(0xFF303030),     // Even darker gray
-            const Color(0xFF252525),     // Deep gray
-            const Color(0xFF1A1A1A),     // Very deep gray
-            const Color(0xFF151515),     // Dark gray-black
-            const Color(0xFF101010),     // Very dark gray
-            const Color(0xFF0A0A0A),     // Almost black gray
-            const Color(0xFF050505),     // Nearly black
-            AppColors.background,        // Pure black at bottom
-          ],
-          stops: const [0.0, 0.08, 0.16, 0.24, 0.32, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Scrollable content with dynamic padding for animated header
-          AnimatedBuilder(
-            animation: _headerAnimationController ?? AnimationController(vsync: this, duration: Duration.zero),
-            builder: (context, child) {
-              return SingleChildScrollView(
-                controller: _scrollController,
-                child: Column(
-                  children: [
-                    // Dynamic padding that adjusts with header animation
-                    SizedBox(height: _getProfileHeaderHeight()),
-                    // Tighter spacing between header and first card
-                    SizedBox(height: 24), // Reduced by another 4px for optimal layout
-                _buildStatsRow(),
+    return Scaffold(
+      backgroundColor:
+          _isEditing
+              ? AppColors.lightBlue.withOpacity(0.1)
+              : AppColors.backgroundColor,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildProfileHeader(),
+            _buildStatsRow(),
+
             // Basic Information
             _buildSectionCard(
               title: 'Basic Information',
@@ -1970,12 +1579,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                 _buildResumeField(),
               ],
             ),
+
             // Skills Section
             _buildSkillsSection(),
+
             // Social Media Section
             _buildSocialMediaSection(),
+
             // Availability Section
             _buildAvailabilitySection(),
+
             // Address Section
             _buildAddressSection(),
             if (_isEditing)
@@ -1993,7 +1606,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           });
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.errorColor,
+                          backgroundColor: AppColors.error,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2002,7 +1615,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         child: Text(
                           'Cancel',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -2014,7 +1627,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: ElevatedButton(
                         onPressed: _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.successColor,
+                          backgroundColor: AppColors.success,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2023,58 +1636,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                         child:
                             _isSaving
                                 ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    'Save Changes',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.white,
+                                    strokeWidth: 2,
                                   ),
+                                )
+                                : Text(
+                                  'Save Changes',
+                                  style: TextStyle(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
                       ),
                     ),
                   ],
                 ),
               ),
-            
-                    // Extra spacing for floating bottom navigation
-                    SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
-                  ],
-                ),
-              );
-            },
-          ),
-      // Animated header that transforms based on scroll
-      Positioned(
-        top: 0,
-        left: 0,
-        right: 0,
-        child: _buildAnimatedProfileHeader(),
+          ],
+        ),
       ),
-    ],
-  ),
-);
-  }
-
-  double _getProfileHeaderHeight() {
-    // Dynamic header height based on animation progress - matched to user home screen
-    final double baseHeight = MediaQuery.of(context).padding.top;
-    final double progress = _headerAnimationController?.value ?? 0.0;
-    
-    // Adjusted to match user home screen: 290px full, 80px collapsed
-    final double fullHeaderHeight = 290.0; // Matches user home screen exactly
-    final double collapsedHeaderHeight = 80.0;
-    
-    // Interpolate between full and collapsed height
-    final double animatedHeight = fullHeaderHeight - ((fullHeaderHeight - collapsedHeaderHeight) * progress);
-    
-    return baseHeight + animatedHeight;
+    );
   }
 }

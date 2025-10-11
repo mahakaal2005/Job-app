@@ -1,142 +1,163 @@
-// lib/utils/app_colors.dart
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Canvas & surfaces - Black base for Red+Black+Gray scheme
-  static const Color background = Color(0xFF000000);       // Pure black background
-  static const Color surface = Color(0xFF0A0A0A);          // Very dark gray surface
-  static const Color surfaceElevated = Color(0xFF1A1A1A);  // Elevated dark gray
+  // Primary Blue Palette - Electric Blue Focus
+  static const Color primaryBlue = Color(0xFF0066FF);
+  static const Color darkBlue = Color(0xFF0052CC);
+  static const Color lightBlue = Color(0xFFE6F2FF);
+  static const Color accentBlue = Color(0xFF3385FF);
+  static const Color neonBlue = Color(0xFF00D4FF);
+  static const Color deepBlue = Color(0xFF003D99);
+  static const Color royalBlue = Color(0xFF4169E1);
 
-  // Header gradient family - SOPHISTICATED GRAY gradient for header
-  static const Color headerDark = Color(0xFF1A1A1A);      // Deep dark gray - header top
-  static const Color headerCore = Color(0xFF2A2A2A);      // Medium dark gray - header upper
-  static const Color headerMid = Color(0xFF3A3A3A);       // Medium gray - header middle
-  static const Color headerLight = Color(0xFF4A4A4A);     // Light gray - header lower
-  
-  // Brand accent family - MINIMAL RED for buttons and accents only
-  static const Color primaryAccent = Color(0xFFDC2626);   // True red - buttons and accents
-  static const Color accentDeep = Color(0xFFB91C3C);      // Deep red - pressed states
-  static const Color accentLight = Color(0xFFEF4444);     // Light red - hover states
-  static const Color accentPop = Color(0xFFF87171);       // Very light red - subtle highlights
-  
-  // Backwards compatibility aliases for existing code
-  static const Color accentDark = accentDeep;             // Alias for accentDeep
-  static const Color accentCore = primaryAccent;          // Alias for primaryAccent
+  // Core Colors - Pure Contrast
+  static const Color black = Color(0xFF000000);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color richBlack = Color(0xFF0A0A0A);
+  static const Color softBlack = Color(0xFF1A1A1A);
+  static const Color charcoalBlack = Color(0xFF2C2C2C);
+  static const Color offWhite = Color(0xFFFCFCFC);
+  static const Color pureWhite = Color(0xFFFFFFFF);
+  static const Color creamWhite = Color(0xFFFAFAFA);
 
-  // Metallic sheen for premium surfaces (gray metallic for header)
-  static const Color sheenStart = Color(0xFF6A6A6A);      // Light gray metallic
-  static const Color sheenEnd = Color(0xFF3A3A3A);        // Dark gray metallic
+  // Beige Accents - Warm Neutrals
+  static const Color lightBeige = Color(0xFFF5F5DC);
+  static const Color warmBeige = Color(0xFFE8E2D4);
+  static const Color softBeige = Color(0xFFF0EAE2);
+  static const Color paleBeige = Color(0xFFFAF8F5);
 
-  // Text - Gray scale for Red+Black+Gray scheme
-  static const Color textPrimary = Color(0xFFFFFFFF);      // Pure white text
-  static const Color textSecondary = Color(0xFFC4C4C4);    // Light gray text
-  static const Color textHigh = Color(0xFFFFFFFF);         // High contrast white
-  static const Color textMuted = Color(0xFF808080);        // Medium gray text
-  static const Color textOnAccent = Color(0xFFFFFFFF);     // White on red
+  // Neutral Shades - Monochrome Palette
+  static const Color darkGrey = Color(0xFF2D2D2D);
+  static const Color grey = Color(0xFF666666);
+  static const Color lightGrey = Color(0xFFE8E8E8);
+  static const Color softGrey = Color(0xFFF2F2F2);
+  static const Color borderGrey = Color(0xFFD1D1D1);
+  static const Color silverGrey = Color(0xFFC0C0C0);
+  static const Color smokeyGrey = Color(0xFF8A8A8A);
 
-  // Glass / tint (brand-based) - Red-black tints for seamless flow
-  static const Color glass05 = Color(0x0D1A0808);
-  static const Color glass10 = Color(0x1A1A0808);
-  static const Color glass15 = Color(0x261A0808);
-  static const Color glass20 = Color(0x331A0808);
-  static const Color glass25 = Color(0x401A0808);
-  static const Color glass30 = Color(0x4D1A0808);
+  // Status Colors - Blue Tinted
+  static const Color success = Color(0xFF00C851);
+  static const Color successLight = Color(0xFFE8F8F0);
+  static const Color error = Color(0xFFFF4444);
+  static const Color errorLight = Color(0xFFFFE8E8);
+  static const Color warning = Color(0xFFFFAA00);
+  static const Color warningLight = Color(0xFFFFF4E6);
+  static const Color info = primaryBlue;
+  static const Color infoLight = lightBlue;
 
-  static const Color glassTint05 = Color(0x0D1A0808);
-  static const Color glassTint12 = Color(0x1F1A0808);
-  static const Color glassBorder = Color(0x33F7EFEE);
-  static const Color glassSpecular = Color(0x28F7EFEE);
+  // Background Colors - Clean & Modern
+  static const Color backgroundColor = Color(0xFFFFFFFF);
+  static const Color darkBackground = Color(0xFF0F0F0F);
+  static const Color cardBackground = Color(0xFFFFFFFF);
+  static const Color darkCardBackground = Color(0xFF1C1C1C);
+  static const Color surfaceColor = Color(0xFFFAFAFA);
+  static const Color darkSurfaceColor = Color(0xFF151515);
+  static const Color beigeBackground = Color(0xFFF8F6F3);
 
-  static const Color glassBorderLight = Color(0x26F7EFEE);
-  static const Color glassBorderStrong = Color(0x66F7EFEE);
+  // Text Colors - High Contrast
+  static const Color primaryText = Color(0xFF000000);
+  static const Color secondaryText = Color(0xFF4A4A4A);
+  static const Color hintText = Color(0xFF999999);
+  static const Color whiteText = Color(0xFFFFFFFF);
+  static const Color blueText = primaryBlue;
+  static const Color mutedText = Color(0xFF6B6B6B);
 
-  static const Color glassDark05 = Color(0x0D0C0807);
-  static const Color glassDark10 = Color(0x1A0C0807);
-  static const Color glassDark15 = Color(0x260C0807);
-  static const Color glassDark20 = Color(0x330C0807);
-  static const Color glassDark25 = Color(0x400C0807);
+  // Interactive Colors
+  static const Color hoverColor = Color(0xFFF0F0F0);
+  static const Color pressedColor = Color(0xFFE0E0E0);
+  static const Color focusColor = Color(0x1A0066FF);
+  static const Color dividerColor = Color(0xFFEEEEEE);
+  static const Color activeColor = primaryBlue;
 
-  static const Color glassWhite = Color(0x26F7EFEE);
-  static const Color glassBlack = Color(0x1A0C0807);
-  static const Color glassGray = Color(0xFFB8A9A7);
-  static const Color cardGlass = Color(0x1A1A0808);
-  static const Color cardGlassSecondary = Color(0x0D1A0808);
-  static const Color cardGlassActive = Color(0x26E53E3E);  // Active cards use true red tint
+  // Enhanced Gradient Collections
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [primaryBlue, deepBlue],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  // ---- RED-ONLY State Tokens (replaced green/yellow/blue) ----
-  // These are distinct tints of your red so they are visually different
-  // but remain within the single-red brand system.
+  static const LinearGradient blackGradient = LinearGradient(
+    colors: [black, charcoalBlack],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 
-  // "Positive" state - Using corrected red variations
-  static const Color statePositive = Color(0xFFDC2626); // true red
-  static const Color statePositiveGlass = Color(
-    0x26DC2626,
-  ); // glass overlay variant
+  static const LinearGradient darkGradient = LinearGradient(
+    colors: [richBlack, softBlack],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  // "Warning" state - Using lighter red
-  static const Color stateWarning = Color(0xFFF87171); // light red
-  static const Color stateWarningGlass = Color(0x26F87171); // glass overlay
+  static const LinearGradient blueGradient = LinearGradient(
+    colors: [neonBlue, primaryBlue, deepBlue],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  // "Error" state - Using deep red
-  static const Color stateError = Color(
-    0xFFB91C3C,
-  ); // deep red
-  static const Color stateErrorGlass = Color(0x26B91C3C); // error glass
+  static const LinearGradient whiteGradient = LinearGradient(
+    colors: [white, creamWhite],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 
-  // "Info" state - Using gray for neutral info
-  static const Color stateInfo = Color(0xFF808080); // medium gray
-  static const Color stateInfoGlass = Color(0x26808080); // info glass
+  static const LinearGradient beigeGradient = LinearGradient(
+    colors: [paleBeige, warmBeige],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 
-  // Backwards compatible aliases kept but mapped to the red-only tokens:
-  static const Color success = statePositive;
-  static const Color successColor = statePositive;
-  static const Color successGlass = statePositiveGlass;
+  static const LinearGradient successGradient = LinearGradient(
+    colors: [success, Color(0xFF00A043)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  static const Color warning = stateWarning;
-  static const Color warningColor = stateWarning;
-  static const Color warningGlass = stateWarningGlass;
+  static const LinearGradient errorGradient = LinearGradient(
+    colors: [error, Color(0xFFE63939)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  static const Color error = stateError;
-  static const Color errorColor = stateError;
-  static const Color errorGlass = stateErrorGlass;
+  // Premium Gradients
+  static const LinearGradient elegantBlue = LinearGradient(
+    colors: [royalBlue, primaryBlue, accentBlue],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  static const Color info = stateInfo;
-  static const Color infoGlass = stateInfoGlass;
+  static const LinearGradient sophisticatedDark = LinearGradient(
+    colors: [black, charcoalBlack, darkGrey],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 
-  // Shadows - subtle, red accent shadow for premium glow
-  static const Color shadowLight = Color(0x22000000);
-  static const Color shadowSoft = Color(0x22000000);
+  // Glassmorphism Effects
+  static const Color glassWhite = Color(0x40FFFFFF);
+  static const Color glassBlack = Color(0x40000000);
+  static const Color glassBlue = Color(0x400066FF);
+  static const Color glassBeige = Color(0x40F5F5DC);
+
+  // Shadow Colors
+  static const Color shadowLight = Color(0x1A000000);
   static const Color shadowMedium = Color(0x33000000);
-  static const Color accentShadow = Color(0x20DC2626);  // True red shadow
+  static const Color shadowDark = Color(0x4D000000);
+  static const Color blueShadow = Color(0x330066FF);
+  static const Color blackShadow = Color(0x26000000);
 
-  // UI Elements - Supporting colors
-  static const Color border = Color(0xFF151313);
-  static const Color dividerColor = Color(0xFF261E1D);
-  static const Color surfaceColor = Color(0xFF050101);
+  // Brand Specific
+  static const Color brandAccent = neonBlue;
+  static const Color brandSecondary = deepBlue;
+  static const Color brandNeutral = smokeyGrey;
+  static const Color brandLight = lightBeige;
+  
+  // Look Gig Brand Colors
+  static const Color lookGigPurple = Color(0xFF130160);
+  static const Color lookGigLightGray = Color(0xFFF9F9F9);
+  static const Color lookGigDescriptionText = Color(0xFF524B6B);
 
-  // Gradients (Red-tinted for seamless flow)
-  static const List<Color> glassGradient = [
-    Color(0x261A0808),
-    Color(0x0D1A0808),
-  ];
-
-  static const List<Color> glassGradientStrong = [
-    Color(0x401A0808),
-    Color(0x1A1A0808),
-  ];
-
-  static const List<Color> metallicGradient = [
-    Color(0xFFFF8A75),
-    Color(0xFFB33A2C),
-  ];
-
-  static const List<Color> accentGradient = [
-    Color(0xFFDC2626),  // True red
-    Color(0xFFB91C3C),  // Deep red
-  ];
-
-  static const List<Color> accentGradientVibrant = [
-    Color(0xFFF87171),  // Light red
-    Color(0xFFDC2626),  // True red
-  ];
+  // Card & Surface Colors
+  static const Color cardElevated = Color(0xFFFFFFFF);
+  static const Color cardSoft = Color(0xFFF8F9FA);
+  static const Color surfaceElevated = Color(0xFFFFFFFF);
+  static const Color surfaceDim = Color(0xFFF5F5F5);
 }

@@ -7,11 +7,11 @@ class EmpHelpSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
         title: const Text('Help & Support'),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.black,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -24,11 +24,11 @@ class EmpHelpSupportScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryAccent,
+                  gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.shadowLight,
+                      color: AppColors.blueShadow,
                       blurRadius: 15,
                       offset: const Offset(0, 5),
                     ),
@@ -40,7 +40,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
                     const Text(
                       'How can we help you?',
                       style: TextStyle(
-                        color: AppColors.textOnAccent,
+                        color: AppColors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -49,7 +49,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
                     Text(
                       'Our support team is here to assist you with any questions or concerns.',
                       style: TextStyle(
-                        color: AppColors.textOnAccent,
+                        color: AppColors.white.withOpacity(0.9),
                         fontSize: 16,
                       ),
                     ),
@@ -114,9 +114,9 @@ class EmpHelpSupportScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppColors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: AppColors.lightGrey),
                     ),
                     child: Column(
                       children: [
@@ -159,7 +159,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: AppColors.primaryText,
           ),
         ),
         const SizedBox(height: 16),
@@ -180,19 +180,19 @@ class EmpHelpSupportScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.lightGrey),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primaryAccent.withOpacity(0.1),
+                color: AppColors.primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primaryAccent, size: 24),
+              child: Icon(icon, color: AppColors.primaryBlue, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -204,7 +204,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: AppColors.primaryText,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -212,7 +212,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: AppColors.secondaryText,
                     ),
                   ),
                 ],
@@ -228,9 +228,9 @@ class EmpHelpSupportScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.lightGrey),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,7 +240,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AppColors.primaryText,
             ),
           ),
           const SizedBox(height: 8),
@@ -248,7 +248,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
             answer,
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: AppColors.secondaryText,
               height: 1.5,
             ),
           ),
@@ -270,7 +270,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+            color: AppColors.primaryText,
           ),
         ),
         Text(
@@ -278,7 +278,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: isClosed ? AppColors.primaryAccent : AppColors.primaryAccent,
+            color: isClosed ? AppColors.error : AppColors.success,
           ),
         ),
       ],

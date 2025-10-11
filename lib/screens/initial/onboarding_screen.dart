@@ -10,183 +10,142 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  PageController pageController = PageController();
-  int currentPage = 0;
-
-  final List<OnboardingData> onboardingData = [
-    OnboardingData(
-      title: "Welcome to Our App",
-      description: "Discover amazing features and connect with people around the world.",
-      imagePath: "assets/images/onboarding1.png", // Add your image here
-      icon: Icons.explore,
-    ),
-    OnboardingData(
-      title: "Stay Connected",
-      description: "Keep in touch with friends and family through secure messaging.",
-      imagePath: "assets/images/onboarding2.png", // Add your image here
-      icon: Icons.message,
-    ),
-    OnboardingData(
-      title: "Get Started",
-      description: "Join our community and start your journey with us today!",
-      imagePath: "assets/images/onboarding3.png", // Add your image here
-      icon: Icons.rocket_launch,
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    currentPage = index;
-                  });
-                },
-                itemCount: onboardingData.length,
-                itemBuilder: (context, index) {
-                  return OnboardingPage(data: onboardingData[index]);
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Skip button
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, AppRoutes.login);
-                    },
-                    child: const Text(
-                      'Skip',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  
-                  // Page indicators
-                  Row(
-                    children: List.generate(
-                      onboardingData.length,
-                      (index) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: currentPage == index ? 20 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: currentPage == index
-                              ? AppColors.primaryAccent
-                              : AppColors.border,
-                          borderRadius: BorderRadius.circular(4),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: AppColors.lookGigLightGray,
+        ),
+        child: SafeArea(
+          child: Column(
+                    children: [
+                      // Top section with logo
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20, right: 32),
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: Text(
+                            'LookGig',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.black,
+                              fontFamily: 'DM Sans',
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      
+                      // Main illustration
+                      Expanded(
+                        flex: 3,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/images/main_illustration.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 300,
+                                  height: 300,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.lightGrey,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.work_outline,
+                                    size: 100,
+                                    color: AppColors.grey,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Bottom section with text and icon
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Main heading
+                              const Text(
+                                'Find Your\nDream Job\nHere!',
+                                style: TextStyle(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.black,
+                                  fontFamily: 'DM Sans',
+                                  height: 0.95,
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Description text
+                              const Text(
+                                'Explore all the most exciting job roles based\non your interest and study major.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.lookGigDescriptionText,
+                                  fontFamily: 'DM Sans',
+                                  height: 1.3,
+                                ),
+                              ),
+                              
+                              const Spacer(),
+                              
+                              // Bottom icon with tap functionality
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 40),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.pushReplacementNamed(context, AppRoutes.login);
+                                    },
+                                    child: Image.asset(
+                                      'assets/images/bottom_icon.png',
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          width: 60,
+                                          height: 60,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryBlue,
+                                            borderRadius: BorderRadius.circular(30),
+                                          ),
+                                          child: const Icon(
+                                            Icons.arrow_forward,
+                                            color: AppColors.white,
+                                            size: 30,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  
-                  // Next button
-                  FloatingActionButton(
-                    onPressed: () {
-                      if (currentPage < onboardingData.length - 1) {
-                        pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      } else {
-                        Navigator.pushReplacementNamed(context, AppRoutes.login);
-                      }
-                    },
-                    backgroundColor: AppColors.primaryAccent,
-                    child: const Icon(
-                      Icons.arrow_forward,
-                      color: AppColors.textOnAccent,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
-}
-
-class OnboardingPage extends StatelessWidget {
-  final OnboardingData data;
-
-  const OnboardingPage({super.key, required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Image or Icon placeholder
-          Container(
-            width: 250,
-            height: 250,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(125),
-            ),
-            child: Icon(
-              data.icon,
-              size: 100,
-              color: AppColors.primaryAccent,
-            ),
-          ),
-          
-          const SizedBox(height: 50),
-          
-          // Title
-          Text(
-            data.title,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Description
-          Text(
-            data.description,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class OnboardingData {
-  final String title;
-  final String description;
-  final String imagePath;
-  final IconData icon;
-
-  OnboardingData({
-    required this.title,
-    required this.description,
-    required this.imagePath,
-    required this.icon,
-  });
 }

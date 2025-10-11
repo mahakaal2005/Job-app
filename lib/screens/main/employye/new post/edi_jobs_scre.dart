@@ -159,13 +159,13 @@ class _EditJobScreenState extends State<EditJobScreen> {
       );
 
       await JobService.updateJob(updatedJob);
-
+      
       Navigator.pop(context, updatedJob);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update job: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     } finally {
@@ -176,18 +176,18 @@ class _EditJobScreenState extends State<EditJobScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryAccent,
+        backgroundColor: AppColors.primaryBlue,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textOnAccent),
+          icon: const Icon(Icons.arrow_back, color: AppColors.whiteText),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Edit Job',
           style: TextStyle(
-            color: AppColors.textOnAccent,
+            color: AppColors.whiteText,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -200,9 +200,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppColors.textOnAccent,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.whiteText),
                 ),
               ),
             )
@@ -212,7 +210,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
               child: const Text(
                 'Save',
                 style: TextStyle(
-                  color: AppColors.textOnAccent,
+                  color: AppColors.whiteText,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -227,61 +225,51 @@ class _EditJobScreenState extends State<EditJobScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSection('Basic Information', [
-                _buildTextField(
-                  controller: _titleController,
-                  label: 'Job Title',
-                  validator:
-                      (value) =>
-                          value?.isEmpty == true
-                              ? 'Please enter job title'
-                              : null,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _descriptionController,
-                  label: 'Job Description',
-                  maxLines: 4,
-                  validator:
-                      (value) =>
-                          value?.isEmpty == true
-                              ? 'Please enter job description'
-                              : null,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _locationController,
-                  label: 'Location',
-                  validator:
-                      (value) =>
-                          value?.isEmpty == true
-                              ? 'Please enter location'
-                              : null,
-                ),
-                const SizedBox(height: 16),
-                _buildDropdown(
-                  label: 'Employment Type',
-                  value: _selectedEmploymentType,
-                  items: _employmentTypes,
-                  onChanged:
-                      (value) =>
-                          setState(() => _selectedEmploymentType = value!),
-                ),
-                const SizedBox(height: 16),
-                _buildDropdown(
-                  label: 'Experience Level',
-                  value: _selectedExperienceLevel,
-                  items: _experienceLevels,
-                  onChanged:
-                      (value) =>
-                          setState(() => _selectedExperienceLevel = value!),
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _salaryRangeController,
-                  label: 'Salary Range (Optional)',
-                ),
-              ]),
+              _buildSection(
+                'Basic Information',
+                [
+                  _buildTextField(
+                    controller: _titleController,
+                    label: 'Job Title',
+                    validator: (value) =>
+                        value?.isEmpty == true ? 'Please enter job title' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _descriptionController,
+                    label: 'Job Description',
+                    maxLines: 4,
+                    validator: (value) =>
+                        value?.isEmpty == true ? 'Please enter job description' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _locationController,
+                    label: 'Location',
+                    validator: (value) =>
+                        value?.isEmpty == true ? 'Please enter location' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    label: 'Employment Type',
+                    value: _selectedEmploymentType,
+                    items: _employmentTypes,
+                    onChanged: (value) => setState(() => _selectedEmploymentType = value!),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDropdown(
+                    label: 'Experience Level',
+                    value: _selectedExperienceLevel,
+                    items: _experienceLevels,
+                    onChanged: (value) => setState(() => _selectedExperienceLevel = value!),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _salaryRangeController,
+                    label: 'Salary Range (Optional)',
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
               _buildListSection(
                 'Requirements',
@@ -330,11 +318,11 @@ class _EditJobScreenState extends State<EditJobScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColors.shadowLight,
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -348,7 +336,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primaryText,
             ),
           ),
           const SizedBox(height: 20),
@@ -368,24 +356,24 @@ class _EditJobScreenState extends State<EditJobScreen> {
       controller: controller,
       maxLines: maxLines,
       validator: validator,
-      style: TextStyle(color: AppColors.textPrimary),
+      style: TextStyle(color: AppColors.primaryText),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: AppColors.textSecondary),
+        labelStyle: TextStyle(color: AppColors.secondaryText),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primaryAccent, width: 2),
+          borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
         ),
         filled: true,
-        fillColor: AppColors.background,
+        fillColor: AppColors.surfaceColor,
       ),
     );
   }
@@ -404,31 +392,30 @@ class _EditJobScreenState extends State<EditJobScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: AppColors.primaryText,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.background,
+            color: AppColors.surfaceColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: AppColors.dividerColor),
           ),
           child: DropdownButton<String>(
             value: value,
             onChanged: onChanged,
             isExpanded: true,
             underline: const SizedBox(),
-            style: TextStyle(color: AppColors.textPrimary),
-            dropdownColor: AppColors.surface,
-            items:
-                items.map((String item) {
-                  return DropdownMenuItem<String>(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
+            style: TextStyle(color: AppColors.primaryText),
+            dropdownColor: AppColors.cardBackground,
+            items: items.map((String item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(item),
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -446,11 +433,11 @@ class _EditJobScreenState extends State<EditJobScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColors.shadowLight,
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -464,7 +451,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: AppColors.primaryText,
             ),
           ),
           const SizedBox(height: 16),
@@ -473,27 +460,24 @@ class _EditJobScreenState extends State<EditJobScreen> {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  style: TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: AppColors.primaryText),
                   decoration: InputDecoration(
                     hintText: hintText,
-                    hintStyle: TextStyle(color: AppColors.textSecondary),
+                    hintStyle: TextStyle(color: AppColors.secondaryText),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: AppColors.dividerColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: AppColors.dividerColor),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.primaryAccent,
-                        width: 2,
-                      ),
+                      borderSide: BorderSide(color: AppColors.primaryBlue, width: 2),
                     ),
                     filled: true,
-                    fillColor: AppColors.background,
+                    fillColor: AppColors.surfaceColor,
                   ),
                 ),
               ),
@@ -501,13 +485,13 @@ class _EditJobScreenState extends State<EditJobScreen> {
               ElevatedButton(
                 onPressed: onAdd,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryAccent,
+                  backgroundColor: AppColors.primaryBlue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Icon(Icons.add, color: AppColors.textOnAccent),
+                child: const Icon(Icons.add, color: AppColors.whiteText),
               ),
             ],
           ),
@@ -520,9 +504,9 @@ class _EditJobScreenState extends State<EditJobScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: AppColors.surfaceColor,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.dividerColor),
                 ),
                 child: Row(
                   children: [
@@ -530,7 +514,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                       child: Text(
                         item,
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: AppColors.primaryText,
                           fontSize: 14,
                         ),
                       ),
@@ -539,7 +523,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                       onPressed: () => onRemove(index),
                       icon: Icon(
                         Icons.delete_outline,
-                        color: Colors.red,
+                        color: AppColors.error,
                         size: 20,
                       ),
                     ),

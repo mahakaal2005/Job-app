@@ -1,7 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/routes/routes.dart';
-
 import '../../utils/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -63,12 +62,10 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.background, AppColors.surface],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          color: AppColors.lookGigPurple,
         ),
         child: Center(
           child: AnimatedBuilder(
@@ -81,57 +78,39 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: AppColors.textOnAccent,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.background.withOpacity(0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.work_outline,
-                                size: 60,
-                                color: AppColors.primaryAccent,
-                              );
-                            },
-                          ),
+                      // Logo PNG
+                      SizedBox(
+                        width: 60,
+                        height: 60,
+                        child: Image.asset(
+                          'assets/images/look_gig_logo.png',
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.work_outline,
+                              size: 60,
+                              color: AppColors.white,
+                            );
+                          },
                         ),
                       ),
-                      const SizedBox(height: 30),
-                      Text(
-                        'GetWork',
+                      const SizedBox(height: 20),
+                      // App Name
+                      const Text(
+                        'Look Gig',
                         style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textOnAccent,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Connect • Work • Grow',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: AppColors.textOnAccent,
-                          fontWeight: FontWeight.w300,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.white,
+                          fontFamily: 'DM Sans',
                         ),
                       ),
                       const SizedBox(height: 50),
-                      CircularProgressIndicator(
+                      const CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.textOnAccent,
+                          AppColors.white,
                         ),
                       ),
                     ],

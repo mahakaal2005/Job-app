@@ -1,7 +1,7 @@
 // recent_jobs_card.dart
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/applicant_provider.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
+import 'package:get_work_app/provider/applicant_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/emp_job_details_Screen.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
@@ -46,7 +46,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -67,7 +67,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: AppColors.primaryText,
                 ),
               ),
               TextButton(
@@ -84,7 +84,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                 child: Text(
                   'See All',
                   style: TextStyle(
-                    color: AppColors.primaryAccent,
+                    color: AppColors.primaryBlue,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -141,10 +141,10 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryAccent.withValues(alpha: 0.2),
+                      color: AppColors.lightBlue.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
-                        color: AppColors.primaryAccent,
+                        color: AppColors.primaryBlue,
                         width: 1.5,
                       ),
                     ),
@@ -152,7 +152,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                       child: Text(
                         job.companyName.substring(0, 1).toUpperCase(),
                         style: TextStyle(
-                          color: AppColors.primaryAccent,
+                          color: AppColors.primaryBlue,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -169,7 +169,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: AppColors.primaryText,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -179,7 +179,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                           job.companyName,
                           style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.textSecondary,
+                            color: AppColors.secondaryText,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -195,14 +195,14 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                                 Icon(
                                   Icons.location_on,
                                   size: 14,
-                                  color: AppColors.textSecondary,
+                                  color: AppColors.secondaryText,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   job.location,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: AppColors.secondaryText,
                                   ),
                                 ),
                               ],
@@ -213,14 +213,14 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                                 Icon(
                                   Icons.people,
                                   size: 14,
-                                  color: AppColors.textSecondary,
+                                  color: AppColors.secondaryText,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '$applicantCount Applied',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textSecondary,
+                                    color: AppColors.secondaryText,
                                   ),
                                 ),
                               ],
@@ -239,14 +239,12 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                     decoration: BoxDecoration(
                       color:
                           job.isActive
-                              ? AppColors.primaryAccent.withValues(alpha: 0.1)
-                              : AppColors.primaryAccent.withValues(alpha: 0.1),
+                              ? AppColors.success.withOpacity(0.1)
+                              : AppColors.error.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color:
-                            job.isActive
-                                ? AppColors.primaryAccent
-                                : AppColors.primaryAccent,
+                            job.isActive ? AppColors.success : AppColors.error,
                         width: 1,
                       ),
                     ),
@@ -258,8 +256,8 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                           size: 14,
                           color:
                               job.isActive
-                                  ? AppColors.primaryAccent
-                                  : AppColors.primaryAccent,
+                                  ? AppColors.success
+                                  : AppColors.error,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -268,8 +266,8 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                             fontSize: 12,
                             color:
                                 job.isActive
-                                    ? AppColors.primaryAccent
-                                    : AppColors.primaryAccent,
+                                    ? AppColors.success
+                                    : AppColors.error,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -291,13 +289,13 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Icon(Icons.work_outline, size: 48, color: AppColors.textSecondary),
+            Icon(Icons.work_outline, size: 48, color: AppColors.secondaryText),
             const SizedBox(height: 16),
             Text(
               'No jobs posted yet',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textSecondary,
+                color: AppColors.secondaryText,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -306,7 +304,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
               'Create your first job posting to get started',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textSecondary.withValues(alpha: 0.7),
+                color: AppColors.secondaryText.withOpacity(0.7),
               ),
               textAlign: TextAlign.center,
             ),

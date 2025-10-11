@@ -1,11 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get_work_app/provider/all_applicants_provider.dart';
-import 'package:get_work_app/provider/applicant_status_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/provider/all_applicants_provider.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AllApplicantsScreen extends StatefulWidget {
   final String jobId;
@@ -76,21 +76,21 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryAccent,
+        backgroundColor: AppColors.primaryBlue,
         elevation: 0,
         title: Text(
           widget.jobId.isEmpty
               ? 'All Applicants'
               : 'Applicants for ${widget.jobTitle}',
           style: TextStyle(
-            color: AppColors.textOnAccent,
+            color: AppColors.whiteText,
             fontWeight: FontWeight.bold,
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.textOnAccent),
+          icon: Icon(Icons.arrow_back, color: AppColors.whiteText),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -115,10 +115,10 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.background.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -139,13 +139,13 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: AppColors.textSecondary.withValues(alpha: 0.3),
+                        color: AppColors.mutedText.withOpacity(0.3),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: AppColors.textSecondary.withValues(alpha: 0.3),
+                        color: AppColors.mutedText.withOpacity(0.3),
                       ),
                     ),
                   ),
@@ -162,9 +162,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.3,
-                              ),
+                              color: AppColors.mutedText.withOpacity(0.3),
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -200,9 +198,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: AppColors.textSecondary.withValues(
-                              alpha: 0.3,
-                            ),
+                            color: AppColors.mutedText.withOpacity(0.3),
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -265,7 +261,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                       padding: const EdgeInsets.all(20),
                       child: Text(
                         provider.error,
-                        style: TextStyle(color: AppColors.primaryAccent),
+                        style: TextStyle(color: AppColors.error),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -281,7 +277,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                       child: Text(
                         'No applicants found',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.secondaryText,
                           fontSize: 16,
                         ),
                       ),
@@ -317,7 +313,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                                   ? Text(
                                     applicant['applicantName'][0].toUpperCase(),
                                     style: TextStyle(
-                                      color: AppColors.primaryAccent,
+                                      color: AppColors.primaryBlue,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   )
@@ -327,7 +323,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                           applicant['applicantName'] ?? 'Anonymous',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: AppColors.primaryText,
                           ),
                         ),
                         subtitle: Column(
@@ -336,14 +332,14 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                             Text(
                               'Applied for ${applicant['jobTitle']}',
                               style: TextStyle(
-                                color: AppColors.primaryAccent,
+                                color: AppColors.primaryBlue,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             Text(
                               'Applied on ${DateFormat('MMM dd, yyyy').format(appliedAt)}',
                               style: TextStyle(
-                                color: AppColors.textSecondary,
+                                color: AppColors.secondaryText,
                                 fontSize: 12,
                               ),
                             ),
@@ -357,6 +353,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                                   applicant['jobId'],
                                   applicant['id'],
                                 ) ??
+                                applicant['status'] ??
                                 'pending';
 
                             return GestureDetector(
@@ -369,12 +366,12 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                                 decoration: BoxDecoration(
                                   color: _getStatusColor(
                                     currentStatus,
-                                  ).withValues(alpha: 0.1),
+                                  ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _getStatusColor(
                                       currentStatus,
-                                    ).withValues(alpha: 0.3),
+                                    ).withOpacity(0.3),
                                     width: 1,
                                   ),
                                 ),
@@ -446,7 +443,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
       case 'shortlisted':
         return Colors.orange;
       default:
-        return AppColors.primaryAccent;
+        return Colors.blue;
     }
   }
 
@@ -460,9 +457,9 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor:
-                isSelected ? AppColors.primaryAccent : AppColors.surface,
+                isSelected ? AppColors.primaryBlue : Colors.grey[200],
             foregroundColor:
-                isSelected ? AppColors.textOnAccent : AppColors.textPrimary,
+                isSelected ? AppColors.whiteText : AppColors.primaryText,
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -490,7 +487,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: _getStatusColor(currentStatus).withValues(alpha: 0.1),
+            color: _getStatusColor(currentStatus).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
