@@ -154,6 +154,9 @@ class AppColors {
   static const Color lookGigPurple = Color(0xFF130160);
   static const Color lookGigLightGray = Color(0xFFF9F9F9);
   static const Color lookGigDescriptionText = Color(0xFF524B6B);
+  static const Color lookGigActiveIcon = Color(0xFF7551FF);
+  static const Color lookGigDarkPurple = Color(0xFF0D0140);
+  static const Color lookGigInactiveIcon = Color(0xFFA49EB5);
 
   // Card & Surface Colors
   static const Color cardElevated = Color(0xFFFFFFFF);

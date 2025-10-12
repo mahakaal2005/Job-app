@@ -5,6 +5,7 @@ import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart
 import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
+import 'package:get_work_app/screens/main/user/user_home_screen_new.dart';
 import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
 import 'package:get_work_app/screens/login_signup/login_screen.dart';
 
@@ -96,7 +97,7 @@ class AuthWrapper extends StatelessWidget {
               if (!onboardingCompleted) {
                 return const StudentOnboardingScreen();
               } else {
-                return const UserHomeScreen();
+                return const UserHomeScreenNew();
               }
             } else if (userRole == 'employee') {
               // Employee role

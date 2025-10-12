@@ -17,6 +17,7 @@ import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.
 import 'package:get_work_app/screens/main/employye/new%20post/new_job_screen.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen.dart';
+import 'package:get_work_app/screens/main/user/user_home_screen_new.dart';
 import 'package:get_work_app/services/auth_wrapper.dart';
 
 class AppRoutes {
@@ -94,7 +95,7 @@ class AppRoutes {
               ),
         );
       case userHome:
-        return MaterialPageRoute(builder: (_) => const UserHomeScreen());
+        return MaterialPageRoute(builder: (_) => const UserHomeScreenNew());
       case employeeHome:
         return MaterialPageRoute(
           builder: (_) => const EmployerDashboardScreen(),
