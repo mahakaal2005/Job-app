@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 import 'package:get_work_app/provider/all_applicants_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:get_work_app/provider/applicant_status_provider.dart';
@@ -298,17 +299,10 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage:
-                              applicant['applicantProfileImg'] != null &&
-                                      applicant['applicantProfileImg']
-                                          .isNotEmpty
-                                  ? NetworkImage(
-                                    applicant['applicantProfileImg'],
-                                  )
-                                  : null,
-                          child:
-                              applicant['applicantProfileImg'] == null ||
+                        leading: ImageUtils.buildSafeCircleAvatar(
+                          radius: 20,
+                          imagePath: applicant['applicantProfileImg'],
+                          child: applicant['applicantProfileImg'] == null ||
                                       applicant['applicantProfileImg'].isEmpty
                                   ? Text(
                                     applicant['applicantName'][0].toUpperCase(),
@@ -352,9 +346,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                                   widget.companyName,
                                   applicant['jobId'],
                                   applicant['id'],
-                                ) ??
-                                applicant['status'] ??
-                                'pending';
+                                ) ?? 'pending';
 
                             return GestureDetector(
                               onTap: () => _showApplicantDetails(applicant),
@@ -476,30 +468,5 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
     );
   }
 
-  Widget _buildStatusChip(String? status) {
-    return Consumer<ApplicantStatusProvider>(
-      builder: (context, provider, child) {
-        final currentStatus = provider.getStatus(
-          widget.companyName,
-          widget.jobId,
-          status ?? 'pending',
-        );
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: _getStatusColor(currentStatus).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            currentStatus.toUpperCase(),
-            style: TextStyle(
-              color: _getStatusColor(currentStatus),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        );
-      },
-    );
-  }
+
 }

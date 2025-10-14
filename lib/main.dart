@@ -64,11 +64,11 @@ class MyApp extends StatelessWidget {
           inputDecorationTheme: InputDecorationTheme(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.grey.withOpacity(0.3)),
+              borderSide: BorderSide(color: AppColors.grey.withValues(alpha: 0.3)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.grey.withOpacity(0.3)),
+              borderSide: BorderSide(color: AppColors.grey.withValues(alpha: 0.3)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -89,12 +89,12 @@ class MyApp extends StatelessWidget {
               horizontal: 16,
               vertical: 16,
             ),
-            hintStyle: TextStyle(color: AppColors.grey.withOpacity(0.7)),
+            hintStyle: TextStyle(color: AppColors.grey.withValues(alpha: 0.7)),
           ),
           chipTheme: ChipThemeData(
-            backgroundColor: AppColors.grey.withOpacity(0.1),
-            selectedColor: AppColors.primaryBlue.withOpacity(0.2),
-            disabledColor: AppColors.grey.withOpacity(0.3),
+            backgroundColor: AppColors.grey.withValues(alpha: 0.1),
+            selectedColor: AppColors.primaryBlue.withValues(alpha: 0.2),
+            disabledColor: AppColors.grey.withValues(alpha: 0.3),
             labelStyle: const TextStyle(color: AppColors.black),
             secondaryLabelStyle: const TextStyle(color: AppColors.primaryBlue),
             shape: RoundedRectangleBorder(

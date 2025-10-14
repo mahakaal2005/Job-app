@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';

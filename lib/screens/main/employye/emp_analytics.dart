@@ -275,7 +275,6 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
-    final isMediumScreen = screenWidth >= 600 && screenWidth < 1200;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,

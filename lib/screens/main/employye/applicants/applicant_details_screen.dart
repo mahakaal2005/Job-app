@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -101,19 +102,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
               child: Column(
                 children: [
                   // Profile Image
-                  CircleAvatar(
+                  ImageUtils.buildSafeCircleAvatar(
                     radius: 50,
-                    backgroundImage:
-                        widget.applicant['applicantProfileImg'] != null &&
-                                widget
-                                    .applicant['applicantProfileImg']
-                                    .isNotEmpty
-                            ? NetworkImage(
-                              widget.applicant['applicantProfileImg'],
-                            )
-                            : null,
-                    child:
-                        widget.applicant['applicantProfileImg'] == null ||
+                    imagePath: widget.applicant['applicantProfileImg'],
+                    child: widget.applicant['applicantProfileImg'] == null ||
                                 widget.applicant['applicantProfileImg'].isEmpty
                             ? Text(
                               widget.applicant['applicantName'][0]
@@ -152,9 +144,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                             widget.applicant['companyName'],
                             widget.applicant['jobId'],
                             widget.applicant['id'],
-                          ) ??
-                          widget.applicant['status'] ??
-                          'pending';
+                          ) ?? 'pending';
                       return Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -215,10 +205,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                 widget.applicant['yearsOfExperience'] ?? 'N/A',
                 Icons.work_outline,
               ),
-              _buildInfoRow(
+              _buildInfoRowWithCustomIcon(
                 'Applied On',
                 _formatDate(DateTime.parse(widget.applicant['appliedAt'])),
-                Icons.calendar_today_outlined,
+                'assets/images/calendar_icon_new.png',
               ),
             ]),
 
@@ -622,6 +612,64 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: AppColors.primaryBlue, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.mutedText,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.primaryText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRowWithCustomIcon(String label, String value, String iconPath) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: Image.asset(
+                iconPath,
+                width: 16,
+                height: 16,
+                color: AppColors.primaryBlue,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.calendar_today_outlined,
+                    color: AppColors.primaryBlue,
+                    size: 16,
+                  );
+                },
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

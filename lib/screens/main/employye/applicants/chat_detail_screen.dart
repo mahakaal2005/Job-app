@@ -326,43 +326,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
     );
   }
 
-  void _showAttachmentOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo, color: Colors.blue),
-              title: const Text('Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle photo selection
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.videocam, color: Colors.red),
-              title: const Text('Video'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle video selection
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.insert_drive_file, color: Colors.orange),
-              title: const Text('Document'),
-              onTap: () {
-                Navigator.pop(context);
-                // Handle document selection
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   void _sendMessage() {
     final message = _messageController.text.trim();

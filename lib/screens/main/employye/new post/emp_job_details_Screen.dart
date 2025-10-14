@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/provider/applicant_provider.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/edi_jobs_scre.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/edi_jobs_scre.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:provider/provider.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 import 'package:get_work_app/screens/main/employye/applicants/applicant_details_screen.dart';
 import 'package:get_work_app/screens/main/employye/applicants/all_applicants_screen.dart';
 import 'package:get_work_app/provider/applicant_status_provider.dart';
@@ -498,18 +499,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundImage:
-                                      applicant['applicantProfileImg'] !=
-                                                  null &&
-                                              applicant['applicantProfileImg']
-                                                  .isNotEmpty
-                                          ? NetworkImage(
-                                            applicant['applicantProfileImg'],
-                                          )
-                                          : null,
-                                  child:
-                                      applicant['applicantProfileImg'] ==
+                                leading: ImageUtils.buildSafeCircleAvatar(
+                                  radius: 20,
+                                  imagePath: applicant['applicantProfileImg'],
+                                  child: applicant['applicantProfileImg'] ==
                                                   null ||
                                               applicant['applicantProfileImg']
                                                   .isEmpty

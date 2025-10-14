@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/services/auth_services.dart';
 
 class JobService {

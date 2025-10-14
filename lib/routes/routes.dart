@@ -13,11 +13,12 @@ import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
 import 'package:get_work_app/screens/main/employye/emp_profile.dart';
 import 'package:get_work_app/screens/main/employye/emp_help_support.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/all_jobs.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/new_job_screen.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
-import 'package:get_work_app/screens/main/user/user_home_screen.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen_new.dart';
+import 'package:get_work_app/screens/main/user/user_profile.dart';
+import 'package:get_work_app/screens/main/user/jobs/no_results_screen.dart';
 import 'package:get_work_app/services/auth_wrapper.dart';
 
 class AppRoutes {
@@ -41,6 +42,8 @@ class AppRoutes {
   static const String helpSupport = '/help-support';
   static const String reports = '/reports';
   static const String empProfile = '/emp-profile';
+  static const String userProfile = '/user-profile';
+  static const String noResults = '/no-results';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -128,6 +131,11 @@ class AppRoutes {
           builder: (_) => const EmpProfile(),
         );
 
+      case userProfile:
+        return MaterialPageRoute(
+          builder: (_) => const ProfileScreen(),
+        );
+
       case studentOnboarding:
         return MaterialPageRoute(
           builder: (_) => const StudentOnboardingScreen(),
@@ -136,6 +144,15 @@ class AppRoutes {
       case employeeOnboarding:
         return MaterialPageRoute(
           builder: (_) => const EmployeeOnboardingScreen(),
+          settings: settings,
+        );
+      case noResults:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => NoResultsScreen(
+            searchQuery: args?['searchQuery'] as String? ?? '',
+            onBack: args?['onBack'] as VoidCallback?,
+          ),
           settings: settings,
         );
       default:

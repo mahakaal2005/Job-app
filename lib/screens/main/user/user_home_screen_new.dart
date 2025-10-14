@@ -1,18 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
-import 'package:get_work_app/screens/main/user/jobs/user_job_detail.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
-import 'package:get_work_app/screens/main/user/saved_jobs_screen.dart';
+import 'package:get_work_app/screens/main/user/jobs/filtered_jobs_screen.dart';
 import 'package:get_work_app/screens/main/user/bookmarks_screen.dart';
 import 'package:get_work_app/screens/main/user/user_chats.dart';
-import 'package:get_work_app/screens/main/user/user_profile.dart';
 import 'package:get_work_app/screens/main/user/user_help_and_support.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 import 'package:get_work_app/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -52,6 +51,11 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   int _fullTimeJobsCount = 0;
   int _partTimeJobsCount = 0;
   int _remoteJobsCount = 0;
+
+  // Filtered jobs view state
+  bool _showingFilteredJobs = false;
+  String _currentFilterType = '';
+  String _currentFilterTitle = '';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -349,10 +353,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   title: const Text('My Profile'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                    );
+                    Navigator.pushNamed(context, AppRoutes.userProfile);
                   },
                 ),
                 ListTile(
@@ -435,6 +436,30 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   }
 
   Widget _buildHomeScreen() {
+    // Show filtered jobs screen if flag is true
+    if (_showingFilteredJobs) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            setState(() {
+              _showingFilteredJobs = false;
+            });
+          }
+        },
+        child: FilteredJobsScreen(
+          filterType: _currentFilterType,
+          title: _currentFilterTitle,
+          onBack: () {
+            setState(() {
+              _showingFilteredJobs = false;
+            });
+          },
+        ),
+      );
+    }
+    
+    // Show normal home screen
     return SafeArea(
       child: FadeTransition(
         opacity: _fadeAnimation,
@@ -501,30 +526,21 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
               ],
             ),
           ),
-          // Profile Picture - Right Side (opens drawer)
+          // Profile Picture - Right Side (navigates to profile)
           // Using CircleAvatar with backgroundImage - same approach as user_profile.dart
           GestureDetector(
             onTap: () {
-              _scaffoldKey.currentState?.openDrawer();
+              Navigator.pushNamed(context, AppRoutes.userProfile);
             },
-            child: CircleAvatar(
+            child: ImageUtils.buildSafeCircleAvatar(
               radius: 18, // 36px diameter
-              backgroundColor: Colors.grey[300],
-              backgroundImage: _userProfilePic.isNotEmpty
-                  ? NetworkImage(_userProfilePic)
-                  : null,
+              imagePath: _userProfilePic,
               child: _userProfilePic.isEmpty
                   ? Icon(
                       Icons.person,
                       color: AppColors.black,
                       size: 20,
                     )
-                  : null,
-              onBackgroundImageError: _userProfilePic.isNotEmpty
-                  ? (exception, stackTrace) {
-                      debugPrint('Profile image load error: $exception');
-                      debugPrint('Profile image URL: $_userProfilePic');
-                    }
                   : null,
             ),
           ),
@@ -684,59 +700,68 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Remote Job Card - Left (150x170)
-          Container(
-            width: 150,
-            height: 170,
-            decoration: BoxDecoration(
-              color: const Color(0xFFAFECFE),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Stack(
-              children: [
-                // Icon at position (58, 37) within card
-                Positioned(
-                  left: 58,
-                  top: 37,
-                  child: Image.asset(
-                    'assets/images/job_search_icon.png',
-                    width: 34,
-                    height: 34,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.work, size: 34, color: Color(0xFF0D0140));
-                    },
-                  ),
-                ),
-                // Count at position (54, 85)
-                Positioned(
-                  left: 54,
-                  top: 85,
-                  child: Text(
-                    _formatCount(_remoteJobsCount),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0D0140),
-                      fontFamily: 'DM Sans',
-                      height: 1.302,
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _showingFilteredJobs = true;
+                _currentFilterType = 'Remote';
+                _currentFilterTitle = 'Remote Jobs';
+              });
+            },
+            child: Container(
+              width: 150,
+              height: 170,
+              decoration: BoxDecoration(
+                color: const Color(0xFFAFECFE),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Stack(
+                children: [
+                  // Icon at position (58, 37) within card
+                  Positioned(
+                    left: 58,
+                    top: 37,
+                    child: Image.asset(
+                      'assets/images/job_search_icon.png',
+                      width: 34,
+                      height: 34,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.work, size: 34, color: Color(0xFF0D0140));
+                      },
                     ),
                   ),
-                ),
-                // Label at position (36, 112)
-                Positioned(
-                  left: 36,
-                  top: 112,
-                  child: const Text(
-                    'Remote Job',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF0D0140),
-                      fontFamily: 'DM Sans',
-                      height: 1.302,
+                  // Count at position (54, 85)
+                  Positioned(
+                    left: 54,
+                    top: 85,
+                    child: Text(
+                      _formatCount(_remoteJobsCount),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0D0140),
+                        fontFamily: 'DM Sans',
+                        height: 1.302,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  // Label at position (36, 112)
+                  Positioned(
+                    left: 36,
+                    top: 112,
+                    child: const Text(
+                      'Remote Job',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF0D0140),
+                        fontFamily: 'DM Sans',
+                        height: 1.302,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 20),
@@ -744,90 +769,108 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
           Column(
             children: [
               // Full Time Card (156x75)
-              Container(
-                width: 156,
-                height: 75,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFBEAFFE),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Stack(
-                  children: [
-                    // Count at position (51, 17)
-                    Positioned(
-                      left: 51,
-                      top: 17,
-                      child: Text(
-                        _formatCount(_fullTimeJobsCount),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0D0140),
-                          fontFamily: 'DM Sans',
-                          height: 1.302,
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showingFilteredJobs = true;
+                    _currentFilterType = 'Full-time';
+                    _currentFilterTitle = 'Full Time Jobs';
+                  });
+                },
+                child: Container(
+                  width: 156,
+                  height: 75,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFBEAFFE),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Count at position (51, 17)
+                      Positioned(
+                        left: 51,
+                        top: 17,
+                        child: Text(
+                          _formatCount(_fullTimeJobsCount),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0D0140),
+                            fontFamily: 'DM Sans',
+                            height: 1.302,
+                          ),
                         ),
                       ),
-                    ),
-                    // Label at position (46, 43)
-                    Positioned(
-                      left: 46,
-                      top: 43,
-                      child: const Text(
-                        'Full Time',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF0D0140),
-                          fontFamily: 'DM Sans',
-                          height: 1.302,
+                      // Label at position (46, 43)
+                      Positioned(
+                        left: 46,
+                        top: 43,
+                        child: const Text(
+                          'Full Time',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF0D0140),
+                            fontFamily: 'DM Sans',
+                            height: 1.302,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
               // Part Time Card (156x75)
-              Container(
-                width: 156,
-                height: 75,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFD6AD),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Stack(
-                  children: [
-                    // Count at position (51, 17)
-                    Positioned(
-                      left: 51,
-                      top: 17,
-                      child: Text(
-                        _formatCount(_partTimeJobsCount),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0D0140),
-                          fontFamily: 'DM Sans',
-                          height: 1.302,
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showingFilteredJobs = true;
+                    _currentFilterType = 'Part-time';
+                    _currentFilterTitle = 'Part Time Jobs';
+                  });
+                },
+                child: Container(
+                  width: 156,
+                  height: 75,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD6AD),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Count at position (51, 17)
+                      Positioned(
+                        left: 51,
+                        top: 17,
+                        child: Text(
+                          _formatCount(_partTimeJobsCount),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0D0140),
+                            fontFamily: 'DM Sans',
+                            height: 1.302,
+                          ),
                         ),
                       ),
-                    ),
-                    // Label at position (43, 43)
-                    Positioned(
-                      left: 43,
-                      top: 43,
-                      child: const Text(
-                        'Part Time',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF0D0140),
-                          fontFamily: 'DM Sans',
-                          height: 1.302,
+                      // Label at position (43, 43)
+                      Positioned(
+                        left: 43,
+                        top: 43,
+                        child: const Text(
+                          'Part Time',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF0D0140),
+                            fontFamily: 'DM Sans',
+                            height: 1.302,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -914,26 +957,31 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
           children: [
             Row(
               children: [
-                // Company Logo
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.lightGrey,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                // Company Logo - Circular
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: const Color(0xFFE8E0FF), // Light purple background
                   child: job.companyLogo.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
+                      ? ClipOval(
                           child: Image.network(
                             job.companyLogo,
+                            width: 30,
+                            height: 30,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.business, size: 24);
+                              return const Icon(
+                                Icons.business,
+                                size: 20,
+                                color: Color(0xFF6B5CE7),
+                              );
                             },
                           ),
                         )
-                      : const Icon(Icons.business, size: 24),
+                      : const Icon(
+                          Icons.business,
+                          size: 20,
+                          color: Color(0xFF6B5CE7),
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1017,25 +1065,23 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              _formatSalary(job.salaryRange, job.employmentType),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF232D3A),
-                fontFamily: 'Open Sans',
-                height: 1.362,
-              ),
-            ),
+            _buildFormattedSalary(job.salaryRange, job.employmentType),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 if (job.experienceLevel.isNotEmpty)
-                  _buildJobTag(job.experienceLevel, const Color(0xFFCBC9D4)),
-                _buildJobTag(job.employmentType, const Color(0xFFCBC9D4)),
-                _buildJobTag('Apply', const Color(0xFFFF6B2C)),
+                  Expanded(
+                    child: _buildJobTag(job.experienceLevel, const Color(0xFFCBC9D4)),
+                  ),
+                if (job.experienceLevel.isNotEmpty) const SizedBox(width: 8),
+                Expanded(
+                  child: _buildJobTag(job.employmentType, const Color(0xFFCBC9D4)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildJobTag('Apply', const Color(0xFFFF6B2C)),
+                ),
               ],
             ),
           ],
@@ -1060,8 +1106,60 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
           fontFamily: 'DM Sans',
           height: 1.302,
         ),
+        textAlign: TextAlign.center,
       ),
     );
+  }
+
+  Widget _buildFormattedSalary(String salaryRange, String employmentType) {
+    final formattedSalary = _formatSalary(salaryRange, employmentType);
+    
+    // Split the salary into amount and unit (e.g., "$10K" and "/Project")
+    final parts = formattedSalary.split(RegExp(r'(/\w+)$'));
+    
+    if (parts.length >= 2) {
+      final amount = parts[0]; // e.g., "$10K"
+      final unit = formattedSalary.substring(amount.length); // e.g., "/Project"
+      
+      return RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: amount,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF232D3A),
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+            TextSpan(
+              text: unit,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF999999), // Light gray
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Fallback to original styling if splitting fails
+      return Text(
+        formattedSalary,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF232D3A),
+          fontFamily: 'Open Sans',
+          height: 1.362,
+        ),
+      );
+    }
   }
 
   /// Formats salary for display matching Figma design

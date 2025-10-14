@@ -653,7 +653,23 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: AppColors.grey),
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Image.asset(
+                      'assets/images/calendar_icon_new.png',
+                      width: 20,
+                      height: 20,
+                      color: AppColors.grey,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.calendar_today,
+                          size: 20,
+                          color: AppColors.grey,
+                        );
+                      },
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     _selectedDateOfBirth != null

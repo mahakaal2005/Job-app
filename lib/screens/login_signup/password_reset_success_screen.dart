@@ -23,7 +23,7 @@ class _PasswordResetSuccessScreenState
   bool _isResending = false;
   
   // Two-flag system for password reset detection
-  bool _resetEmailSent = true; // Always true on this screen (email was sent to reach here)
+  final bool _resetEmailSent = true; // Always true on this screen (email was sent to reach here)
   bool _passwordWasReset = false; // Set to true when user confirms they reset password
   
   // Helper flags

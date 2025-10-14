@@ -3,7 +3,7 @@ import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
 import 'package:get_work_app/screens/main/employye/emp_profile.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/employye/new%20post/recent_jobs.dart';
 import 'package:get_work_app/screens/main/employye/applicants/all_applicants_screen.dart';
 import 'package:get_work_app/services/auth_services.dart';
@@ -27,7 +27,6 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
   List<Job> _jobs = [];
-  List<Map<String, dynamic>> _recentApplicants = [];
 
   @override
   void initState() {
@@ -121,10 +120,7 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
         return bDate.compareTo(aDate);
       });
 
-      // Return only the 3 most recent applicants
-      setState(() {
-        _recentApplicants = allApplicants.take(3).toList();
-      });
+      // Note: _recentApplicants removed as it was unused
     } catch (e) {
       print('Error loading recent applicants: $e');
     }
@@ -573,7 +569,6 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _userData;
   Map<String, dynamic>? _companyInfo;
   bool _isLoading = true;
-  List<Map<String, dynamic>> _recentApplicants = [];
 
   @override
   void initState() {
@@ -648,10 +643,7 @@ class _DashboardPageState extends State<DashboardPage> {
         return bDate.compareTo(aDate);
       });
 
-      // Return only the 3 most recent applicants
-      setState(() {
-        _recentApplicants = allApplicants.take(3).toList();
-      });
+      // Note: _recentApplicants removed as it was unused
     } catch (e) {
       print('Error loading recent applicants: $e');
     }

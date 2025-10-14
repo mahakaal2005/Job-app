@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/provider/applicant_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/emp_job_details_Screen.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/emp_job_details_screen.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 

@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/apply_success_screen.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 

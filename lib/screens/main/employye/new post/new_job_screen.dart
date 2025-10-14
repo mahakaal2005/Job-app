@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job%20new%20model.dart';
+import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';

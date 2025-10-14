@@ -157,6 +157,15 @@ class AppColors {
   static const Color lookGigActiveIcon = Color(0xFF7551FF);
   static const Color lookGigDarkPurple = Color(0xFF0D0140);
   static const Color lookGigInactiveIcon = Color(0xFFA49EB5);
+  static const Color lookGigProfileText = Color(0xFF150B3D);
+  static const Color lookGigProfileGradientStart = Color(0xFF7551FF);
+  static const Color lookGigProfileGradientEnd = Color(0xFFA993FF);
+  
+  // Profile Screen Specific Colors (from Figma)
+  static const Color profileHeaderGradientStart = Color(0xFF7551FF);
+  static const Color profileHeaderGradientEnd = Color(0xFFA993FF);
+  static const Color profileCardShadow = Color(0x2E99ABC6);
+  static const Color profileSectionText = Color(0xFF150B3D);
 
   // Card & Surface Colors
   static const Color cardElevated = Color(0xFFFFFFFF);

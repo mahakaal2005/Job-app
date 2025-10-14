@@ -63,47 +63,162 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
-        elevation: 1,
+        elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.primaryBlue,
-              child: Text(
-                widget.otherUserName.isNotEmpty
-                    ? widget.otherUserName[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+        toolbarHeight: 156,
+        automaticallyImplyLeading: false,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF99ABC6).withOpacity(0.18),
+                blurRadius: 62,
+                offset: const Offset(0, 4),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.otherUserName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+            ],
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Top row with back button and menu
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 30, 20, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Back button
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Image.asset(
+                          'assets/images/chat_back_icon.png',
+                          width: 24,
+                          height: 24,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.arrow_back, size: 24);
+                          },
+                        ),
+                      ),
+                      // Menu icon
+                      Image.asset(
+                        'assets/images/chat_menu_icon.png',
+                        width: 24,
+                        height: 24,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.more_vert, size: 24);
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                // User info row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      // User avatar
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 25,
+                            backgroundColor: AppColors.primaryBlue,
+                            child: Text(
+                              widget.otherUserName.isNotEmpty
+                                  ? widget.otherUserName[0].toUpperCase()
+                                  : '?',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          // Online indicator
+                          Positioned(
+                            left: 0,
+                            bottom: 5,
+                            child: Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF4EC133),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 11),
+                      // Name and status
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.otherUserName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF101828),
+                                fontFamily: 'DM Sans',
+                                height: 2,
+                              ),
+                            ),
+                            const Text(
+                              'Online',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF524B6B),
+                                fontFamily: 'DM Sans',
+                                height: 1.302,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Call icon
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Call feature coming soon')),
+                          );
+                        },
+                        child: Image.asset(
+                          'assets/images/chat_call_icon.png',
+                          width: 24,
+                          height: 24,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.call, color: Color(0xFFFF9228), size: 24);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Search icon
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Search feature coming soon')),
+                          );
+                        },
+                        child: Image.asset(
+                          'assets/images/chat_search_icon.png',
+                          width: 24,
+                          height: 24,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.search, color: Color(0xFFFF9228), size: 24);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       body: Column(
@@ -205,10 +320,13 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
                           Container(
                             margin: const EdgeInsets.symmetric(vertical: 16),
                             child: Text(
-                              _formatMessageTime(message.timestamp),
-                              style: TextStyle(
-                                color: Colors.grey[500],
+                              _formatDateSeparator(message.timestamp),
+                              style: const TextStyle(
+                                color: Color(0xFFAAA6B9),
                                 fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: 'DM Sans',
+                                height: 1.302,
                               ),
                             ),
                           ),
@@ -230,43 +348,84 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: isMe ? AppColors.primaryBlue : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(isMe ? 20 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
+        margin: const EdgeInsets.only(bottom: 11),
+        child: Row(
+          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              message.message,
-              style: TextStyle(
-                color: isMe ? Colors.white : Colors.black87,
-                fontSize: 16,
+            // Avatar for received messages
+            if (!isMe) ...[
+              CircleAvatar(
+                radius: 17.5,
+                backgroundColor: AppColors.primaryBlue,
+                child: Text(
+                  widget.otherUserName.isNotEmpty
+                      ? widget.otherUserName[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _formatTime(message.timestamp),
-              style: TextStyle(
-                color: isMe ? Colors.white70 : Colors.grey[500],
-                fontSize: 11,
+              const SizedBox(width: 10),
+            ],
+            // Message bubble
+            Flexible(
+              child: Column(
+                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(15),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.65,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isMe ? const Color(0xFF130160) : const Color(0xFFFF9228).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(0),
+                    ),
+                    child: Text(
+                      message.message,
+                      style: TextStyle(
+                        color: isMe ? Colors.white : const Color(0xFF524B6B),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        fontFamily: 'DM Sans',
+                        height: isMe ? 1.302 : 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  // Timestamp and read receipt
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isMe) const SizedBox(width: 0),
+                      Text(
+                        _formatTime(message.timestamp),
+                        style: const TextStyle(
+                          color: Color(0xFFAAA6B9),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'DM Sans',
+                          height: 1.302,
+                        ),
+                      ),
+                      if (isMe) ...[
+                        const SizedBox(width: 5),
+                        Image.asset(
+                          'assets/images/chat_double_check.png',
+                          width: 14,
+                          height: 10,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.done_all, size: 14, color: Color(0xFF05B016));
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -277,50 +436,98 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
 
   Widget _buildMessageInput() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
+      color: const Color(0xFFF9F9F9),
       child: SafeArea(
         child: Row(
           children: [
+            // Input field with attachment icon
             Expanded(
               child: Container(
+                height: 50,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: TextField(
-                  controller: _messageController,
-                  maxLines: null,
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF99ABC6).withOpacity(0.18),
+                      blurRadius: 62,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Attachment icon
+                    Padding(
+                      padding: const EdgeInsets.only(left: 15, right: 10),
+                      child: GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Attachment feature coming soon')),
+                          );
+                        },
+                        child: Image.asset(
+                          'assets/images/chat_attachment_icon.png',
+                          width: 24,
+                          height: 24,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.attach_file, color: Color(0xFF524B6B), size: 24);
+                          },
+                        ),
+                      ),
+                    ),
+                    // Text field
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        maxLines: 1,
+                        decoration: const InputDecoration(
+                          hintText: 'Write your massage',
+                          hintStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFFAAA6B9),
+                            fontFamily: 'DM Sans',
+                            height: 1.302,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 16,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'DM Sans',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.primaryBlue,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                onPressed: _sendMessage,
-                icon: const Icon(Icons.send, color: Colors.white),
-                padding: const EdgeInsets.all(12),
+            const SizedBox(width: 10),
+            // Send button
+            GestureDetector(
+              onTap: _sendMessage,
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF130160),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/chat_send_button.png',
+                    width: 24,
+                    height: 24,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.send, color: Colors.white, size: 20);
+                    },
+                  ),
+                ),
               ),
             ),
           ],
@@ -357,8 +564,33 @@ class _UserChatDetailScreenState extends State<UserChatDetailScreen>
     final date = timestamp.toDate();
     final hour = date.hour > 12 ? date.hour - 12 : date.hour;
     final minute = date.minute.toString().padLeft(2, '0');
-    final period = date.hour >= 12 ? 'PM' : 'AM';
+    final period = date.hour >= 12 ? 'pm' : 'am';
     return '${hour == 0 ? 12 : hour}:$minute $period';
+  }
+
+  String _formatDateSeparator(Timestamp timestamp) {
+    final now = DateTime.now();
+    final date = timestamp.toDate();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      const weekdays = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      return weekdays[date.weekday - 1];
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 
   String _formatMessageTime(Timestamp timestamp) {
