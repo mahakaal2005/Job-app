@@ -1,12 +1,14 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get_work_app/models/chat_message.dart';
 import 'package:get_work_app/screens/main/user/user_chat_det.dart';
 import 'package:get_work_app/services/chat_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class UserChats extends StatefulWidget {
   const UserChats({super.key});
@@ -26,6 +28,9 @@ class _UserChatsState extends State<UserChats> {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
+  // Stream subscription for message listener
+  StreamSubscription<QuerySnapshot>? _messageListenerSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -42,126 +47,151 @@ class _UserChatsState extends State<UserChats> {
         final hasMessages = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
 
         return Scaffold(
-          backgroundColor: hasMessages ? const Color(0xFFF9F9F9) : const Color(0xFFF9F9F9),
-          appBar: hasMessages
-              ? AppBar(
-                  elevation: 0,
-                  title: const Text(
-                    'Messages',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                      color: Colors.black,
-                      fontFamily: 'DM Sans',
-                      height: 1.302,
-                    ),
-                  ),
-                  backgroundColor: const Color(0xFFF9F9F9),
-                  centerTitle: true,
-                  automaticallyImplyLeading: false,
-                  actions: [
-                    // Edit icon
-                    Padding(
-                      padding: const EdgeInsets.only(right: 15),
-                      child: IconButton(
-                        icon: Image.asset(
-                          'assets/images/messages_edit_icon.png',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.edit, color: Color(0xFFFF9228), size: 24);
-                          },
-                        ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Create message feature coming soon')),
-                          );
-                        },
+          backgroundColor:
+              hasMessages ? const Color(0xFFF9F9F9) : const Color(0xFFF9F9F9),
+          appBar:
+              hasMessages
+                  ? AppBar(
+                    elevation: 0,
+                    title: const Text(
+                      'Messages',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        color: Colors.black,
+                        fontFamily: 'DM Sans',
+                        height: 1.302,
                       ),
                     ),
-                    // Three dots menu
-                    Padding(
-                      padding: const EdgeInsets.only(right: 20),
-                      child: IconButton(
-                        icon: Image.asset(
-                          'assets/images/messages_menu_icon.png',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.more_vert, color: Color(0xFF5B5858), size: 24);
+                    backgroundColor: const Color(0xFFF9F9F9),
+                    centerTitle: true,
+                    automaticallyImplyLeading: false,
+                    actions: [
+                      // Edit icon
+                      Padding(
+                        padding: const EdgeInsets.only(right: 15),
+                        child: IconButton(
+                          icon: Image.asset(
+                            'assets/images/messages_edit_icon.png',
+                            width: 24,
+                            height: 24,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.edit,
+                                color: Color(0xFFFF9228),
+                                size: 24,
+                              );
+                            },
+                          ),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Create message feature coming soon',
+                                ),
+                              ),
+                            );
                           },
                         ),
-                        onPressed: () {},
                       ),
-                    ),
-                  ],
-                )
-              : null, // No AppBar when empty
-          body: hasMessages
-              ? Column(
-                  children: [
-                    // Search Bar (only when there are messages) - Figma design
-                    Container(
-                      color: const Color(0xFFF9F9F9),
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 15),
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF99ABC6).withOpacity(0.18),
-                              blurRadius: 62,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                      // Three dots menu
+                      Padding(
+                        padding: const EdgeInsets.only(right: 20),
+                        child: IconButton(
+                          icon: Image.asset(
+                            'assets/images/messages_menu_icon.png',
+                            width: 24,
+                            height: 24,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.more_vert,
+                                color: Color(0xFF5B5858),
+                                size: 24,
+                              );
+                            },
+                          ),
+                          onPressed: () {},
                         ),
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (value) {
-                            setState(() {
-                              _searchQuery = value.toLowerCase();
-                            });
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Search message',
-                            hintStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFFA0A7B1),
-                              fontFamily: 'DM Sans',
-                              height: 1.302,
-                            ),
-                            prefixIcon: Padding(
-                              padding: const EdgeInsets.all(13),
-                              child: Image.asset(
-                                'assets/images/messages_search_icon.png',
-                                width: 24,
-                                height: 24,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(Icons.search, color: Color(0xFFA0A7B1), size: 24);
-                                },
+                      ),
+                    ],
+                  )
+                  : null, // No AppBar when empty
+          body:
+              hasMessages
+                  ? Column(
+                    children: [
+                      // Search Bar (only when there are messages) - Figma design
+                      Container(
+                        color: const Color(0xFFF9F9F9),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 15),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF99ABC6,
+                                ).withOpacity(0.18),
+                                blurRadius: 62,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (value) {
+                              if (mounted) {
+                                setState(() {
+                                  _searchQuery = value.toLowerCase();
+                                });
+                              }
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Search message',
+                              hintStyle: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFFA0A7B1),
+                                fontFamily: 'DM Sans',
+                                height: 1.302,
+                              ),
+                              prefixIcon: Padding(
+                                padding: const EdgeInsets.all(13),
+                                child: Image.asset(
+                                  'assets/images/messages_search_icon.png',
+                                  width: 24,
+                                  height: 24,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.search,
+                                      color: Color(0xFFA0A7B1),
+                                      size: 24,
+                                    );
+                                  },
+                                ),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 17,
                               ),
                             ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 17,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'DM Sans',
                             ),
-                          ),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'DM Sans',
                           ),
                         ),
                       ),
-                    ),
-                    // Chat List
-                    Expanded(child: _buildMessagesList(snapshot)),
-                  ],
-                )
-              : SafeArea(child: _buildContent(snapshot)), // Empty state or error
+                      // Chat List
+                      Expanded(child: _buildMessagesList(snapshot)),
+                    ],
+                  )
+                  : SafeArea(
+                    child: _buildContent(snapshot),
+                  ), // Empty state or error
         );
       },
     );
@@ -170,15 +200,21 @@ class _UserChatsState extends State<UserChats> {
   // Build messages list or other states
   Widget _buildContent(AsyncSnapshot<QuerySnapshot> snapshot) {
     if (snapshot.hasError) {
+      // Check if it's an index error
+      final errorString = snapshot.error.toString();
+      if (errorString.contains('index') ||
+          errorString.contains('FAILED_PRECONDITION')) {
+        // Index is building or missing - show empty state instead
+        return _buildEmptyState();
+      }
+
+      // For other errors, show error message
+      debugPrint('Chat error: ${snapshot.error}');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Something went wrong',
@@ -202,35 +238,28 @@ class _UserChatsState extends State<UserChats> {
 
   // Build the messages list
   Widget _buildMessagesList(AsyncSnapshot<QuerySnapshot> snapshot) {
-
     // Filter chats based on search query
-    final filteredDocs = snapshot.data!.docs.where((doc) {
-      final chatRoom = ChatRoom.fromFirestore(doc);
-      final otherParticipantIndex =
-          chatRoom.participants.indexOf(currentUserId!) == 0 ? 1 : 0;
-      final otherParticipantName =
-          chatRoom.participantNames[otherParticipantIndex];
+    final filteredDocs =
+        snapshot.data!.docs.where((doc) {
+          final chatRoom = ChatRoom.fromFirestore(doc);
+          final otherParticipantIndex =
+              chatRoom.participants.indexOf(currentUserId!) == 0 ? 1 : 0;
+          final otherParticipantName =
+              chatRoom.participantNames[otherParticipantIndex];
 
-      return _searchQuery.isEmpty ||
-          otherParticipantName.toLowerCase().contains(_searchQuery) ||
-          chatRoom.lastMessage.toLowerCase().contains(_searchQuery);
-    }).toList();
+          return _searchQuery.isEmpty ||
+              otherParticipantName.toLowerCase().contains(_searchQuery) ||
+              chatRoom.lastMessage.toLowerCase().contains(_searchQuery);
+        }).toList();
 
     if (filteredDocs.isEmpty && _searchQuery.isNotEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 48,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text(
-              'No results found',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+            Text('No results found', style: TextStyle(color: Colors.grey[600])),
           ],
         ),
       );
@@ -253,123 +282,241 @@ class _UserChatsState extends State<UserChats> {
           final otherParticipantName =
               chatRoom.participantNames[otherParticipantIndex];
 
-          return FutureBuilder<int>(
-            future: _getUnreadCount(chatRoom.id),
+          return StreamBuilder<int>(
+            stream: _getUnreadCountStream(chatRoom.id),
             builder: (context, unreadSnapshot) {
               final unreadCount = unreadSnapshot.data ?? 0;
               final hasUnread = unreadCount > 0;
 
-              return InkWell(
-                onTap: () async {
-                  await _markMessagesAsRead(chatRoom.id);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UserChatDetailScreen(
-                        chatId: chatRoom.id,
-                        otherUserId: otherParticipantId,
-                        otherUserName: otherParticipantName,
+              return FutureBuilder<DocumentSnapshot>(
+                future:
+                    FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(otherParticipantId)
+                        .get(),
+                builder: (context, userSnapshot) {
+                  String? profilePhotoUrl;
+                  if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                    final userData =
+                        userSnapshot.data!.data() as Map<String, dynamic>?;
+                    profilePhotoUrl = userData?['profilePhotoUrl'] as String?;
+                  }
+
+                  // Alternate colors based on index
+                  final avatarColor =
+                      index % 2 == 0
+                          ? const Color(0xFF130160) // Purple
+                          : const Color(0xFF0D47A1); // Blue
+
+                  return Dismissible(
+                    key: Key(chatRoom.id),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      height: 50,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 30),
+                      margin: const EdgeInsets.symmetric(vertical: 0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF9E87),
+                        borderRadius: BorderRadius.circular(15),
                       ),
-                    ),
-                  );
-                },
-                child: SizedBox(
-                  height: 50,
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColors.primaryBlue,
-                        child: Text(
-                          otherParticipantName.isNotEmpty
-                              ? otherParticipantName[0].toUpperCase()
-                              : '?',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      child: Container(
+                        width: 43,
+                        height: 72,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF9E87),
                         ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              otherParticipantName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF150B3D),
-                                fontFamily: 'DM Sans',
-                                height: 1.302,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              chatRoom.lastMessage,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w400,
-                                color: hasUnread
-                                    ? const Color(0xFF524B6B)
-                                    : const Color(0xFFAAAAAA),
-                                fontFamily: 'DM Sans',
-                                height: 1.5,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Image.asset(
+                              'assets/images/messages_remove_icon.png',
+                              width: 24,
+                              height: 24,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.delete_outline,
+                                  color: Color(0xFFFF9228),
+                                  size: 28,
+                                );
+                              },
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 5),
-                          Text(
-                            _formatTimeAgo(chatRoom.lastMessageTime),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFFAAA6B9),
-                              fontFamily: 'DM Sans',
-                              height: 1.302,
+                    ),
+                    confirmDismiss: (direction) async {
+                      return await showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Delete Chat'),
+                            content: const Text(
+                              'Are you sure you want to delete this conversation?',
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          if (hasUnread)
-                            Container(
-                              width: 14,
-                              height: 14,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFF9228),
-                                shape: BoxShape.circle,
+                            actions: [
+                              TextButton(
+                                onPressed:
+                                    () => Navigator.of(context).pop(false),
+                                child: const Text('Cancel'),
                               ),
-                              child: Center(
-                                child: Text(
-                                  unreadCount > 9 ? '9' : unreadCount.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Open Sans',
-                                    height: 1.362,
-                                  ),
+                              TextButton(
+                                onPressed:
+                                    () => Navigator.of(context).pop(true),
+                                child: const Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
                                 ),
                               ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    onDismissed: (direction) async {
+                      // Delete the chat from Firestore
+                      await FirebaseFirestore.instance
+                          .collection('chats')
+                          .doc(chatRoom.id)
+                          .delete();
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Chat deleted')),
+                        );
+                      }
+                    },
+                    child: InkWell(
+                      onTap: () async {
+                        await _markMessagesAsRead(chatRoom.id);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => UserChatDetailScreen(
+                                  chatId: chatRoom.id,
+                                  otherUserId: otherParticipantId,
+                                  otherUserName: otherParticipantName,
+                                ),
+                          ),
+                        );
+                      },
+                      child: SizedBox(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 25,
+                              backgroundColor: avatarColor,
+                              backgroundImage:
+                                  profilePhotoUrl != null &&
+                                          profilePhotoUrl.isNotEmpty
+                                      ? NetworkImage(profilePhotoUrl)
+                                      : null,
+                              child:
+                                  profilePhotoUrl == null ||
+                                          profilePhotoUrl.isEmpty
+                                      ? Text(
+                                        otherParticipantName.isNotEmpty
+                                            ? otherParticipantName[0]
+                                                .toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      )
+                                      : null,
                             ),
-                        ],
+                            const SizedBox(width: 15),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    otherParticipantName,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF150B3D),
+                                      fontFamily: 'DM Sans',
+                                      height: 1.302,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    chatRoom.lastMessage,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight:
+                                          hasUnread
+                                              ? FontWeight.w700
+                                              : FontWeight.w400,
+                                      color:
+                                          hasUnread
+                                              ? const Color(0xFF524B6B)
+                                              : const Color(0xFFAAAAAA),
+                                      fontFamily: 'DM Sans',
+                                      height: 1.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 5),
+                                Text(
+                                  _formatTimeAgo(chatRoom.lastMessageTime),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFFAAA6B9),
+                                    fontFamily: 'DM Sans',
+                                    height: 1.302,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                if (hasUnread)
+                                  Container(
+                                    width: 14,
+                                    height: 14,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFFF9228),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        unreadCount > 9
+                                            ? '9'
+                                            : unreadCount.toString(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: 'Open Sans',
+                                          height: 1.362,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               );
             },
           );
@@ -431,19 +578,24 @@ class _UserChatsState extends State<UserChats> {
   void _setupMessageListener() {
     if (currentUserId == null) return;
 
-    FirebaseFirestore.instance
+    _messageListenerSubscription = FirebaseFirestore.instance
         .collectionGroup('messages')
         .where('receiverId', isEqualTo: currentUserId)
         .where('isRead', isEqualTo: false)
         .snapshots()
-        .listen((snapshot) {
-          for (var change in snapshot.docChanges) {
-            if (change.type == DocumentChangeType.added) {
-              final message = ChatMessage.fromFirestore(change.doc);
-              _showLocalNotification(message);
+        .listen(
+          (snapshot) {
+            for (var change in snapshot.docChanges) {
+              if (change.type == DocumentChangeType.added) {
+                final message = ChatMessage.fromFirestore(change.doc);
+                _showLocalNotification(message);
+              }
             }
-          }
-        });
+          },
+          onError: (error) {
+            debugPrint('Message listener error: $error');
+          },
+        );
   }
 
   // Handle foreground messages
@@ -581,22 +733,20 @@ class _UserChatsState extends State<UserChats> {
     }
   }
 
-  // Get unread message count for a chat
-  Future<int> _getUnreadCount(String chatId) async {
+  // Get unread message count for a chat (real-time stream)
+  Stream<int> _getUnreadCountStream(String chatId) {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance
-              .collection('chats')
-              .doc(chatId)
-              .collection('messages')
-              .where('receiverId', isEqualTo: currentUserId)
-              .where('isRead', isEqualTo: false)
-              .get();
-
-      return snapshot.docs.length;
+      return FirebaseFirestore.instance
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('receiverId', isEqualTo: currentUserId)
+          .where('isRead', isEqualTo: false)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.length);
     } catch (e) {
       print('Error getting unread count: $e');
-      return 0;
+      return Stream.value(0);
     }
   }
 
@@ -741,7 +891,7 @@ class _UserChatsState extends State<UserChats> {
   @override
   void dispose() {
     _searchController.dispose();
+    _messageListenerSubscription?.cancel();
     super.dispose();
   }
 }
-

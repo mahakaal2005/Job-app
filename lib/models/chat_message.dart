@@ -7,6 +7,11 @@ class ChatMessage {
   final String message;
   final Timestamp timestamp;
   final bool isRead;
+  final bool isDelivered; // New: for WhatsApp-style delivery status
+  final String? messageType; // 'text', 'image', 'document'
+  final String? fileUrl;
+  final String? fileName;
+  final int? fileSize;
 
   ChatMessage({
     required this.id,
@@ -15,6 +20,11 @@ class ChatMessage {
     required this.message,
     required this.timestamp,
     this.isRead = false,
+    this.isDelivered = false,
+    this.messageType,
+    this.fileUrl,
+    this.fileName,
+    this.fileSize,
   });
 
   factory ChatMessage.fromFirestore(DocumentSnapshot doc) {
@@ -26,6 +36,11 @@ class ChatMessage {
       message: data['message'] ?? '',
       timestamp: data['timestamp'] ?? Timestamp.now(),
       isRead: data['isRead'] ?? false,
+      isDelivered: data['isDelivered'] ?? false,
+      messageType: data['messageType'] ?? 'text',
+      fileUrl: data['fileUrl'],
+      fileName: data['fileName'],
+      fileSize: data['fileSize'],
     );
   }
 
@@ -36,7 +51,19 @@ class ChatMessage {
       'message': message,
       'timestamp': timestamp,
       'isRead': isRead,
+      'isDelivered': isDelivered,
+      'messageType': messageType ?? 'text',
+      if (fileUrl != null) 'fileUrl': fileUrl,
+      if (fileName != null) 'fileName': fileName,
+      if (fileSize != null) 'fileSize': fileSize,
     };
+  }
+
+  // Get read receipt icon based on status
+  String getReadReceiptStatus() {
+    if (isRead) return 'read'; // Blue double check
+    if (isDelivered) return 'delivered'; // Gray double check
+    return 'sent'; // Single gray check
   }
 }
 

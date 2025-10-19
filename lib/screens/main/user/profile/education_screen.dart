@@ -244,7 +244,7 @@ class _EducationScreenState extends State<EducationScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         final educationData = {
           'level': _levelController.text.trim(),
@@ -1250,7 +1250,7 @@ class _EducationScreenState extends State<EducationScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
 
         // Get current user document to check existing education data
         final doc = await FirebaseFirestore.instance

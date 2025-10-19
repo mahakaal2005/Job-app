@@ -92,11 +92,8 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           color: const Color(0xFF2C373B).withOpacity(0.6),
         ),
         
-        // Modal content
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
+        // Modal content - centered on screen
+        Center(
           child: Container(
             width: 335,
             height: 449,
@@ -114,24 +111,21 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
             ),
             child: Column(
               children: [
-                // Close button
+                // Close button - centered horizontally at top
                 Padding(
-                  padding: const EdgeInsets.only(top: 25, right: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      GestureDetector(
-                        onTap: _onCancel,
-                        child: Container(
-                          width: 30,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF5B5858),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                  padding: const EdgeInsets.only(top: 25),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: _onCancel,
+                      child: Container(
+                        width: 30,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF5B5858),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 
@@ -146,6 +140,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                     fontSize: 16,
                     height: 1.362,
                     color: Color(0xFF150B3D),
+                    decoration: TextDecoration.none,
                   ),
                 ),
                 
@@ -209,6 +204,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                                 height: 1.302,
                                 letterSpacing: 0.84,
                                 color: AppColors.white,
+                                decoration: TextDecoration.none,
                               ),
                             ),
                           ),
@@ -237,6 +233,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                                 height: 1.302,
                                 letterSpacing: 0.84,
                                 color: AppColors.white,
+                                decoration: TextDecoration.none,
                               ),
                             ),
                           ),
@@ -296,6 +293,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                       fontSize: isSelected ? 14 : 10,
                       height: 1.362,
                       color: AppColors.white,
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 ),
@@ -349,6 +347,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                       fontSize: isSelected ? 14 : 10,
                       height: 1.362,
                       color: AppColors.white,
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 ),

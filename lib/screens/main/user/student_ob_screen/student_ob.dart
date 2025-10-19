@@ -1,13 +1,15 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/screens/main/employer/emp_ob/cd_servi.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
-import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+
 import 'skills_list.dart';
-import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
-import 'package:file_selector/file_selector.dart';
 
 class StudentOnboardingScreen extends StatefulWidget {
   const StudentOnboardingScreen({super.key});
@@ -141,7 +143,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: AppColors.primaryBlue,
+              primary: AppColors.lookGigPurple,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
@@ -343,6 +345,89 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     }
   }
 
+  // Skip onboarding confirmation dialog
+  Future<bool?> _showSkipConfirmation() async {
+    return showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            title: const Text(
+              'Skip Profile Setup?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: const Text(
+              'You can complete your profile anytime from the Settings section. '
+              'A complete profile helps you get better job matches!',
+              style: TextStyle(fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Go Back'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.lookGigPurple,
+                ),
+                child: const Text('Skip'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Skip onboarding and go to home
+  Future<void> _skipOnboarding() async {
+    final confirmed = await _showSkipConfirmation();
+    if (confirmed != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Mark onboarding as skipped in Firestore
+      await AuthService.skipOnboarding();
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You can complete your profile later from Settings'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+
+        // Navigate to user home screen
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.userHome,
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _completeOnboarding() async {
     if (!_validateCurrentPage()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -457,98 +542,197 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with progress
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Complete Your Profile',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Step ${_currentPage + 1} of 5',
-                    style: const TextStyle(fontSize: 16, color: AppColors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  // Progress indicator
-                  LinearProgressIndicator(
-                    value: (_currentPage + 1) / 5,
-                    backgroundColor: AppColors.grey.withOpacity(0.3),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryBlue,
-                    ),
-                  ),
-                ],
-              ),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        colorScheme: ColorScheme.light(
+          primary: AppColors.lookGigPurple,
+          secondary: AppColors.lookGigPurple,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+              color: AppColors.lookGigPurple,
+              width: 2,
             ),
-
-            // Page content
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                children: [
-                  _buildPersonalInfoPage(),
-                  _buildAddressPage(),
-                  _buildEducationPage(),
-                  _buildSkillsAndAvailabilityPage(),
-                  _buildProfileAndResumeUploadPage(),
-                ],
-              ),
-            ),
-
-            // Bottom navigation buttons
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  if (_currentPage > 0)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _previousPage,
-                        child: const Text('Previous'),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: AppColors.grey.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header with progress and action buttons
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Complete Your Profile',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.black,
+                            ),
+                          ),
+                        ),
+                        // Skip button in top right
+                        if (_currentPage < 4)
+                          TextButton(
+                            onPressed: _isLoading ? null : _skipOnboarding,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: const Text(
+                              'Skip',
+                              style: TextStyle(
+                                color: AppColors.grey,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Step ${_currentPage + 1} of 5',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: AppColors.grey,
                       ),
                     ),
-                  if (_currentPage > 0) const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          _isLoading
-                              ? null
-                              : _currentPage == 4
-                              ? _completeOnboarding
-                              : _validateCurrentPage()
-                              ? _nextPage
-                              : null,
-                      child:
-                          _isLoading
-                              ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                              : Text(
-                                _currentPage == 4 ? 'Complete Setup' : 'Next',
-                              ),
+                    const SizedBox(height: 16),
+                    // Progress indicator
+                    LinearProgressIndicator(
+                      value: (_currentPage + 1) / 5,
+                      backgroundColor: AppColors.grey.withOpacity(0.3),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.lookGigPurple,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              // Page content
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
+                  children: [
+                    _buildPersonalInfoPage(),
+                    _buildAddressPage(),
+                    _buildEducationPage(),
+                    _buildSkillsAndAvailabilityPage(),
+                    _buildProfileAndResumeUploadPage(),
+                  ],
+                ),
+              ),
+
+              // Bottom navigation buttons
+              Container(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    // Previous button (light purple from Figma: #D6CDFE)
+                    if (_currentPage > 0)
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _previousPage,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.lookGigLightPurple,
+                              foregroundColor: AppColors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              shadowColor: const Color(0x2E99ABC6),
+                            ),
+                            child: const Text(
+                              'PREVIOUS',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.84,
+                                fontFamily: 'DM Sans',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_currentPage > 0) const SizedBox(width: 15),
+                    
+                    // Next/Complete button (dark purple from Figma: #130160)
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed:
+                              _isLoading
+                                  ? null
+                                  : _currentPage == 4
+                                  ? _completeOnboarding
+                                  : _validateCurrentPage()
+                                  ? _nextPage
+                                  : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.lookGigPurple,
+                            foregroundColor: AppColors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            shadowColor: const Color(0x2E99ABC6),
+                            disabledBackgroundColor: AppColors.grey.withOpacity(0.3),
+                          ),
+                          child:
+                              _isLoading
+                                  ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : Text(
+                                    _currentPage == 4 ? 'COMPLETE' : 'NEXT',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.84,
+                                      fontFamily: 'DM Sans',
+                                    ),
+                                  ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -581,7 +765,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(
               hintText: 'Enter your phone number',
-              prefixIcon: Icon(Icons.phone),
+              prefixIcon: Icon(Icons.phone, color: AppColors.lookGigOrange),
             ),
             onChanged: (value) => setState(() {}),
           ),
@@ -660,12 +844,12 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       'assets/images/calendar_icon_new.png',
                       width: 20,
                       height: 20,
-                      color: AppColors.grey,
+                      color: AppColors.lookGigOrange,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(
                           Icons.calendar_today,
                           size: 20,
-                          color: AppColors.grey,
+                          color: AppColors.lookGigOrange,
                         );
                       },
                     ),
@@ -700,7 +884,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             readOnly: true,
             decoration: const InputDecoration(
               hintText: 'Age will be calculated from date of birth',
-              prefixIcon: Icon(Icons.cake),
+              prefixIcon: Icon(Icons.cake, color: AppColors.lookGigOrange),
             ),
           ),
         ],
@@ -734,7 +918,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             controller: _addressController,
             decoration: const InputDecoration(
               hintText: 'Enter your street address',
-              prefixIcon: Icon(Icons.home),
+              prefixIcon: Icon(Icons.home, color: AppColors.lookGigOrange),
             ),
             onChanged: (value) => setState(() {}),
           ),
@@ -750,7 +934,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             controller: _cityController,
             decoration: const InputDecoration(
               hintText: 'Enter your city',
-              prefixIcon: Icon(Icons.location_city),
+              prefixIcon: Icon(
+                Icons.location_city,
+                color: AppColors.lookGigOrange,
+              ),
             ),
             onChanged: (value) => setState(() {}),
           ),
@@ -775,7 +962,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       controller: _stateController,
                       decoration: const InputDecoration(
                         hintText: 'State',
-                        prefixIcon: Icon(Icons.map),
+                        prefixIcon: Icon(
+                          Icons.map,
+                          color: AppColors.lookGigOrange,
+                        ),
                       ),
                       onChanged: (value) => setState(() {}),
                     ),
@@ -800,7 +990,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         hintText: 'ZIP',
-                        prefixIcon: Icon(Icons.local_post_office),
+                        prefixIcon: Icon(
+                          Icons.local_post_office,
+                          color: AppColors.lookGigOrange,
+                        ),
                       ),
                       onChanged: (value) => setState(() {}),
                     ),
@@ -843,7 +1036,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     : _selectedEducationLevel,
             decoration: const InputDecoration(
               hintText: 'Select your education level',
-              prefixIcon: Icon(Icons.school),
+              prefixIcon: Icon(Icons.school, color: AppColors.lookGigOrange),
             ),
             items:
                 _educationLevels.map((String level) {
@@ -871,7 +1064,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               controller: _customEducationController,
               decoration: const InputDecoration(
                 hintText: 'Enter your education level',
-                prefixIcon: Icon(Icons.edit),
+                prefixIcon: Icon(Icons.edit, color: AppColors.lookGigOrange),
               ),
               onChanged: (value) => setState(() {}),
             ),
@@ -889,7 +1082,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             controller: _collegeController,
             decoration: const InputDecoration(
               hintText: 'Enter your college or institution name',
-              prefixIcon: Icon(Icons.business),
+              prefixIcon: Icon(Icons.business, color: AppColors.lookGigOrange),
             ),
             onChanged: (value) => setState(() {}),
           ),
@@ -948,7 +1141,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             controller: _skillsSearchController,
             decoration: InputDecoration(
               hintText: 'Search skills...',
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppColors.lookGigOrange,
+              ),
               suffixIcon:
                   _skillsSearchController.text.isNotEmpty
                       ? IconButton(
@@ -979,8 +1175,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                           _selectedSkills.remove(skill);
                         });
                       },
-                      backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-                      deleteIconColor: AppColors.primaryBlue,
+                      backgroundColor: AppColors.lookGigPurple.withOpacity(0.1),
+                      deleteIconColor: AppColors.lookGigPurple,
                     );
                   }).toList(),
             ),
@@ -1061,14 +1257,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  color: AppColors.lookGigPurple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$_weeklyHours hrs/week',
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    color: AppColors.primaryBlue,
+                    color: AppColors.lookGigPurple,
                   ),
                 ),
               ),
@@ -1104,7 +1300,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         }
                       });
                     },
-                    activeColor: AppColors.primaryBlue,
+                    activeColor: AppColors.lookGigPurple,
                     controlAffinity: ListTileControlAffinity.leading,
                   );
                 }).toList(),
@@ -1182,7 +1378,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       height: 36,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primaryBlue,
+                        color: AppColors.lookGigPurple,
                       ),
                       child:
                           _isUploadingImage
@@ -1275,22 +1471,22 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.lightBlue.withOpacity(0.1),
+              color: AppColors.lookGigLightPurple.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.primaryBlue.withOpacity(0.2)),
+              border: Border.all(color: AppColors.lookGigPurple.withOpacity(0.2)),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.description_outlined,
-                  color: AppColors.primaryBlue,
+                  color: AppColors.lookGigPurple,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _resumeFileName ?? 'Resume uploaded',
                     style: const TextStyle(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.lookGigPurple,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -1320,7 +1516,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              side: BorderSide(color: AppColors.primaryBlue.withOpacity(0.5)),
+              side: BorderSide(color: AppColors.lookGigPurple.withOpacity(0.5)),
             ),
           ),
         ),

@@ -46,7 +46,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         final doc =
             await FirebaseFirestore.instance
@@ -87,7 +87,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         await FirebaseFirestore.instance
             .collection(collectionName)

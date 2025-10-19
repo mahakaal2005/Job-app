@@ -89,9 +89,17 @@ class _SignupScreenState extends State<SignupScreen> {
         await Future.delayed(const Duration(milliseconds: 500));
 
         if (mounted) {
+          // Navigate to appropriate onboarding screen based on role
+          String onboardingRoute = _selectedRole == 'employer' 
+              ? AppRoutes.employerOnboarding 
+              : AppRoutes.studentOnboarding;
+          
+          print('🔍 DEBUG Signup (Email): Selected role = $_selectedRole');
+          print('🔍 DEBUG Signup (Email): Navigating to $onboardingRoute');
+          
           Navigator.pushNamedAndRemoveUntil(
             context,
-            AppRoutes.home,
+            onboardingRoute,
             (route) => false,
           );
         }
@@ -104,6 +112,97 @@ class _SignupScreenState extends State<SignupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.message ?? 'Registration failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _signUpWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      UserCredential? userCredential = await AuthService.signUpWithGoogle(
+        role: _selectedRole,
+      );
+      
+      if (userCredential != null && mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        String displayName = userCredential.user?.displayName ?? 'User';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome $displayName! Account created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (mounted) {
+          // Navigate to appropriate onboarding screen based on role
+          String onboardingRoute = _selectedRole == 'employer' 
+              ? AppRoutes.employerOnboarding 
+              : AppRoutes.studentOnboarding;
+          
+          print('🔍 DEBUG Signup (Google): Selected role = $_selectedRole');
+          print('🔍 DEBUG Signup (Google): Navigating to $onboardingRoute');
+          
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            onboardingRoute,
+            (route) => false,
+          );
+        }
+      } else if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        String errorMessage;
+        switch (e.code) {
+          case 'account-exists-with-different-credential':
+            errorMessage = 'An account already exists with this email. Please sign in instead.';
+            break;
+          case 'invalid-credential':
+            errorMessage = 'The credential is invalid or has expired.';
+            break;
+          case 'operation-not-allowed':
+            errorMessage = 'Google Sign-In is not enabled. Please contact support.';
+            break;
+          case 'user-disabled':
+            errorMessage = 'This account has been disabled.';
+            break;
+          default:
+            errorMessage = e.message ?? 'Google Sign-Up failed';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );
@@ -468,13 +567,13 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: GestureDetector(
                         onTap: () {
                           setState(() {
-                            _selectedRole = 'employee';
+                            _selectedRole = 'employer';
                           });
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: _selectedRole == 'employee'
+                            color: _selectedRole == 'employer'
                                 ? AppColors.lookGigPurple
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(6),
@@ -487,12 +586,12 @@ class _SignupScreenState extends State<SignupScreen> {
                             ],
                           ),
                           child: Text(
-                            'EMPLOYEE',
+                            'EMPLOYER',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: _selectedRole == 'employee'
+                              color: _selectedRole == 'employer'
                                   ? Colors.white
                                   : AppColors.lookGigPurple,
                             ),
@@ -604,13 +703,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Google sign-up coming soon!'),
-                        ),
-                      );
-                    },
+                    onPressed: _isLoading ? null : _signUpWithGoogle,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD6CDFE),
                       foregroundColor: Colors.white,
@@ -623,14 +716,14 @@ class _SignupScreenState extends State<SignupScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Image.asset(
-                          'assets/images/google.png',
+                          'assets/images/google_icon.png',
                           width: 16,
-                          height: 20,
+                          height: 16,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
                               Icons.g_mobiledata,
                               size: 24,
-                              color: Colors.white,
+                              color: AppColors.lookGigPurple,
                             );
                           },
                         ),

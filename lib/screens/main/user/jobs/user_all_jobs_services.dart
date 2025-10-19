@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 
 class AllJobsService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;

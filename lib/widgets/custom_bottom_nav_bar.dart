@@ -4,11 +4,13 @@ import 'package:get_work_app/utils/app_colors.dart';
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final String userType; // 'user' or 'employer'
 
   const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.userType = 'user', // Default to user
   });
 
   @override
@@ -47,10 +49,16 @@ class CustomBottomNavBar extends StatelessWidget {
             index: 3,
             isActive: currentIndex == 3,
           ),
-          _buildBookmarkNavItem(
-            index: 4,
-            isActive: currentIndex == 4,
-          ),
+          // Conditional last item based on user type
+          userType == 'employer'
+              ? _buildAnalyticsNavItem(
+                  index: 4,
+                  isActive: currentIndex == 4,
+                )
+              : _buildBookmarkNavItem(
+                  index: 4,
+                  isActive: currentIndex == 4,
+                ),
         ],
       ),
     );
@@ -119,6 +127,29 @@ class CustomBottomNavBar extends StatelessWidget {
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsNavItem({
+    required int index,
+    required bool isActive,
+  }) {
+    Color iconColor = isActive 
+        ? AppColors.lookGigActiveIcon 
+        : AppColors.lookGigInactiveIcon;
+
+    return GestureDetector(
+      onTap: () => onTap(index),
+      child: Container(
+        width: 48,
+        height: 48,
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.analytics_outlined,
+          color: iconColor,
+          size: 24,
         ),
       ),
     );

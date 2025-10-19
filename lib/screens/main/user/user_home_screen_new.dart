@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/applicant_provider.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
@@ -9,6 +11,7 @@ import 'package:get_work_app/screens/main/user/jobs/filtered_jobs_screen.dart';
 import 'package:get_work_app/screens/main/user/bookmarks_screen.dart';
 import 'package:get_work_app/screens/main/user/user_chats.dart';
 import 'package:get_work_app/screens/main/user/user_help_and_support.dart';
+import 'package:get_work_app/screens/main/user/applications/my_applications_screen.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/image_utils.dart';
@@ -270,6 +273,10 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   void _onNavBarTap(int index) {
     setState(() {
       _currentIndex = index;
+      // Always reset filtered jobs view when tapping any bottom nav icon
+      // This ensures clicking Home icon always shows the main home screen
+      // regardless of where you navigated from
+      _showingFilteredJobs = false;
     });
   }
 
@@ -304,21 +311,19 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                       backgroundColor: AppColors.white,
                       child: _userProfilePic.isNotEmpty
                           ? ClipOval(
-                              child: Image.network(
-                                _userProfilePic,
+                              child: ImageUtils.buildSafeNetworkImage(
+                                imageUrl: _userProfilePic,
                                 width: 80,
                                 height: 80,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Text(
-                                    _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
-                                    style: const TextStyle(
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.lookGigPurple,
-                                    ),
-                                  );
-                                },
+                                errorWidget: Text(
+                                  _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.lookGigPurple,
+                                  ),
+                                ),
                               ),
                             )
                           : Text(
@@ -381,6 +386,18 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
                   onTap: () async {
                     Navigator.pop(context);
+                    
+                    // Clear Firestore listeners before sign out
+                    try {
+                      final applicantProvider = Provider.of<ApplicantProvider>(context, listen: false);
+                      final statusProvider = Provider.of<ApplicantStatusProvider>(context, listen: false);
+                      applicantProvider.clearData();
+                      statusProvider.clearAllCache();
+                      await Future.delayed(const Duration(milliseconds: 100));
+                    } catch (e) {
+                      print('⚠️ Warning: Error cleaning up listeners: $e');
+                    }
+                    
                     await AuthService.signOut();
                     if (mounted) {
                       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -715,49 +732,41 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                 color: const Color(0xFFAFECFE),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Stack(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Icon at position (58, 37) within card
-                  Positioned(
-                    left: 58,
-                    top: 37,
-                    child: Image.asset(
-                      'assets/images/job_search_icon.png',
-                      width: 34,
-                      height: 34,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.work, size: 34, color: Color(0xFF0D0140));
-                      },
+                  // Icon
+                  Image.asset(
+                    'assets/images/job_search_icon.png',
+                    width: 34,
+                    height: 34,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.work, size: 34, color: Color(0xFF0D0140));
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  // Count
+                  Text(
+                    _formatCount(_remoteJobsCount),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0D0140),
+                      fontFamily: 'DM Sans',
+                      height: 1.302,
                     ),
                   ),
-                  // Count at position (54, 85)
-                  Positioned(
-                    left: 54,
-                    top: 85,
-                    child: Text(
-                      _formatCount(_remoteJobsCount),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0D0140),
-                        fontFamily: 'DM Sans',
-                        height: 1.302,
-                      ),
-                    ),
-                  ),
-                  // Label at position (36, 112)
-                  Positioned(
-                    left: 36,
-                    top: 112,
-                    child: const Text(
-                      'Remote Job',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF0D0140),
-                        fontFamily: 'DM Sans',
-                        height: 1.302,
-                      ),
+                  const SizedBox(height: 6),
+                  // Label
+                  const Text(
+                    'Remote Job',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF0D0140),
+                      fontFamily: 'DM Sans',
+                      height: 1.302,
                     ),
                   ),
                 ],
@@ -963,18 +972,16 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   backgroundColor: const Color(0xFFE8E0FF), // Light purple background
                   child: job.companyLogo.isNotEmpty
                       ? ClipOval(
-                          child: Image.network(
-                            job.companyLogo,
+                          child: ImageUtils.buildSafeNetworkImage(
+                            imageUrl: job.companyLogo,
                             width: 30,
                             height: 30,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.business,
-                                size: 20,
-                                color: Color(0xFF6B5CE7),
-                              );
-                            },
+                            errorWidget: const Icon(
+                              Icons.business,
+                              size: 20,
+                              color: Color(0xFF6B5CE7),
+                            ),
                           ),
                         )
                       : const Icon(
@@ -1003,14 +1010,19 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Text(
-                            job.companyName,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF524B6B),
-                              fontFamily: 'DM Sans',
-                              height: 1.302,
+                          Flexible(
+                            flex: 2,
+                            child: Text(
+                              job.companyName,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF524B6B),
+                                fontFamily: 'DM Sans',
+                                height: 1.302,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -1023,9 +1035,35 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Expanded(
+                          Flexible(
+                            flex: 2,
                             child: Text(
                               job.location,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF524B6B),
+                                fontFamily: 'DM Sans',
+                                height: 1.302,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 2,
+                            height: 2,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF524B6B),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            flex: 1,
+                            child: Text(
+                              _getTimeAgo(job.createdAt),
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
@@ -1068,19 +1106,15 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
             _buildFormattedSalary(job.salaryRange, job.employmentType),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (job.experienceLevel.isNotEmpty)
-                  Expanded(
-                    child: _buildJobTag(job.experienceLevel, const Color(0xFFCBC9D4)),
-                  ),
-                if (job.experienceLevel.isNotEmpty) const SizedBox(width: 8),
+                if (job.experienceLevel.isNotEmpty) ...[
+                  _buildJobTag(job.experienceLevel, const Color(0xFFCBC9D4), false),
+                  const SizedBox(width: 8),
+                ],
+                _buildJobTag(job.employmentType, const Color(0xFFCBC9D4), false),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: _buildJobTag(job.employmentType, const Color(0xFFCBC9D4)),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildJobTag('Apply', const Color(0xFFFF6B2C)),
+                  child: _buildJobTag('Apply', const Color(0xFFFF6B2C), true),
                 ),
               ],
             ),
@@ -1090,25 +1124,49 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
     );
   }
 
-  Widget _buildJobTag(String label, Color color) {
+  Widget _buildJobTag(String label, Color color, bool isApplyButton) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isApplyButton ? 28 : 20,
+        vertical: isApplyButton ? 10 : 8,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 10,
+        style: TextStyle(
+          fontSize: isApplyButton ? 13 : 11,
           fontWeight: FontWeight.w400,
-          color: Color(0xFF524B6B),
+          color: const Color(0xFF524B6B),
           fontFamily: 'DM Sans',
           height: 1.302,
         ),
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years ${years == 1 ? 'year' : 'years'} ago';
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'month' : 'months'} ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   Widget _buildFormattedSalary(String salaryRange, String employmentType) {
@@ -1169,8 +1227,34 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
     if (salaryRange.isEmpty) return 'Salary not specified';
 
     try {
-      // Remove currency symbols and commas
-      String cleaned = salaryRange.replaceAll(RegExp(r'[₹$,\s]'), '');
+      // Check if salary already has a period indicator (e.g., "40/hour", "50/month")
+      final hasPeriod = salaryRange.contains('/');
+      String period = '';
+      String numberPart = salaryRange;
+      
+      if (hasPeriod) {
+        // Extract the period from the salary string
+        final parts = salaryRange.split('/');
+        numberPart = parts[0];
+        if (parts.length > 1) {
+          // Normalize the period format
+          final periodText = parts[1].toLowerCase().trim();
+          if (periodText.contains('hour') || periodText == 'hr') {
+            period = '/hr';
+          } else if (periodText.contains('month') || periodText == 'mo') {
+            period = '/mo';
+          } else if (periodText.contains('year') || periodText == 'yr') {
+            period = '/yr';
+          } else if (periodText.contains('project')) {
+            period = '/project';
+          } else {
+            period = '/$periodText'; // Use as-is if not recognized
+          }
+        }
+      }
+      
+      // Remove currency symbols and commas from number part
+      String cleaned = numberPart.replaceAll(RegExp(r'[₹$,\s]'), '');
       
       // Extract numbers (handle ranges like "10-16" or "50000-80000")
       final numbers = RegExp(r'\d+').allMatches(cleaned);
@@ -1179,39 +1263,30 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
       // Get first number (min salary)
       int minSalary = int.parse(numbers.first.group(0)!);
       
-      // Determine if it's in thousands or needs K suffix
-      String formattedAmount;
-      if (minSalary < 1000) {
-        // Already in K format (e.g., "10" means 10K)
-        formattedAmount = '${minSalary}K';
-      } else if (minSalary >= 1000 && minSalary < 100000) {
-        // Convert to K (e.g., 15000 -> 15K)
-        formattedAmount = '${(minSalary / 1000).round()}K';
-      } else {
-        // Large numbers, show in lakhs or keep as is
-        formattedAmount = '${(minSalary / 1000).round()}K';
+      // Format the amount
+      String formattedAmount = minSalary.toString();
+      
+      // If no period was in the original data, determine it from employment type
+      if (period.isEmpty) {
+        switch (employmentType.toLowerCase()) {
+          case 'full-time':
+          case 'full time':
+            period = '/mo';
+            break;
+          case 'part-time':
+          case 'part time':
+            period = '/hr';
+            break;
+          case 'freelance':
+          case 'contract':
+            period = '/project';
+            break;
+          default:
+            period = '/mo'; // Default to monthly
+        }
       }
       
-      // Determine period based on employment type
-      String period;
-      switch (employmentType.toLowerCase()) {
-        case 'full-time':
-        case 'full time':
-          period = '/Mo';
-          break;
-        case 'part-time':
-        case 'part time':
-          period = '/Hr';
-          break;
-        case 'freelance':
-        case 'contract':
-          period = '/Project';
-          break;
-        default:
-          period = '/Mo'; // Default to monthly
-      }
-      
-      // Use ₹ for Indian currency, $ for others (can be enhanced based on location)
+      // Use ₹ for Indian currency, $ for others
       String currency = salaryRange.contains('₹') ? '₹' : '\$';
       
       return '$currency$formattedAmount$period';
@@ -1222,9 +1297,8 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   }
 
   Widget _buildSearchScreen() {
-    return const Center(
-      child: Text('Search Screen - Coming Soon'),
-    );
+    // Return My Applications Screen without the header since it has its own
+    return const MyApplicationsScreen();
   }
 
   Widget _buildAddScreen() {

@@ -13,12 +13,16 @@ import 'package:get_work_app/screens/main/user/profile/resume_screen.dart';
 import 'package:get_work_app/screens/main/user/profile/settings_screen.dart';
 import 'package:get_work_app/screens/main/user/profile/skills_screen.dart';
 import 'package:get_work_app/screens/main/user/profile/work_experience_screen.dart';
+import 'package:get_work_app/screens/main/user/applications/my_applications_screen.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
+import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -32,11 +36,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditing = false;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isSavingFromSettingsIcon = false; // Track if save was triggered from settings icon
   bool _isUploadingImage = false;
   bool _isUploadingResume = false;
   Map<String, dynamic> _userData = {};
   final _skillSearchController = TextEditingController();
   // Removed unused fields to fix analyzer warnings
+  
+  // Profile completion tracking
+  bool _profileCompleted = true;
+  int _profileCompletionPercentage = 100;
+  bool _skippedOnboarding = false;
 
   // Text controllers
   final _fullNameController = TextEditingController();
@@ -103,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         final doc =
             await FirebaseFirestore.instance
@@ -112,8 +122,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 .get();
 
         if (doc.exists && mounted) {
+          // Load profile completion status
+          final completionStatus = await AuthService.getProfileCompletionStatus();
+          
           setState(() {
             _userData = doc.data() ?? {};
+            // Log user data for debugging (only essential info)
+            debugPrint('=== User Data Loaded ===');
+            debugPrint('User Name: ${_userData['fullName'] ?? 'N/A'}');
+            final profileImg = _userData['profileImageUrl']?.toString() ?? '';
+            debugPrint('Profile Image URL: ${profileImg.isNotEmpty ? profileImg : '(empty)'}');
+            debugPrint('=======================');
+            
+            // Set profile completion data
+            // Only show banner if user explicitly skipped OR has incomplete profile
+            _skippedOnboarding = completionStatus['skippedOnboarding'] ?? false;
+            _profileCompletionPercentage = completionStatus['completionPercentage'] ?? 100;
+            _profileCompleted = completionStatus['profileCompleted'] ?? true;
+            
+            // If user has onboardingCompleted=true, they completed it before this feature
+            // So don't show the banner even if new fields are missing
+            bool hasCompletedOnboarding = completionStatus['onboardingCompleted'] ?? false;
+            if (hasCompletedOnboarding && !_skippedOnboarding) {
+              _profileCompleted = true;
+              _profileCompletionPercentage = 100;
+            }
+            
             _populateControllers();
             _isLoading = false;
           });
@@ -195,7 +229,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (user != null) {
           final role = await AuthService.getUserRole();
           final collectionName =
-              role == 'employee' ? 'employees' : 'users_specific';
+              role == 'employer' ? 'employers' : 'users_specific';
 
           await FirebaseFirestore.instance
               .collection(collectionName)
@@ -241,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (user != null) {
           final role = await AuthService.getUserRole();
           final collectionName =
-              role == 'employee' ? 'employees' : 'users_specific';
+              role == 'employer' ? 'employers' : 'users_specific';
 
           // Update Firestore with available data
           final updateData = {
@@ -324,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         final updatedData = {
           'fullName': _fullNameController.text.trim(),
@@ -375,6 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             _isEditing = false;
             _isSaving = false;
+            _isSavingFromSettingsIcon = false;
             _userData.addAll(updatedData);
           });
           _showSuccessSnackBar('Profile updated successfully!');
@@ -382,7 +417,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() {
+          _isSaving = false;
+          _isSavingFromSettingsIcon = false;
+        });
         _showErrorSnackBar('Error saving profile: $e');
       }
     }
@@ -433,6 +471,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
+  }
+
+  Future<void> _shareProfile() async {
+    debugPrint('=== SHARE PROFILE STARTED ===');
+    try {
+      // Log user data availability
+      debugPrint('User data isEmpty: ${_userData.isEmpty}');
+      debugPrint('User data keys: ${_userData.keys.toList()}');
+      
+      // Build profile summary text
+      final name = _userData['fullName'] ?? 'Job Seeker';
+      debugPrint('Extracted name: $name');
+      
+      final availability = _userData['availability'] is String
+          ? _userData['availability']
+          : _userData['availability']?['type'] ?? 'Full-time';
+      debugPrint('Extracted availability: $availability');
+      
+      // Get skills
+      final skills = _userData['skills'] as List<dynamic>?;
+      debugPrint('Skills data: $skills');
+      final skillsText = skills != null && skills.isNotEmpty
+          ? skills.take(5).join(', ')
+          : 'Not specified';
+      debugPrint('Skills text: $skillsText');
+      
+      // Get work experience
+      String workExpText = 'Not specified';
+      try {
+        final workExpData = _userData['workExperience'];
+        debugPrint('Work experience data type: ${workExpData.runtimeType}');
+        debugPrint('Work experience data: $workExpData');
+        
+        if (workExpData != null) {
+          if (workExpData is List && workExpData.isNotEmpty) {
+            final latest = workExpData.first as Map<String, dynamic>;
+            final position = latest['position'] ?? latest['jobTitle'] ?? '';
+            final company = latest['company'] ?? '';
+            if (position.isNotEmpty || company.isNotEmpty) {
+              workExpText = '$position at $company';
+            }
+          } else if (workExpData is Map<String, dynamic>) {
+            final position = workExpData['position'] ?? workExpData['jobTitle'] ?? '';
+            final company = workExpData['company'] ?? '';
+            if (position.isNotEmpty || company.isNotEmpty) {
+              workExpText = '$position at $company';
+            }
+          }
+        }
+        debugPrint('Work experience text: $workExpText');
+      } catch (e, stackTrace) {
+        debugPrint('Error getting work experience for share: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
+      
+      // Get bio
+      final bio = _userData['bio'] ?? '';
+      debugPrint('Bio length: ${bio.length}');
+      
+      // Build share text
+      String shareText = '''
+🌟 Professional Profile
+
+👤 Name: $name
+💼 Availability: $availability
+🎯 Skills: $skillsText
+💡 Experience: $workExpText''';
+
+      if (bio.isNotEmpty) {
+        shareText += '\n\n📝 About:\n$bio';
+      }
+
+      // Add resume preview image link if available (works better than PDF)
+      final resumePreviewUrl = _userData['resumePreviewUrl'];
+      final resumeUrl = _userData['resumeUrl'];
+      
+      debugPrint('Resume Preview URL: $resumePreviewUrl');
+      debugPrint('Resume PDF URL: $resumeUrl');
+      
+      // Prefer preview image URL over PDF URL (preview images work, PDFs don't on Cloudinary free tier)
+      if (resumePreviewUrl != null && resumePreviewUrl.toString().isNotEmpty) {
+        shareText += '\n\n📄 Resume Preview: $resumePreviewUrl';
+      } else if (resumeUrl != null && resumeUrl.toString().isNotEmpty) {
+        shareText += '\n\n📄 Resume: $resumeUrl';
+      }
+
+      shareText += '\n\n✨ Shared from Look Gig App';
+
+      debugPrint('=== FINAL SHARE TEXT ===');
+      debugPrint(shareText);
+      debugPrint('=== CALLING Share.share() ===');
+      
+      // Share using share_plus
+      final result = await Share.share(
+        shareText,
+        subject: '$name - Professional Profile',
+      );
+      
+      debugPrint('Share result: ${result.status}');
+      debugPrint('Share result raw: $result');
+      debugPrint('=== SHARE COMPLETED SUCCESSFULLY ===');
+      
+    } catch (e, stackTrace) {
+      debugPrint('=== SHARE PROFILE ERROR ===');
+      debugPrint('Error type: ${e.runtimeType}');
+      debugPrint('Error message: $e');
+      debugPrint('Stack trace: $stackTrace');
+      debugPrint('=========================');
+      _showErrorSnackBar('Failed to share profile: $e');
+    }
   }
 
   String _getContentForSection(String title) {
@@ -579,6 +727,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProfileSections() {
     return Column(
       children: [
+        // Profile completion banner (show ONLY if profile is less than 100% complete)
+        if (_profileCompletionPercentage < 100) 
+          _buildProfileCompletionBanner(),
+        if (_profileCompletionPercentage < 100) 
+          const SizedBox(height: 20),
+        
         _buildProfileSection(
           title: 'About me',
           iconPath: 'assets/images/basic_info_icon.png',
@@ -626,9 +780,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
           iconPath: 'assets/images/resume_icon.png',
           onTap: () => _navigateToResume(),
         ),
+        const SizedBox(height: 10),
+        _buildProfileSection(
+          title: 'My Applications',
+          iconPath: 'assets/images/work_experience_icon.png',
+          onTap: () => _navigateToMyApplications(),
+        ),
         const SizedBox(height: 20),
       ],
     );
+  }
+
+  // Profile completion banner widget
+  Widget _buildProfileCompletionBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF130160), Color(0xFF6C5CE7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF130160).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Info icon
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // Text content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Complete Your Profile',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontFamily: 'DM Sans',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$_profileCompletionPercentage% complete',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 13,
+                    fontFamily: 'DM Sans',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: _profileCompletionPercentage / 100,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // Complete Now button
+          ElevatedButton(
+            onPressed: _navigateToCompleteProfile,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF130160),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Complete',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                fontFamily: 'DM Sans',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Navigate to onboarding to complete profile
+  Future<void> _navigateToCompleteProfile() async {
+    try {
+      String? role = await AuthService.getUserRole();
+      String route = role == 'employer' 
+        ? AppRoutes.employerOnboarding 
+        : AppRoutes.studentOnboarding;
+      
+      if (mounted) {
+        await Navigator.pushNamed(context, route);
+        // Reload profile data after returning from onboarding
+        _loadUserData();
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error: ${e.toString()}');
+    }
   }
 
   Widget _buildEditForm() {
@@ -1582,7 +1862,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         await FirebaseFirestore.instance
             .collection(collectionName)
@@ -1855,9 +2135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       // Share icon
                       GestureDetector(
-                        onTap: () {
-                          // Share functionality
-                        },
+                        onTap: _shareProfile,
                         child: SizedBox(
                           width: 24,
                           height: 24,
@@ -1881,7 +2159,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       GestureDetector(
                         onTap: () {
                           if (_isEditing) {
-                            _saveProfile();
+                            // Only allow save if not already saving
+                            if (!_isSaving) {
+                              setState(() {
+                                _isSavingFromSettingsIcon = true;
+                              });
+                              _saveProfile();
+                            }
                           } else {
                             _navigateToSettings();
                           }
@@ -1890,7 +2174,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 24,
                           height: 24,
                           child:
-                              _isSaving
+                              // Only show loading spinner when save was triggered from THIS icon
+                              (_isEditing && _isSaving && _isSavingFromSettingsIcon)
                                   ? const SizedBox(
                                     width: 20,
                                     height: 20,
@@ -1953,40 +2238,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         _userData['profileImageUrl']
                                             .toString()
                                             .isNotEmpty
-                                    ? Image.network(
-                                      _userData['profileImageUrl'],
+                                    ? ImageUtils.buildSafeNetworkImage(
+                                      imageUrl: _userData['profileImageUrl'],
                                       fit: BoxFit.cover,
-                                      loadingBuilder: (
-                                        context,
-                                        child,
-                                        loadingProgress,
-                                      ) {
-                                        if (loadingProgress == null) {
-                                          return child;
-                                        }
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppColors.white,
-                                            strokeWidth: 2,
-                                            value:
-                                                loadingProgress
-                                                            .expectedTotalBytes !=
-                                                        null
-                                                    ? loadingProgress
-                                                            .cumulativeBytesLoaded /
-                                                        loadingProgress
-                                                            .expectedTotalBytes!
-                                                    : null,
-                                          ),
-                                        );
-                                      },
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return _buildDefaultAvatar();
-                                      },
+                                      errorWidget: _buildDefaultAvatar(),
+                                      loadingWidget: Center(
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
                                     )
                                     : _buildDefaultAvatar(),
                           ),
@@ -2487,11 +2748,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _navigateToMyApplications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MyApplicationsScreen()),
+    );
+  }
+
   void _navigateToSettings() async {
+    // Don't navigate to settings if currently saving
+    if (_isSaving) {
+      _showErrorSnackBar('Please wait for the save operation to complete');
+      return;
+    }
+    
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const SettingsScreen()),
     );
+    
+    // Reset saving state when returning from settings screen
+    // This ensures the settings icon doesn't show a spinner if there was any state issue
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
 
   // Dialog methods for each section (temporary - will be replaced with separate screens)

@@ -108,7 +108,7 @@ class ApplicantStatusProvider with ChangeNotifier {
       }
       notifyListeners();
 
-      // Set up real-time listener for this job's applicants
+      // Set up real-time listener for this job's applicants with error handling
       final listener = FirebaseFirestore.instance
           .collection('jobs')
           .doc(companyName)
@@ -116,20 +116,31 @@ class ApplicantStatusProvider with ChangeNotifier {
           .doc(jobId)
           .collection('applicants')
           .snapshots()
-          .listen((snapshot) {
-            bool hasChanges = false;
-            for (var doc in snapshot.docs) {
-              final key = '$companyName-$jobId-${doc.id}';
-              final newStatus = doc.data()['status'] ?? 'pending';
-              if (_statusCache[key] != newStatus) {
-                _statusCache[key] = newStatus;
-                hasChanges = true;
+          .listen(
+            (snapshot) {
+              try {
+                bool hasChanges = false;
+                for (var doc in snapshot.docs) {
+                  final key = '$companyName-$jobId-${doc.id}';
+                  final newStatus = doc.data()['status'] ?? 'pending';
+                  if (_statusCache[key] != newStatus) {
+                    _statusCache[key] = newStatus;
+                    hasChanges = true;
+                  }
+                }
+                if (hasChanges) {
+                  notifyListeners();
+                }
+              } catch (e) {
+                // Catch any errors from notifyListeners() during navigation
+                print('⚠️ Error in status listener callback: $e');
               }
-            }
-            if (hasChanges) {
-              notifyListeners();
-            }
-          });
+            },
+            onError: (error) {
+              print('⚠️ Status listener error for job $jobId: $error');
+              // Don't crash on permission errors during logout
+            },
+          );
 
       _statusListeners[jobId] = listener;
       _isLoading = false;
@@ -149,19 +160,24 @@ class ApplicantStatusProvider with ChangeNotifier {
 
   // Clear cache for a specific job
   void clearJobCache(String companyName, String jobId) {
+    print('🧹 ApplicantStatusProvider: Clearing cache for job $jobId');
     _cancelJobListener(jobId);
     _statusCache.removeWhere(
       (key, _) => key.startsWith('$companyName-$jobId-'),
     );
-    notifyListeners();
+    // Don't call notifyListeners() here - this is a cleanup operation
+    // often called from dispose() when the widget tree may be locked
   }
 
   // Clear all cache and listeners
   void clearAllCache() {
+    print('🧹 ApplicantStatusProvider: Cancelling all ${_statusListeners.length} listeners...');
     _statusListeners.forEach((_, listener) => listener.cancel());
     _statusListeners.clear();
     _statusCache.clear();
-    notifyListeners();
+    print('✅ ApplicantStatusProvider: All listeners cancelled');
+    // Don't call notifyListeners() here - this is a cleanup operation
+    // often called from dispose() when the widget tree may be locked
   }
 
   @override

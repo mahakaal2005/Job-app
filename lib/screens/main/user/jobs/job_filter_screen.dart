@@ -18,13 +18,13 @@ class JobFilterScreen extends StatefulWidget {
 
 class _JobFilterScreenState extends State<JobFilterScreen> {
   // Filter state variables - default to empty/unselected state
-  String _selectedLastUpdate = 'Any time';
-  String _selectedWorkplace = 'On-site';
+  String _selectedLastUpdate = '';
+  String _selectedWorkplace = '';
   String _selectedJobType = '';
   String _selectedPositionLevel = '';
   List<String> _selectedCities = [];
-  double _minSalary = 13;
-  double _maxSalary = 25;
+  double _minSalary = 10;
+  double _maxSalary = 200;
   String _selectedExperience = '';
   List<String> _selectedSpecializations = [];
 
@@ -92,13 +92,13 @@ class _JobFilterScreenState extends State<JobFilterScreen> {
     if (widget.initialFilters != null) {
       final filters = widget.initialFilters!;
       setState(() {
-        _selectedLastUpdate = filters['lastUpdate'] ?? 'Any time';
-        _selectedWorkplace = filters['workplace'] ?? 'On-site';
+        _selectedLastUpdate = filters['lastUpdate'] ?? '';
+        _selectedWorkplace = filters['workplace'] ?? '';
         _selectedJobType = filters['jobType'] ?? '';
         _selectedPositionLevel = filters['positionLevel'] ?? '';
         _selectedCities = List<String>.from(filters['cities'] ?? []);
-        _minSalary = (filters['minSalary'] ?? 13).toDouble();
-        _maxSalary = (filters['maxSalary'] ?? 25).toDouble();
+        _minSalary = (filters['minSalary'] ?? 10).toDouble();
+        _maxSalary = (filters['maxSalary'] ?? 200).toDouble();
         _selectedExperience = filters['experience'] ?? '';
         _selectedSpecializations = List<String>.from(filters['specializations'] ?? []);
       });
@@ -107,16 +107,26 @@ class _JobFilterScreenState extends State<JobFilterScreen> {
 
   void _resetFilters() {
     setState(() {
-      _selectedLastUpdate = 'Any time';
-      _selectedWorkplace = 'On-site';
+      _selectedLastUpdate = '';
+      _selectedWorkplace = '';
       _selectedJobType = '';
       _selectedPositionLevel = '';
       _selectedCities = [];
-      _minSalary = 13;
-      _maxSalary = 25;
+      _minSalary = 10;
+      _maxSalary = 200;
       _selectedExperience = '';
       _selectedSpecializations = [];
     });
+    
+    // Show minimal toast message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Filters reset'),
+        duration: Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(bottom: 100, left: 20, right: 20),
+      ),
+    );
   }
 
   void _applyFilters() {

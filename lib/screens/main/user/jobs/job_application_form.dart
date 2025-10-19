@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_application_model.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/services/auth_services.dart';

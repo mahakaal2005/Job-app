@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -32,6 +33,7 @@ class ChatService {
       'message': message,
       'timestamp': timestamp,
       'isRead': false, // New messages are unread by default
+      'isDelivered': false, // Will be marked as delivered when receiver opens chat list
     };
 
     // Add message to the chat collection
@@ -55,6 +57,66 @@ class ChatService {
       receiverId: receiverId,
       senderName: senderName,
       message: message,
+      chatId: chatId,
+    );
+  }
+
+  // Send a media message (image or document)
+  Future<void> sendMediaMessage({
+    required String receiverId,
+    required String message,
+    required String senderName,
+    required String receiverName,
+    required String messageType, // 'image' or 'document'
+    required String fileUrl,
+    String? fileName,
+    int? fileSize,
+  }) async {
+    final String currentUserId = _auth.currentUser!.uid;
+    final String chatId = getChatId(currentUserId, receiverId);
+    final Timestamp timestamp = Timestamp.now();
+
+    // Create a new media message
+    final newMessage = {
+      'senderId': currentUserId,
+      'receiverId': receiverId,
+      'message': message,
+      'timestamp': timestamp,
+      'isRead': false,
+      'messageType': messageType,
+      'fileUrl': fileUrl,
+      if (fileName != null) 'fileName': fileName,
+      if (fileSize != null) 'fileSize': fileSize,
+    };
+
+    // Add message to the chat collection
+    await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .add(newMessage);
+
+    // Update the chat metadata with appropriate preview
+    String lastMessagePreview = message;
+    if (messageType == 'image') {
+      lastMessagePreview = '📷 Photo';
+    } else if (messageType == 'document') {
+      lastMessagePreview = '📄 ${fileName ?? 'Document'}';
+    }
+
+    await _firestore.collection('chats').doc(chatId).set({
+      'lastMessage': lastMessagePreview,
+      'lastMessageTime': timestamp,
+      'participants': [currentUserId, receiverId],
+      'participantNames': [senderName, receiverName],
+      'updatedAt': timestamp,
+    }, SetOptions(merge: true));
+
+    // Send push notification
+    await _sendPushNotification(
+      receiverId: receiverId,
+      senderName: senderName,
+      message: lastMessagePreview,
       chatId: chatId,
     );
   }
@@ -122,7 +184,29 @@ class ChatService {
         .snapshots();
   }
 
-  // Mark messages as read
+  // Mark messages as delivered (when user opens chat list)
+  Future<void> markMessagesAsDelivered(String chatId, String currentUserId) async {
+    try {
+      final batch = _firestore.batch();
+      final snapshot = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('receiverId', isEqualTo: currentUserId)
+          .where('isDelivered', isEqualTo: false)
+          .get();
+
+      for (var doc in snapshot.docs) {
+        batch.update(doc.reference, {'isDelivered': true});
+      }
+
+      await batch.commit();
+    } catch (e) {
+      print('Error marking messages as delivered: $e');
+    }
+  }
+
+  // Mark messages as read (when user opens specific chat)
   Future<void> markMessagesAsRead(String chatId, String currentUserId) async {
     try {
       final batch = _firestore.batch();
@@ -135,7 +219,10 @@ class ChatService {
           .get();
 
       for (var doc in snapshot.docs) {
-        batch.update(doc.reference, {'isRead': true});
+        batch.update(doc.reference, {
+          'isRead': true,
+          'isDelivered': true, // Also mark as delivered
+        });
       }
 
       await batch.commit();
@@ -164,13 +251,31 @@ class ChatService {
 
   // Get total unread message count for all chats
   Stream<int> getTotalUnreadCount() {
-    final String currentUserId = _auth.currentUser!.uid;
-    return _firestore
-        .collectionGroup('messages')
-        .where('receiverId', isEqualTo: currentUserId)
-        .where('isRead', isEqualTo: false)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('⚠️ No user logged in for unread count');
+        return Stream.value(0);
+      }
+      
+      final String currentUserId = currentUser.uid;
+      return _firestore
+          .collectionGroup('messages')
+          .where('receiverId', isEqualTo: currentUserId)
+          .where('isRead', isEqualTo: false)
+          .snapshots()
+          .map((snapshot) {
+            debugPrint('📬 Unread messages count: ${snapshot.docs.length}');
+            return snapshot.docs.length;
+          })
+          .handleError((error) {
+            debugPrint('❌ Error in unread count stream: $error');
+            return 0;
+          });
+    } catch (e) {
+      debugPrint('❌ Error creating unread count stream: $e');
+      return Stream.value(0);
+    }
   }
 
   // Update FCM token for push notifications
@@ -204,7 +309,7 @@ class ChatService {
 
   // Get employer data
   Future<Map<String, dynamic>?> getEmployerData(String employerId) async {
-    final doc = await _firestore.collection('employees').doc(employerId).get();
+    final doc = await _firestore.collection('employers').doc(employerId).get();
     if (doc.exists) {
       return doc.data();
     }

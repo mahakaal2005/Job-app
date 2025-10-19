@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/emp_ob/cd_servi.dart';
+import 'package:get_work_app/screens/main/employer/emp_ob/cd_servi.dart';
 import 'package:image/image.dart' as img;
 // Note: flutter_pdfview doesn't have PDF to image conversion capabilities
 // We'll need to use a different approach for PDF preview generation
@@ -70,7 +70,7 @@ class PDFService {
     }
   }
 
-  /// Uploads a resume PDF and optionally creates a placeholder preview
+  /// Uploads a resume PDF and generates preview using Cloudinary's built-in PDF to image conversion
   static Future<Map<String, String?>> uploadResumePDF(File pdfFile) async {
     try {
       // Verify file exists and is PDF
@@ -79,39 +79,56 @@ class PDFService {
         throw Exception('Invalid PDF file: ${pdfFile.path}');
       }
 
-      print('Starting PDF upload process...');
+      print('📄 [PDF SERVICE] Starting PDF upload process...');
+      print('   File: ${pdfFile.path}');
+      print('   Size: ${await pdfFile.length()} bytes');
 
-      // Upload the original PDF
-      print('Uploading PDF file...');
+      // Upload the original PDF to Cloudinary
+      print('📤 [PDF SERVICE] Uploading PDF file to Cloudinary...');
       final pdfUrl = await CloudinaryService.uploadDocument(pdfFile);
       if (pdfUrl == null) {
         throw Exception('Failed to upload PDF to Cloudinary');
       }
-      print('PDF uploaded successfully: $pdfUrl');
+      print('✅ [PDF SERVICE] PDF uploaded successfully: $pdfUrl');
 
-      // Create a simple preview placeholder (optional)
+      // Generate BOTH preview URL and proper PDF viewing URL
       String? previewUrl;
+      String? viewablePdfUrl;
+      
       try {
-        final placeholderPath = await createPDFPreview(pdfFile);
-        if (placeholderPath != null) {
-          final placeholderFile = File(placeholderPath);
-          if (await placeholderFile.exists()) {
-            print('Uploading placeholder preview...');
-            previewUrl = await CloudinaryService.uploadImage(placeholderFile);
-            print('Placeholder preview uploaded: $previewUrl');
-
-            // Clean up
-            await placeholderFile.delete();
-          }
+        // Extract public ID and cloud name from the PDF URL
+        final publicId = CloudinaryService.extractPublicId(pdfUrl);
+        final cloudName = pdfUrl.split('/')[3];
+        
+        if (publicId != null) {
+          // Generate preview URL by converting PDF first page to JPG (THIS WORKS!)
+          previewUrl = 'https://res.cloudinary.com/$cloudName/image/upload/pg_1,w_800,h_1000,c_fit,q_auto/$publicId.jpg';
+          
+          // Generate viewable PDF URL using EXACT same pattern as preview (no transformations)
+          // Just change .jpg to .pdf - if preview works, this should too
+          viewablePdfUrl = 'https://res.cloudinary.com/$cloudName/image/upload/$publicId.pdf';
+          
+          print('✅ [PDF SERVICE] Preview URL generated: $previewUrl');
+          print('✅ [PDF SERVICE] Viewable PDF URL generated: $viewablePdfUrl');
+        } else {
+          print('⚠️ [PDF SERVICE] Could not extract public ID from PDF URL');
         }
       } catch (e) {
-        print('Error creating/uploading placeholder: $e');
-        // Continue without preview
+        print('⚠️ [PDF SERVICE] Error generating URLs: $e');
       }
 
-      return {'pdfUrl': pdfUrl, 'previewUrl': previewUrl};
+      print('🎉 [PDF SERVICE] Upload complete!');
+      print('   Original PDF URL: $pdfUrl');
+      print('   Viewable PDF URL: $viewablePdfUrl');
+      print('   Preview URL: $previewUrl');
+      
+      // Return the viewable PDF URL instead of the original
+      return {
+        'pdfUrl': viewablePdfUrl ?? pdfUrl, 
+        'previewUrl': previewUrl
+      };
     } catch (e, stackTrace) {
-      print('Error uploading resume: $e');
+      print('❌ [PDF SERVICE] Error uploading resume: $e');
       print('Stack trace: $stackTrace');
       return {'pdfUrl': null, 'previewUrl': null};
     }

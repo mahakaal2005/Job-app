@@ -79,22 +79,28 @@ class _LoginScreenState extends State<LoginScreen> {
       // Get the current user's role from your auth service
       String? userRole = await AuthService.getCurrentUserRole();
       
+      // Debug logging
+      print('🔍 DEBUG Login: User role = $userRole');
+      
       if (mounted) {
         // Navigate to appropriate home screen based on role
         if (userRole == 'user') {
+          print('🔍 DEBUG Login: Navigating to USER home');
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.userHome,
             (route) => false,
           );
-        } else if (userRole == 'employee') {
+        } else if (userRole == 'employer') {
+          print('🔍 DEBUG Login: Navigating to EMPLOYER home');
           Navigator.pushNamedAndRemoveUntil(
             context,
-            AppRoutes.employeeHome,
+            AppRoutes.employerHome,
             (route) => false,
           );
         } else {
           // Default fallback - you might want to handle this case differently
+          print('⚠️ WARNING Login: No role found, going to AuthWrapper');
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.home, // This will go to AuthWrapper
@@ -103,6 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
+      print('❌ ERROR Login: Failed to get user role - $e');
       if (mounted) {
         // If role retrieval fails, fallback to AuthWrapper
         Navigator.pushNamedAndRemoveUntil(
@@ -145,6 +152,98 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _forgotPassword() {
     Navigator.pushNamed(context, AppRoutes.forgotPassword);
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      UserCredential? userCredential = await AuthService.signInWithGoogle();
+      
+      if (userCredential != null && mounted) {
+        // Check if user needs role selection (new Google user)
+        bool needsRoleSelection = await AuthService.doesGoogleUserNeedRoleSelection();
+        
+        if (needsRoleSelection) {
+          // New Google user - redirect to signup for role selection
+          setState(() {
+            _isLoading = false;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please complete your profile setup'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.signup,
+            arguments: userCredential.user?.email ?? '',
+          );
+        } else {
+          // Existing user - navigate to appropriate home screen
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Welcome back!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          await _navigateBasedOnUserRole();
+        }
+      } else if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        String errorMessage;
+        switch (e.code) {
+          case 'account-exists-with-different-credential':
+            errorMessage = 'An account already exists with this email using a different sign-in method.';
+            break;
+          case 'invalid-credential':
+            errorMessage = 'The credential is invalid or has expired.';
+            break;
+          case 'operation-not-allowed':
+            errorMessage = 'Google Sign-In is not enabled. Please contact support.';
+            break;
+          case 'user-disabled':
+            errorMessage = 'This account has been disabled.';
+            break;
+          default:
+            errorMessage = e.message ?? 'Google Sign-In failed';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -249,6 +348,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.lookGigPurple,
+                                    width: 1,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Colors.red),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Colors.red, width: 1),
+                                ),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 17,
@@ -322,6 +440,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.lookGigPurple,
+                                    width: 1,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Colors.red),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: Colors.red, width: 1),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -484,12 +621,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Implement Google Sign In
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Google Sign In coming soon!')),
-                          );
-                        },
+                        onPressed: _isLoading ? null : _signInWithGoogle,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFD6CDFE),
                           shape: RoundedRectangleBorder(

@@ -115,7 +115,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        initialRoute: AppRoutes.splash,
+        initialRoute: '/',
         onGenerateRoute: AppRoutes.generateRoute,
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/job_services.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new%20post/job_services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class JobProvider with ChangeNotifier {

@@ -338,7 +338,7 @@ class _SkillSearchScreenState extends State<SkillSearchScreen> {
           padding: const EdgeInsets.only(bottom: 30), // 46px spacing from Figma
           child: GestureDetector(
             onTap: () => _toggleSkill(skill),
-            child: Container(
+            child: SizedBox(
               width: 131, // From Figma layout_U6KIXB
               child: Row(
                 children: [

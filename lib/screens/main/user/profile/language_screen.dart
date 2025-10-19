@@ -29,7 +29,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
 
         final doc = await FirebaseFirestore.instance
             .collection(collectionName)
@@ -83,7 +83,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
 
         await FirebaseFirestore.instance
             .collection(collectionName)

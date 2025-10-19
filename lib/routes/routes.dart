@@ -6,15 +6,16 @@ import 'package:get_work_app/screens/login_signup/signup_screen.dart';
 import 'package:get_work_app/screens/login_signup/forgot_password_screen.dart';
 import 'package:get_work_app/screens/login_signup/password_reset_success_screen.dart';
 import 'package:get_work_app/screens/login_signup/password_reset_complete_screen.dart';
-import 'package:get_work_app/screens/main/employye/emp_analytics.dart';
-import 'package:get_work_app/screens/main/employye/emp_chats.dart';
-import 'package:get_work_app/screens/main/employye/emp_ob/employee_onboarding.dart';
-import 'package:get_work_app/screens/main/employye/employee_home_screen.dart';
-import 'package:get_work_app/screens/main/employye/emp_profile.dart';
-import 'package:get_work_app/screens/main/employye/emp_help_support.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/all_jobs.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
-import 'package:get_work_app/screens/main/employye/new%20post/new_job_screen.dart';
+import 'package:get_work_app/screens/main/employer/emp_analytics.dart';
+import 'package:get_work_app/screens/main/employer/emp_chats.dart';
+import 'package:get_work_app/screens/main/employer/emp_ob/employer_onboarding.dart';
+import 'package:get_work_app/screens/main/employer/employer_home_screen.dart';
+import 'package:get_work_app/screens/main/employer/emp_profile.dart';
+import 'package:get_work_app/screens/main/employer/emp_help_support.dart';
+import 'package:get_work_app/screens/main/employer/emp_privacy_policy.dart';
+import 'package:get_work_app/screens/main/employer/new%20post/all_jobs.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new%20post/new_job_screen.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/screens/main/user/user_home_screen_new.dart';
 import 'package:get_work_app/screens/main/user/user_profile.dart';
@@ -22,24 +23,25 @@ import 'package:get_work_app/screens/main/user/jobs/no_results_screen.dart';
 import 'package:get_work_app/services/auth_wrapper.dart';
 
 class AppRoutes {
-  static const String splash = '/';
+  static const String splash = '/splash'; // Changed from '/' to '/splash' to prevent back navigation issues
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
   static const String passwordResetSuccess = '/password-reset-success';
   static const String passwordResetComplete = '/password-reset-complete';
-  static const String home = '/home';
+  static const String home = '/';
   static const String userHome = '/user-home';
-  static const String employeeHome = '/employee-home';
+  static const String employerHome = '/employer-home';
   static const String employerProfile = '/employer-profile';
   static const String jobsManagement = '/jobs-management';
   static const String messages = '/messages';
   static const String studentOnboarding = '/student-onboarding';
-  static const String employeeOnboarding = '/employee-onboarding';
+  static const String employerOnboarding = '/employer-onboarding';
   static const String createJobOpening = '/create-job-opening';
   static const String allJobListings = '/all-job-listings';
   static const String helpSupport = '/help-support';
+  static const String privacyPolicy = '/privacy-policy';
   static const String reports = '/reports';
   static const String empProfile = '/emp-profile';
   static const String userProfile = '/user-profile';
@@ -47,6 +49,8 @@ class AppRoutes {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case home:
+        return MaterialPageRoute(builder: (_) => const AuthWrapper());
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());
       case login:
@@ -85,8 +89,6 @@ class AppRoutes {
           builder: (_) => const CreateJobScreen(),
           settings: settings,
         );
-      case home:
-        return MaterialPageRoute(builder: (_) => const AuthWrapper());
       case allJobListings:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
@@ -99,7 +101,7 @@ class AppRoutes {
         );
       case userHome:
         return MaterialPageRoute(builder: (_) => const UserHomeScreenNew());
-      case employeeHome:
+      case employerHome:
         return MaterialPageRoute(
           builder: (_) => const EmployerDashboardScreen(),
         );
@@ -107,6 +109,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const EmpProfile());
       case helpSupport:
         return MaterialPageRoute(builder: (_) => const EmpHelpSupportScreen());
+      case privacyPolicy:
+        return MaterialPageRoute(builder: (_) => const EmpPrivacyPolicyScreen());
       case jobsManagement:
         return MaterialPageRoute(
           builder:
@@ -141,9 +145,9 @@ class AppRoutes {
           builder: (_) => const StudentOnboardingScreen(),
           settings: settings,
         );
-      case employeeOnboarding:
+      case employerOnboarding:
         return MaterialPageRoute(
-          builder: (_) => const EmployeeOnboardingScreen(),
+          builder: (_) => const EmployerOnboardingScreen(),
           settings: settings,
         );
       case noResults:

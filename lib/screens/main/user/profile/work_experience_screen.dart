@@ -313,7 +313,7 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         final experienceData = {
           'position': _jobTitleController.text.trim(),
@@ -1410,7 +1410,7 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
       if (user != null) {
         final role = await AuthService.getUserRole();
         final collectionName =
-            role == 'employee' ? 'employees' : 'users_specific';
+            role == 'employer' ? 'employers' : 'users_specific';
 
         // Get current user document to check existing work experience data
         final doc = await FirebaseFirestore.instance

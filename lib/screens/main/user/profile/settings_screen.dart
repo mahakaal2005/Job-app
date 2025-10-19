@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_work_app/provider/applicant_provider.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/screens/main/user/profile/update_password_screen.dart';
+import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,7 +17,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
   bool _isLoading = false;
+  
+  // Profile completion tracking
+  bool _profileCompleted = true;
+  int _profileCompletionPercentage = 100;
+  bool _skippedOnboarding = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileCompletionStatus();
+  }
+
+  Future<void> _loadProfileCompletionStatus() async {
+    try {
+      final status = await AuthService.getProfileCompletionStatus();
+      if (mounted) {
+        setState(() {
+          _skippedOnboarding = status['skippedOnboarding'] ?? false;
+          _profileCompletionPercentage = status['completionPercentage'] ?? 100;
+          _profileCompleted = status['profileCompleted'] ?? true;
+          
+          // If user has onboardingCompleted=true, they completed it before this feature
+          bool hasCompletedOnboarding = status['onboardingCompleted'] ?? false;
+          if (hasCompletedOnboarding && !_skippedOnboarding) {
+            _profileCompleted = true;
+            _profileCompletionPercentage = 100;
+          }
+        });
+      }
+    } catch (e) {
+      // Silently fail - not critical
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +143,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(height: 10),
 
+                        // Complete Profile setting (NEW - show ONLY if profile is less than 100% complete)
+                        if (_profileCompletionPercentage < 100)
+                          _buildSettingItem(
+                            icon: 'assets/images/profile_icon.png',
+                            title: 'Complete Profile',
+                            subtitle: '$_profileCompletionPercentage% complete',
+                            hasArrow: true,
+                            showBadge: true,
+                            onTap: _navigateToCompleteProfile,
+                          ),
+                        if (_profileCompletionPercentage < 100) 
+                          const SizedBox(height: 10),
+
                         // Password setting (positioned at x: 20, y: 261 from Figma)
                         _buildSettingItem(
                           icon: 'assets/images/password_icon.png',
@@ -152,17 +199,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSettingItem({
     required String icon,
     required String title,
+    String? subtitle,
     bool hasToggle = false,
     bool toggleValue = false,
     ValueChanged<bool>? onToggleChanged,
     bool hasArrow = false,
+    bool showBadge = false,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 335, // From Figma layout_YJFR7O
-        height: 50,
+        height: subtitle != null ? 60 : 50, // Taller if has subtitle
         decoration: BoxDecoration(
           color: AppColors.white, // From Figma fill_ROSM8H
           borderRadius: BorderRadius.circular(10),
@@ -178,36 +227,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13), // From Figma layout_Z2TV3A
           child: Row(
             children: [
-              // Icon
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Image.asset(
-                  icon,
-                  width: 24,
-                  height: 24,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
-                      _getDefaultIcon(title),
-                      size: 24,
-                      color: const Color(0xFF150B3D),
-                    );
-                  },
-                ),
+              // Icon with badge
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Image.asset(
+                      icon,
+                      width: 24,
+                      height: 24,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          _getDefaultIcon(title),
+                          size: 24,
+                          color: const Color(0xFF150B3D),
+                        );
+                      },
+                    ),
+                  ),
+                  // Badge indicator
+                  if (showBadge)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 11), // Gap to title (55 - 20 - 24 = 11)
 
-              // Title
+              // Title and subtitle
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans', // From Figma style_XLWF0Y
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    height: 1.302,
-                    color: Color(0xFF150B3D), // From Figma fill_YIIY4R
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans', // From Figma style_XLWF0Y
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 1.302,
+                        color: Color(0xFF150B3D), // From Figma fill_YIIY4R
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 10,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
 
@@ -291,6 +378,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  // Navigate to onboarding to complete profile
+  Future<void> _navigateToCompleteProfile() async {
+    try {
+      String? role = await AuthService.getUserRole();
+      String route = role == 'employer' 
+        ? '/EMPLOYER-onboarding'
+        : '/student-onboarding';
+      
+      if (mounted) {
+        await Navigator.pushNamed(context, route);
+        // Reload profile completion status after returning
+        _loadProfileCompletionStatus();
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error: ${e.toString()}');
+    }
   }
 
   void _showLogoutConfirmation() async {
@@ -442,6 +547,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Icons.notifications_outlined;
       case 'dark mode':
         return Icons.dark_mode_outlined;
+      case 'complete profile':
+        return Icons.person_outline;
       case 'password':
         return Icons.lock_outline;
       case 'logout':
@@ -478,6 +585,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _logout() async {
     try {
+      // Clear Firestore listeners before sign out
+      try {
+        final applicantProvider = Provider.of<ApplicantProvider>(context, listen: false);
+        final statusProvider = Provider.of<ApplicantStatusProvider>(context, listen: false);
+        applicantProvider.clearData();
+        statusProvider.clearAllCache();
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (e) {
+        print('⚠️ Warning: Error cleaning up listeners: $e');
+      }
+      
       await AuthService.signOut();
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
@@ -496,7 +614,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$feature'),
+        title: Text(feature),
         content: Text('$feature functionality will be available soon.'),
         actions: [
           TextButton(

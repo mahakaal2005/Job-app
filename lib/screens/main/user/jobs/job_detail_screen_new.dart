@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 import 'package:get_work_app/screens/main/user/jobs/apply_job_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_work_app/screens/main/user/applications/application_detail_screen.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 
 class JobDetailScreenNew extends StatefulWidget {
   final Job job;
@@ -22,11 +27,45 @@ class JobDetailScreenNew extends StatefulWidget {
 class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
   bool _isDescriptionTab = false; // false = Company tab, true = Description tab
   late bool _isBookmarked;
+  bool _hasApplied = false;
+  bool _isCheckingApplication = true;
+  Map<String, dynamic>? _applicationData;
 
   @override
   void initState() {
     super.initState();
     _isBookmarked = widget.isBookmarked;
+    _checkIfApplied();
+  }
+
+  Future<void> _checkIfApplied() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        setState(() => _isCheckingApplication = false);
+        return;
+      }
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users_specific')
+          .doc(currentUser.uid)
+          .collection('applications')
+          .doc(widget.job.id)
+          .get();
+
+      if (mounted) {
+        setState(() {
+          _hasApplied = doc.exists;
+          _applicationData = doc.data();
+          _isCheckingApplication = false;
+        });
+      }
+    } catch (e) {
+      print('Error checking application: $e');
+      if (mounted) {
+        setState(() => _isCheckingApplication = false);
+      }
+    }
   }
 
   void _toggleBookmark() {
@@ -129,19 +168,17 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(42),
                   child: widget.job.companyLogo.isNotEmpty
-                      ? Image.network(
-                          widget.job.companyLogo,
+                      ? ImageUtils.buildSafeNetworkImage(
+                          imageUrl: widget.job.companyLogo,
                           width: 84,
                           height: 84,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/job_detail_company_logo.png',
-                              width: 84,
-                              height: 84,
-                              fit: BoxFit.cover,
-                            );
-                          },
+                          errorWidget: Image.asset(
+                            'assets/images/job_detail_company_logo.png',
+                            width: 84,
+                            height: 84,
+                            fit: BoxFit.cover,
+                          ),
                         )
                       : Image.asset(
                           'assets/images/job_detail_company_logo.png',
@@ -176,96 +213,84 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
               ),
             ),
 
-            // Company name - positioned at x:29, y:173 (38 + 135)
+            // Company name, location, and time - full width with smart spacing
             Positioned(
-              left: 29,
+              left: 0,
+              right: 0,
               top: 173,
-              child: SizedBox(
-                width: 53,
-                height: 21,
-                child: Text(
-                  widget.job.companyName,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: Color(0xFF0D0140),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Company Name
+                  Flexible(
+                    child: Text(
+                      widget.job.companyName,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 16,
+                        height: 1.302,
+                        color: Color(0xFF0D0140),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-
-            // First bullet point - positioned at x:104, y:182 (38 + 144)
-            Positioned(
-              left: 104,
-              top: 182,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0D0140),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            // Location - positioned at x:143, y:173 (38 + 135)
-            Positioned(
-              left: 143,
-              top: 173,
-              child: SizedBox(
-                width: 70,
-                height: 21,
-                child: Text(
-                  widget.job.location,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: Color(0xFF0D0140),
+                  // First bullet point
+                  Container(
+                    width: 7,
+                    height: 7,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0D0140),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-
-            // Second bullet point - positioned at x:245, y:182 (38 + 144)
-            Positioned(
-              left: 245,
-              top: 182,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0D0140),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-
-            // Time ago - positioned at x:276, y:173 (38 + 135)
-            Positioned(
-              left: 276,
-              top: 173,
-              child: SizedBox(
-                width: 68,
-                height: 21,
-                child: Text(
-                  _getTimeAgo(),
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: Color(0xFF0D0140),
+                  // Location
+                  Flexible(
+                    child: Text(
+                      widget.job.location,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 16,
+                        height: 1.302,
+                        color: Color(0xFF0D0140),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  // Second bullet point
+                  Container(
+                    width: 7,
+                    height: 7,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0D0140),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  // Time
+                  Flexible(
+                    child: Text(
+                      _getTimeAgo(),
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 16,
+                        height: 1.302,
+                        color: Color(0xFF0D0140),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -783,8 +808,8 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
         _buildDetailItem('Industry', 'Internet product'),
         const SizedBox(height: 20),
         
-        // Employee size
-        _buildDetailItem('Employee size', '132,121 Employees'),
+        // EMPLOYER size
+        _buildDetailItem('EMPLOYER size', '132,121 EMPLOYERs'),
         const SizedBox(height: 20),
         
         // Head office
@@ -947,6 +972,25 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
   }
 
   Widget _buildBottomBar() {
+    if (_isCheckingApplication) {
+      return Container(
+        height: 78,
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFACC8D3).withOpacity(0.2),
+              blurRadius: 83,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFFFF9228)),
+        ),
+      );
+    }
+
     return Container(
       height: 78,
       decoration: BoxDecoration(
@@ -998,7 +1042,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                           child: Icon(
                             _isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
                             key: ValueKey(_isBookmarked),
-                            color: const Color(0xFFFCA34D), // Orange color from Figma
+                            color: const Color(0xFFFCA34D),
                             size: 24,
                           ),
                         ),
@@ -1011,20 +1055,43 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
             
             const SizedBox(width: 15),
             
-            // Apply Now button
+            // Apply Now or View Application button
             Expanded(
               child: GestureDetector(
                 onTapDown: (_) => setState(() {}),
                 onTapUp: (_) => setState(() {}),
                 onTapCancel: () => setState(() {}),
-                onTap: () {
-                  // Navigate to Apply Job screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ApplyJobScreen(job: widget.job),
-                    ),
-                  );
+                onTap: () async {
+                  if (_hasApplied && _applicationData != null) {
+                    // Navigate to Application Detail screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ApplicationDetailScreen(
+                          application: _applicationData!,
+                        ),
+                      ),
+                    );
+                  } else {
+                    // Check profile completion before allowing application
+                    final canApply = await ProfileGatingService.canPerformAction(
+                      context,
+                      actionName: 'apply for this job',
+                    );
+                    
+                    if (canApply && mounted) {
+                      // Navigate to Apply Job screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ApplyJobScreen(job: widget.job),
+                        ),
+                      ).then((_) {
+                        // Refresh application status after returning
+                        _checkIfApplied();
+                      });
+                    }
+                  }
                 },
                 child: TweenAnimationBuilder<double>(
                   tween: Tween(begin: 1.0, end: 1.0),
@@ -1035,7 +1102,9 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                       child: Container(
                         height: 50,
                         decoration: BoxDecoration(
-                          color: AppColors.lookGigPurple,
+                          color: _hasApplied 
+                              ? const Color(0xFFFF9228) 
+                              : AppColors.lookGigPurple,
                           borderRadius: BorderRadius.circular(6),
                           boxShadow: [
                             BoxShadow(
@@ -1046,16 +1115,28 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                           ],
                         ),
                         alignment: Alignment.center,
-                        child: const Text(
-                          'APPLY NOW',
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            height: 1.302,
-                            letterSpacing: 0.84,
-                            color: Colors.white,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_hasApplied)
+                              const Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            if (_hasApplied) const SizedBox(width: 8),
+                            Text(
+                              _hasApplied ? 'VIEW APPLICATION' : 'APPLY NOW',
+                              style: const TextStyle(
+                                fontFamily: 'DM Sans',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                height: 1.302,
+                                letterSpacing: 0.84,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );

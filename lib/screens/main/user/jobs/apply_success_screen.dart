@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 
 class ApplySuccessScreen extends StatelessWidget {
@@ -15,6 +15,27 @@ class ApplySuccessScreen extends StatelessWidget {
     required this.uploadedFileSize,
     required this.uploadedFileDate,
   });
+
+  String _getTimeAgo() {
+    final now = DateTime.now();
+    final difference = now.difference(job.createdAt);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years ${years == 1 ? 'year' : 'years'} ago';
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'month' : 'months'} ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'Just now';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,95 +202,84 @@ class ApplySuccessScreen extends StatelessWidget {
               ),
             ),
 
-            // Company name - positioned at x:29, y:173 (38 + 135)
+            // Company name, location, and time - full width with smart spacing
             Positioned(
-              left: 29,
+              left: 0,
+              right: 0,
               top: 173,
-              child: SizedBox(
-                width: 53,
-                height: 21,
-                child: Text(
-                  job.companyName,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: Color(0xFF0D0140),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Company Name
+                  Flexible(
+                    child: Text(
+                      job.companyName,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 16,
+                        height: 1.302,
+                        color: Color(0xFF0D0140),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-
-            // First bullet point - positioned at x:104, y:182 (38 + 144)
-            Positioned(
-              left: 104,
-              top: 182,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0D0140),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-
-            // Location - positioned at x:143, y:173 (38 + 135)
-            Positioned(
-              left: 143,
-              top: 173,
-              child: SizedBox(
-                width: 70,
-                height: 21,
-                child: Text(
-                  job.location,
-                  style: const TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: Color(0xFF0D0140),
+                  // First bullet point
+                  Container(
+                    width: 7,
+                    height: 7,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0D0140),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-
-            // Second bullet point - positioned at x:245, y:182 (38 + 144)
-            Positioned(
-              left: 245,
-              top: 182,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0D0140),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-
-            // Time ago - positioned at x:276, y:173 (38 + 135)
-            Positioned(
-              left: 276,
-              top: 173,
-              child: const SizedBox(
-                width: 68,
-                height: 21,
-                child: Text(
-                  '1 day ago',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: Color(0xFF0D0140),
+                  // Location
+                  Flexible(
+                    child: Text(
+                      job.location,
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 16,
+                        height: 1.302,
+                        color: Color(0xFF0D0140),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
+                  // Second bullet point
+                  Container(
+                    width: 7,
+                    height: 7,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0D0140),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  // Time
+                  Flexible(
+                    child: Text(
+                      _getTimeAgo(),
+                      style: const TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 16,
+                        height: 1.302,
+                        color: Color(0xFF0D0140),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
             ),
 

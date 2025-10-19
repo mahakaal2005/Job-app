@@ -94,7 +94,7 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
 
         final appreciationData = {
           'title': _awardNameController.text.trim(),
@@ -313,7 +313,7 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employee' ? 'employees' : 'users_specific';
+        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
 
         final docRef = FirebaseFirestore.instance.collection(collectionName).doc(user.uid);
         final doc = await docRef.get();

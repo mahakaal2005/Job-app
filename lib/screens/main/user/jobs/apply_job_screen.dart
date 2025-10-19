@@ -1,10 +1,14 @@
 import 'dart:ui';
+import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/apply_success_screen.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_work_app/services/pdf_service.dart';
 
 class ApplyJobScreen extends StatefulWidget {
   final Job job;
@@ -19,7 +23,9 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
   String? _uploadedFileName;
   String? _uploadedFileSize;
   String? _uploadedFileDate;
+  XFile? _selectedFile; // Store the actual file reference
   final TextEditingController _informationController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -39,11 +45,16 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
       if (file != null) {
         final int fileSize = await file.length();
         setState(() {
+          _selectedFile = file; // Store the file reference
           _uploadedFileName = file.name;
           _uploadedFileSize = '${(fileSize / 1024).toStringAsFixed(0)} Kb';
           _uploadedFileDate =
               '${DateTime.now().day} ${_getMonthName(DateTime.now().month)} ${DateTime.now().year} at ${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}';
         });
+        
+        print('📄 [FILE PICKER] File selected: ${file.name}');
+        print('   Size: $_uploadedFileSize');
+        print('   Path: ${file.path}');
       }
     } catch (e) {
       debugPrint('Error picking file: $e');
@@ -68,16 +79,41 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
     return months[month - 1];
   }
 
+  String _getTimeAgo() {
+    final now = DateTime.now();
+    final difference = now.difference(widget.job.createdAt);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years ${years == 1 ? 'year' : 'years'} ago';
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'month' : 'months'} ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
   void _removeFile() {
     setState(() {
+      _selectedFile = null;
       _uploadedFileName = null;
       _uploadedFileSize = null;
       _uploadedFileDate = null;
     });
   }
 
-  void _applyNow() {
+  Future<void> _applyNow() async {
+    print('🚀 [JOB APPLICATION] Starting application process...');
+    
     if (_uploadedFileName == null) {
+      print('❌ [JOB APPLICATION] No CV uploaded');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please upload your CV/Resume first'),
@@ -87,18 +123,198 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
       return;
     }
 
-    // Navigate to success screen with job and file details
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ApplySuccessScreen(
-          job: widget.job,
-          uploadedFileName: _uploadedFileName!,
-          uploadedFileSize: _uploadedFileSize!,
-          uploadedFileDate: _uploadedFileDate!,
-        ),
-      ),
-    );
+    if (_isSubmitting) {
+      print('⚠️ [JOB APPLICATION] Already submitting, ignoring duplicate request');
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      print('📝 [JOB APPLICATION] Validating user authentication...');
+      
+      // Get current user
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        print('❌ [JOB APPLICATION] No authenticated user found');
+        throw Exception('You must be logged in to apply for jobs');
+      }
+      
+      print('✅ [JOB APPLICATION] User authenticated: ${currentUser.uid}');
+      print('📧 [JOB APPLICATION] User email: ${currentUser.email}');
+
+      // Get user data from Firestore
+      print('🔍 [JOB APPLICATION] Fetching user profile data...');
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users_specific')
+          .doc(currentUser.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        print('❌ [JOB APPLICATION] User profile not found in Firestore');
+        throw Exception('User profile not found. Please complete your profile first.');
+      }
+
+      final userData = userDoc.data()!;
+      print('✅ [JOB APPLICATION] User profile loaded');
+      print('👤 [JOB APPLICATION] User name: ${userData['fullName']}');
+      print('🖼️ [JOB APPLICATION] Profile image: ${userData['profileImageUrl'] ?? 'No image'}');
+
+      // Upload resume to Cloudinary if file is selected
+      String? resumeUrl;
+      String? resumePreviewUrl;
+      
+      if (_selectedFile != null) {
+        print('📤 [JOB APPLICATION] Uploading resume to Cloudinary...');
+        print('   File: ${_selectedFile!.name}');
+        
+        try {
+          // Convert XFile to File
+          final file = File(_selectedFile!.path);
+          
+          // Upload using PDFService
+          final uploadResult = await PDFService.uploadResumePDF(file);
+          resumeUrl = uploadResult['pdfUrl'];
+          resumePreviewUrl = uploadResult['previewUrl'];
+          
+          if (resumeUrl != null) {
+            print('✅ [JOB APPLICATION] Resume uploaded successfully');
+            print('   Resume URL: $resumeUrl');
+            print('   Preview URL: ${resumePreviewUrl ?? 'No preview'}');
+          } else {
+            print('⚠️ [JOB APPLICATION] Resume upload failed, continuing without URL');
+          }
+        } catch (e) {
+          print('❌ [JOB APPLICATION] Error uploading resume: $e');
+          // Continue without resume URL
+        }
+      } else {
+        print('⚠️ [JOB APPLICATION] No file selected for upload');
+      }
+
+      // Prepare application data
+      final applicationData = {
+        'applicantId': currentUser.uid,
+        'applicantName': userData['fullName'] ?? currentUser.displayName ?? 'Anonymous',
+        'applicantEmail': currentUser.email ?? '',
+        'applicantProfileImg': userData['profileImageUrl'] ?? '',
+        'appliedAt': DateTime.now().toIso8601String(),
+        'status': 'pending',
+        'cvFileName': _uploadedFileName!,
+        'cvFileSize': _uploadedFileSize!,
+        'cvFileDate': _uploadedFileDate!,
+        'resumeUrl': resumeUrl, // Add Cloudinary URL
+        'resumePreviewUrl': resumePreviewUrl, // Add preview URL
+        'additionalInfo': _informationController.text.trim(),
+        'jobId': widget.job.id,
+        'jobTitle': widget.job.title,
+        'companyName': widget.job.companyName,
+      };
+
+      print('📦 [JOB APPLICATION] Application data prepared:');
+      print('   - Job ID: ${widget.job.id}');
+      print('   - Job Title: ${widget.job.title}');
+      print('   - Company: ${widget.job.companyName}');
+      print('   - CV: $_uploadedFileName');
+      print('   - Resume URL: ${resumeUrl ?? 'Not uploaded'}');
+      print('   - Preview URL: ${resumePreviewUrl ?? 'Not generated'}');
+      print('   - Status: pending');
+
+      // Save to employer's job applicants collection
+      print('💾 [JOB APPLICATION] Saving to employer\'s applicants collection...');
+      print('   Path: jobs/${widget.job.companyName}/jobPostings/${widget.job.id}/applicants');
+      
+      final employerApplicantRef = await FirebaseFirestore.instance
+          .collection('jobs')
+          .doc(widget.job.companyName)
+          .collection('jobPostings')
+          .doc(widget.job.id)
+          .collection('applicants')
+          .add(applicationData);
+
+      print('✅ [JOB APPLICATION] Saved to employer collection with ID: ${employerApplicantRef.id}');
+
+      // Save to user's applications collection
+      print('💾 [JOB APPLICATION] Saving to user\'s applications collection...');
+      print('   Path: users_specific/${currentUser.uid}/applications/${widget.job.id}');
+      
+      await FirebaseFirestore.instance
+          .collection('users_specific')
+          .doc(currentUser.uid)
+          .collection('applications')
+          .doc(widget.job.id)
+          .set(applicationData);
+
+      print('✅ [JOB APPLICATION] Saved to user\'s applications collection');
+
+      // Verify the data was saved
+      print('🔍 [JOB APPLICATION] Verifying data was saved...');
+      
+      final verifyEmployer = await FirebaseFirestore.instance
+          .collection('jobs')
+          .doc(widget.job.companyName)
+          .collection('jobPostings')
+          .doc(widget.job.id)
+          .collection('applicants')
+          .doc(employerApplicantRef.id)
+          .get();
+
+      final verifyUser = await FirebaseFirestore.instance
+          .collection('users_specific')
+          .doc(currentUser.uid)
+          .collection('applications')
+          .doc(widget.job.id)
+          .get();
+
+      if (verifyEmployer.exists && verifyUser.exists) {
+        print('✅ [JOB APPLICATION] Verification successful - data exists in both locations');
+      } else {
+        print('⚠️ [JOB APPLICATION] Verification warning:');
+        print('   - Employer collection exists: ${verifyEmployer.exists}');
+        print('   - User collection exists: ${verifyUser.exists}');
+      }
+
+      print('🎉 [JOB APPLICATION] Application submitted successfully!');
+      print('═══════════════════════════════════════════════════════');
+
+      // Navigate to success screen
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ApplySuccessScreen(
+              job: widget.job,
+              uploadedFileName: _uploadedFileName!,
+              uploadedFileSize: _uploadedFileSize!,
+              uploadedFileDate: _uploadedFileDate!,
+            ),
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      print('❌ [JOB APPLICATION] ERROR occurred during application submission');
+      print('   Error: $e');
+      print('   Stack trace: $stackTrace');
+      print('═══════════════════════════════════════════════════════');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit application: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
@@ -249,95 +465,84 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
             ),
           ),
 
-          // Company name - positioned at x:29, y:173 (38 + 135)
+          // Company name, location, and time - full width with smart spacing
           Positioned(
-            left: 29,
+            left: 0,
+            right: 0,
             top: 173,
-            child: SizedBox(
-              width: 53,
-              height: 21,
-              child: Text(
-                widget.job.companyName,
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 16,
-                  height: 1.302,
-                  color: Color(0xFF0D0140),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Company Name
+                Flexible(
+                  child: Text(
+                    widget.job.companyName,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      height: 1.302,
+                      color: Color(0xFF0D0140),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-
-          // First bullet point - positioned at x:104, y:182 (38 + 144)
-          Positioned(
-            left: 104,
-            top: 182,
-            child: Container(
-              width: 7,
-              height: 7,
-              decoration: const BoxDecoration(
-                color: Color(0xFF0D0140),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          // Location - positioned at x:143, y:173 (38 + 135)
-          Positioned(
-            left: 143,
-            top: 173,
-            child: SizedBox(
-              width: 70,
-              height: 21,
-              child: Text(
-                widget.job.location,
-                style: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 16,
-                  height: 1.302,
-                  color: Color(0xFF0D0140),
+                // First bullet point
+                Container(
+                  width: 7,
+                  height: 7,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0D0140),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-
-          // Second bullet point - positioned at x:245, y:182 (38 + 144)
-          Positioned(
-            left: 245,
-            top: 182,
-            child: Container(
-              width: 7,
-              height: 7,
-              decoration: const BoxDecoration(
-                color: Color(0xFF0D0140),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          // Time ago - positioned at x:276, y:173 (38 + 135)
-          Positioned(
-            left: 276,
-            top: 173,
-            child: const SizedBox(
-              width: 68,
-              height: 21,
-              child: Text(
-                '1 day ago',
-                style: TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 16,
-                  height: 1.302,
-                  color: Color(0xFF0D0140),
+                // Location
+                Flexible(
+                  child: Text(
+                    widget.job.location,
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      height: 1.302,
+                      color: Color(0xFF0D0140),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
+                // Second bullet point
+                Container(
+                  width: 7,
+                  height: 7,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0D0140),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                // Time
+                Flexible(
+                  child: Text(
+                    _getTimeAgo(),
+                    style: const TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      height: 1.302,
+                      color: Color(0xFF0D0140),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -728,13 +933,13 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 29, vertical: 26),
       child: GestureDetector(
-        onTap: _applyNow,
+        onTap: _isSubmitting ? null : _applyNow,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           width: 317,
           height: 50,
           decoration: BoxDecoration(
-            color: AppColors.lookGigPurple,
+            color: _isSubmitting ? Colors.grey : AppColors.lookGigPurple,
             borderRadius: BorderRadius.circular(6),
             boxShadow: [
               BoxShadow(
@@ -745,17 +950,26 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
             ],
           ),
           alignment: Alignment.center,
-          child: const Text(
-            'APPLY NOW',
-            style: TextStyle(
-              fontFamily: 'DM Sans',
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              height: 1.302,
-              letterSpacing: 0.84,
-              color: Colors.white,
-            ),
-          ),
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text(
+                  'APPLY NOW',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    height: 1.302,
+                    letterSpacing: 0.84,
+                    color: Colors.white,
+                  ),
+                ),
         ),
       ),
     );

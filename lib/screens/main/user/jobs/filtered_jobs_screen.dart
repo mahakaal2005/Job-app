@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_filter_screen.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/jobs/no_results_screen.dart';
 import 'package:get_work_app/utils/salary_utils.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 
 class FilteredJobsScreen extends StatefulWidget {
   final String filterType; // 'Remote', 'Full-time', 'Part-time'
@@ -91,7 +92,7 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
     }
     
     // Add workplace filter
-    if (_currentFilters['workplace'] != null && _currentFilters['workplace'] != 'On-site') {
+    if (_currentFilters['workplace'] != null && _currentFilters['workplace'].isNotEmpty) {
       queryParts.add(_currentFilters['workplace']);
     }
     
@@ -207,7 +208,7 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
         // Apply additional filters if they exist
         if (_currentFilters.isNotEmpty) {
           // Workplace filter
-          if (_currentFilters['workplace'] != null && _currentFilters['workplace'] != 'On-site') {
+          if (_currentFilters['workplace'] != null && _currentFilters['workplace'].isNotEmpty) {
             String workplace = _currentFilters['workplace'].toLowerCase();
             if (workplace == 'remote') {
               if (job.workFrom == null || job.workFrom!.toLowerCase() != 'remote') {
@@ -215,6 +216,10 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
               }
             } else if (workplace == 'hybrid') {
               if (job.workFrom == null || job.workFrom!.toLowerCase() != 'hybrid') {
+                return false;
+              }
+            } else if (workplace == 'on-site') {
+              if (job.workFrom != null && job.workFrom!.toLowerCase() != 'on-site' && job.workFrom!.toLowerCase() != '') {
                 return false;
               }
             }
@@ -251,11 +256,13 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
             if (!matchesCity) return false;
           }
 
-          // Salary filter
+          // Salary filter - only apply if not at full range (10-200)
           if (_currentFilters['minSalary'] != null && _currentFilters['maxSalary'] != null) {
             double minSalary = _currentFilters['minSalary'].toDouble();
             double maxSalary = _currentFilters['maxSalary'].toDouble();
-            if (!SalaryUtils.isWithinSalaryRange(job.salaryRange, minSalary, maxSalary)) {
+            // Skip filter if at full range (no salary filter selected)
+            bool isFullRange = minSalary == 10 && maxSalary == 200;
+            if (!isFullRange && !SalaryUtils.isWithinSalaryRange(job.salaryRange, minSalary, maxSalary)) {
               return false;
             }
           }
@@ -296,10 +303,18 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
       }
 
       // Check if no results found and navigate to NoResultsScreen
-      bool hasActiveFilters = _currentFilters.isNotEmpty || 
-                             _searchQuery.isNotEmpty || 
+      // Check if filters are actually active (not just at default values)
+      bool hasActiveFilters = _searchQuery.isNotEmpty || 
                              _locationQuery.isNotEmpty || 
-                             _selectedChips.isNotEmpty;
+                             _selectedChips.isNotEmpty ||
+                             (_currentFilters['workplace'] != null && _currentFilters['workplace'].isNotEmpty) ||
+                             (_currentFilters['jobType'] != null && _currentFilters['jobType'].isNotEmpty) ||
+                             (_currentFilters['positionLevel'] != null && _currentFilters['positionLevel'].isNotEmpty) ||
+                             (_currentFilters['cities'] != null && (_currentFilters['cities'] as List).isNotEmpty) ||
+                             (_currentFilters['experience'] != null && _currentFilters['experience'].isNotEmpty) ||
+                             (_currentFilters['specializations'] != null && (_currentFilters['specializations'] as List).isNotEmpty) ||
+                             (_currentFilters['minSalary'] != null && _currentFilters['maxSalary'] != null && 
+                              !(_currentFilters['minSalary'] == 10 && _currentFilters['maxSalary'] == 200));
       
       debugPrint('Filtered jobs count: ${filteredJobs.length}');
       debugPrint('Has active filters: $hasActiveFilters');
@@ -317,9 +332,6 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
           MaterialPageRoute(
             builder: (context) => NoResultsScreen(
               searchQuery: _getSearchQueryFromFilters(),
-              onBack: () {
-                Navigator.pop(context);
-              },
             ),
           ),
         );
@@ -329,6 +341,18 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
           setState(() {
             _searchController.text = newSearchQuery;
             _searchQuery = newSearchQuery;
+          });
+          _loadFilteredJobs();
+        } else if (mounted) {
+          // User pressed back without entering new search - clear all filters
+          debugPrint('User pressed back from NoResultsScreen - clearing all filters');
+          setState(() {
+            _currentFilters = {};
+            _searchQuery = '';
+            _locationQuery = '';
+            _searchController.clear();
+            _locationController.clear();
+            _selectedChips.clear();
           });
           _loadFilteredJobs();
         }
@@ -858,12 +882,12 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
                 child: job.companyLogo.isNotEmpty
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          job.companyLogo,
+                        child: ImageUtils.buildSafeNetworkImage(
+                          imageUrl: job.companyLogo,
+                          width: 40,
+                          height: 40,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.business, size: 24);
-                          },
+                          errorWidget: const Icon(Icons.business, size: 24),
                         ),
                       )
                     : const Icon(Icons.business, size: 24),
@@ -1010,20 +1034,8 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
               right: 20,
               top: 169,
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 100), // Prevent overflow
-                child: Text(
-                  _formatSalary(job.salaryRange, job.employmentType),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF232D3A),
-                    fontFamily: 'Open Sans',
-                    height: 1.362,
-                  ),
-                  textAlign: TextAlign.right,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                constraints: const BoxConstraints(maxWidth: 100),
+                child: _buildFormattedSalary(job.salaryRange, job.employmentType),
               ),
             ),
           ],
@@ -1072,6 +1084,161 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
     return '\$${salaryRange}K$period';
   }
 
+  Widget _buildFormattedSalary(String salaryRange, String employmentType) {
+    if (salaryRange.isEmpty) {
+      return RichText(
+        textAlign: TextAlign.right,
+        text: const TextSpan(
+          children: [
+            TextSpan(
+              text: '\$0',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF232D3A),
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+            TextSpan(
+              text: '/Mo',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF999999),
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    try {
+      final hasPeriod = salaryRange.contains('/');
+      String period = '';
+      String numberPart = salaryRange;
+      
+      if (hasPeriod) {
+        final parts = salaryRange.split('/');
+        numberPart = parts[0];
+        if (parts.length > 1) {
+          final periodText = parts[1].toLowerCase().trim();
+          if (periodText.contains('hour') || periodText == 'hr') {
+            period = '/Hr';
+          } else if (periodText.contains('month') || periodText == 'mo') {
+            period = '/Mo';
+          } else if (periodText.contains('year') || periodText == 'yr') {
+            period = '/Yr';
+          } else if (periodText.contains('project')) {
+            period = '/Project';
+          } else {
+            period = '/$periodText';
+          }
+        }
+      }
+      
+      String cleaned = numberPart.replaceAll(RegExp(r'[$,\s]'), '');
+      final numbers = RegExp(r'\d+').allMatches(cleaned);
+      if (numbers.isEmpty) {
+        return Text(
+          salaryRange,
+          textAlign: TextAlign.right,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF232D3A),
+            fontFamily: 'Open Sans',
+            height: 1.362,
+          ),
+        );
+      }
+      
+      int minSalary = int.parse(numbers.first.group(0)!);
+      String formattedAmount = minSalary.toString();
+      
+      if (period.isEmpty) {
+        switch (employmentType.toLowerCase()) {
+          case 'full-time':
+          case 'full time':
+            period = '/Mo';
+            break;
+          case 'part-time':
+          case 'part time':
+            period = '/Hr';
+            break;
+          case 'freelance':
+          case 'contract':
+            period = '/Project';
+            break;
+          default:
+            period = '/Mo';
+        }
+      }
+      
+      String currency = '\$';
+      
+      return RichText(
+        textAlign: TextAlign.right,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '$currency$formattedAmount',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF232D3A),
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+            TextSpan(
+              text: period,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF999999),
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error formatting salary: $e');
+      return RichText(
+        textAlign: TextAlign.right,
+        text: const TextSpan(
+          children: [
+            TextSpan(
+              text: '\$0',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF232D3A),
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+            TextSpan(
+              text: '/Mo',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF999999),
+                fontFamily: 'Open Sans',
+                height: 1.362,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
   String _formatTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);

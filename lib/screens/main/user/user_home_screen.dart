@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:get_work_app/provider/applicant_provider.dart';
+import 'package:get_work_app/provider/applicant_status_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_job_detail.dart';
@@ -26,6 +28,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     with TickerProviderStateMixin {
   String? _userId;
   String _userName = '';
+  String _userProfilePic = '';
   bool _isLoading = true;
   int _currentIndex = 0;
   String _selectedFilter = 'All';
@@ -126,9 +129,14 @@ class _UserHomeScreenState extends State<UserHomeScreen>
     try {
       final userData = await AuthService.getUserData();
       if (userData != null && mounted) {
+        final profilePic = userData['profileImageUrl'] ?? '';
+        debugPrint('=== User Data Loaded in Home Screen ===');
+        debugPrint('User Name: ${userData['fullName']}');
+        debugPrint('Profile Image URL: ${profilePic.isNotEmpty ? profilePic : '(empty)'}');
         setState(() {
           _userName = userData['fullName'] ?? 'User';
           _userId = userData['uid'];
+          _userProfilePic = profilePic;
           _isLoading = false;
         });
       }
@@ -549,20 +557,29 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                           ),
                         ],
                       ),
-                      child: CircleAvatar(
-                        radius: MediaQuery.of(context).size.width * 0.09,
-                        backgroundColor: AppColors.primaryBlue,
-                        child: Text(
-                          _userName.isNotEmpty
-                              ? _userName[0].toUpperCase()
-                              : 'U',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: MediaQuery.of(context).size.width * 0.07,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      child: _userProfilePic.isNotEmpty
+                          ? CircleAvatar(
+                              radius: MediaQuery.of(context).size.width * 0.09,
+                              backgroundColor: AppColors.primaryBlue,
+                              backgroundImage: NetworkImage(_userProfilePic),
+                              onBackgroundImageError: (exception, stackTrace) {
+                                debugPrint('Error loading profile image: $exception');
+                              },
+                            )
+                          : CircleAvatar(
+                              radius: MediaQuery.of(context).size.width * 0.09,
+                              backgroundColor: AppColors.primaryBlue,
+                              child: Text(
+                                _userName.isNotEmpty
+                                    ? _userName[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: MediaQuery.of(context).size.width * 0.07,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(height: 16),
                     Padding(
@@ -731,6 +748,18 @@ class _UserHomeScreenState extends State<UserHomeScreen>
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
+                
+                // Clear Firestore listeners before sign out
+                try {
+                  final applicantProvider = Provider.of<ApplicantProvider>(context, listen: false);
+                  final statusProvider = Provider.of<ApplicantStatusProvider>(context, listen: false);
+                  applicantProvider.clearData();
+                  statusProvider.clearAllCache();
+                  await Future.delayed(const Duration(milliseconds: 100));
+                } catch (e) {
+                  print('⚠️ Warning: Error cleaning up listeners: $e');
+                }
+                
                 await AuthService.signOut();
                 if (mounted) {
                   Navigator.of(

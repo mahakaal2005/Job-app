@@ -44,13 +44,103 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# ============================================================================
+# SENSITIVE & CONFIDENTIAL FILES - DO NOT COMMIT
+# ============================================================================
+
+# Environment variables (contains API keys and secrets)
 .env
+.env.local
+.env.*.local
+
+# Firebase configuration files (contains API keys and project IDs)
+lib/firebase_options.dart
+lib/firebase_options.dart.client
+android/app/google-services.json
+android/app/serviceAccountKey.json
+ios/Runner/GoogleService-Info.plist
+firebase.json
+firestore.rules
+firestore.indexes.json
+firestore-data.json
+
+# Android local configuration (contains local SDK paths)
+android/local.properties
+android/key.properties
+android/app/upload-keystore.jks
+android/app/*.jks
+android/app/*.keystore
+
+# iOS configuration
+ios/Runner/GoogleService-Info.plist
+ios/firebase_app_id_file.json
+
+# Node modules (large and can be regenerated)
+node_modules/
+package-lock.json
+
+# AI Assistant rules and documentation (internal use only)
 .clinerules/byterover-rules.md
 .kilocode/rules/byterover-rules.md
 .roo/rules/byterover-rules.md
 .windsurf/rules/byterover-rules.md
 .cursor/rules/byterover-rules.mdc
 .kiro/steering/byterover-rules.md
+.kiro/steering/agentRules.md
 .qoder/rules/byterover-rules.md
 .augment/rules/byterover-rules.md
-.kiro/steering/agentRules.md
+
+# Internal documentation (may contain sensitive info)
+atul_docs/
+CHAT_SCREENS_FIX_SUMMARY.md
+CLAUDE.md
+CLIENT_SETUP_CHECKLIST.md
+COMMIT_CHECKLIST.md
+EMPLOYEE_PROFILE_REDESIGN_PLAN.md
+FIRESTORE_INDEXES_REQUIRED.md
+FIXES_APPLIED.md
+GITHUB_READY_SUMMARY.md
+GOOGLE_SIGNIN_ERROR_FIX.md
+IMPLEMENTATION_COMPLETE.md
+INDEX_STATUS.md
+JOB_APPLICATION_FIX_SUMMARY.md
+JOB_DATA_FORMAT.md
+MANUAL_ADD_JOBS_GUIDE.md
+MESSAGING_TEST_PLAN.md
+PRODUCT_REQUIREMENTS_DOCUMENT.md
+QUICK_REFERENCE.md
+QUICK_START_MESSAGING_TEST.md
+QUICK_START.md
+REVERT_TO_CLIENT_FIREBASE.md
+SALARY_DISPLAY_FIX.md
+SECURITY_CHECKLIST.md
+SETUP_COMPLETE.md
+SETUP_INSTRUCTIONS.md
+TESTING_SETUP_GUIDE.md
+# Keep these documentation files
+!README.md
+!CONTRIBUTING.md
+!LICENSE.md
+!CHANGELOG.md
+
+# Deployment scripts
+deploy_messaging.bat
+*.bat
+*.sh
+
+# IDE specific
+.vscode/
+.idea/
+*.code-workspace
+
+# Build artifacts
+build/
+.gradle/
+.kotlin/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~

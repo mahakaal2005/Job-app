@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:get_work_app/screens/main/employye/new post/job_new_model.dart';
+import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/image_utils.dart';
 import 'package:provider/provider.dart';
 
 class BookmarksScreen extends StatefulWidget {
@@ -27,18 +28,22 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
 
   Future<void> _loadSavedJobs() async {
     try {
-      setState(() => _isLoading = true);
+      if (mounted) {
+        setState(() => _isLoading = true);
+      }
       
       final allJobs = await AllJobsService.getAllJobs(limit: 100);
       final bookmarkProvider = Provider.of<BookmarkProvider>(context, listen: false);
       
-      setState(() {
-        _savedJobs = allJobs.where((job) => bookmarkProvider.isBookmarked(job.id)).toList();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() {
+          _savedJobs = allJobs.where((job) => bookmarkProvider.isBookmarked(job.id)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading saved jobs: $e')),
         );
@@ -63,7 +68,9 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               for (var job in _savedJobs) {
                 bookmarkProvider.toggleBookmark(job.id);
               }
-              setState(() => _savedJobs.clear());
+              if (mounted) {
+                setState(() => _savedJobs.clear());
+              }
               Navigator.pop(context);
             },
             child: const Text('Delete All', style: TextStyle(color: Color(0xFFFF9228))),
@@ -101,10 +108,10 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppColors.lookGigPurple))
             : _savedJobs.isEmpty
-                ? _buildEmptyState() // No header in empty state
+                ? _buildEmptyState()
                 : Column(
                     children: [
-                      _buildHeader(), // Header only when there are jobs
+                      _buildHeader(),
                       Expanded(child: _buildJobsList()),
                     ],
                   ),
@@ -118,7 +125,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Centered "Save Job" title
           const Center(
             child: Text(
               'Save Job',
@@ -131,7 +137,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               ),
             ),
           ),
-          // "Delete all" positioned on the right
           if (_savedJobs.isNotEmpty)
             Positioned(
               right: 0,
@@ -160,13 +165,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 60), // Top spacing
-            // Content group - centered
+            const SizedBox(height: 60),
             SizedBox(
               width: 223,
               child: Column(
                 children: [
-                  // Title "No Savings"
                   const Text(
                     'No Savings',
                     style: TextStyle(
@@ -179,7 +182,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  // Description text - 213px wide, centered
                   const SizedBox(
                     width: 213,
                     child: Text(
@@ -195,7 +197,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                     ),
                   ),
                   const SizedBox(height: 54),
-                  // Illustration - 220 x 208
                   Image.asset(
                     'assets/images/no_savings_illustration.png',
                     width: 220,
@@ -217,8 +218,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 80), // Space to button
-            // "Find a job" button - 213 x 50
+            const SizedBox(height: 80),
             Container(
               width: 213,
               height: 50,
@@ -235,7 +235,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  // Navigate to home tab (index 0) where all jobs are listed
                   if (widget.onNavigateToTab != null) {
                     widget.onNavigateToTab!(0);
                   } else {
@@ -265,7 +264,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 60), // Bottom spacing
+            const SizedBox(height: 60),
           ],
         ),
       ),
@@ -297,9 +296,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   isBookmarked: isBookmarked,
                   onBookmarkToggled: (jobId) {
                     bookmarkProvider.toggleBookmark(jobId);
-                    setState(() {
-                      _savedJobs.removeWhere((j) => j.id == jobId);
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _savedJobs.removeWhere((j) => j.id == jobId);
+                      });
+                    }
                   },
                 ),
               ),
@@ -326,7 +327,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Company Logo
                     Container(
                       width: 40,
                       height: 40,
@@ -336,18 +336,17 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: job.companyLogo.isNotEmpty
-                            ? Image.network(
-                                job.companyLogo,
+                            ? ImageUtils.buildSafeNetworkImage(
+                                imageUrl: job.companyLogo,
+                                width: 40,
+                                height: 40,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return _buildCompanyLogoFallback(job.companyName);
-                                },
+                                errorWidget: _buildCompanyLogoFallback(job.companyName),
                               )
                             : _buildCompanyLogoFallback(job.companyName),
                       ),
                     ),
                     const SizedBox(width: 11),
-                    // Job Title and Company
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,14 +366,19 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Text(
-                                job.companyName,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: Color(0xFF524B6B),
-                                  fontFamily: 'DM Sans',
-                                  height: 1.302,
+                              Flexible(
+                                flex: 2,
+                                child: Text(
+                                  job.companyName,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF524B6B),
+                                    fontFamily: 'DM Sans',
+                                    height: 1.302,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               const SizedBox(width: 5),
@@ -387,24 +391,51 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                                 ),
                               ),
                               const SizedBox(width: 5),
-                              Text(
-                                job.location,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: Color(0xFF524B6B),
-                                  fontFamily: 'DM Sans',
-                                  height: 1.302,
+                              Flexible(
+                                flex: 2,
+                                child: Text(
+                                  job.location,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF524B6B),
+                                    fontFamily: 'DM Sans',
+                                    height: 1.302,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(width: 5),
+                              Container(
+                                width: 2,
+                                height: 2,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF524B6B),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                flex: 1,
+                                child: Text(
+                                  _getTimeAgo(job.createdAt.toIso8601String()),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: Color(0xFF524B6B),
+                                    fontFamily: 'DM Sans',
+                                    height: 1.302,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    // Options Menu
                     GestureDetector(
                       onTap: () => _showOptionsMenu(context, job, bookmarkProvider),
                       child: Image.asset(
@@ -423,7 +454,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   ],
                 ),
                 const SizedBox(height: 18),
-                // Tags
                 Wrap(
                   spacing: 10,
                   runSpacing: 8,
@@ -435,7 +465,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   ],
                 ),
                 const SizedBox(height: 18),
-                // Salary and Time
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -449,16 +478,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         height: 1.302,
                       ),
                     ),
-                    Text(
-                      _formatSalary(job.salaryRange),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF232D3A),
-                        fontFamily: 'Open Sans',
-                        height: 1.362,
-                      ),
-                    ),
+                    _buildFormattedSalary(job.salaryRange, job.employmentType),
                   ],
                 ),
               ],
@@ -505,15 +525,165 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     );
   }
 
-  String _formatSalary(String salary) {
+  Widget _buildFormattedSalary(String salaryRange, String employmentType) {
+    if (salaryRange.isEmpty) {
+      return RichText(
+        text: const TextSpan(
+          children: [
+            TextSpan(
+              text: '\$0',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF150B3D),
+                fontFamily: 'DM Sans',
+                height: 1.302,
+              ),
+            ),
+            TextSpan(
+              text: '/Mo',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFAAA6B9),
+                fontFamily: 'DM Sans',
+                height: 1.302,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     try {
-      final num = int.tryParse(salary) ?? 0;
-      if (num >= 1000) {
-        return '\$${(num / 1000).toStringAsFixed(0)}K/Mo';
+      // Check if salary already has a period indicator (e.g., "40/hour", "50/month")
+      final hasPeriod = salaryRange.contains('/');
+      String period = '';
+      String numberPart = salaryRange;
+      
+      if (hasPeriod) {
+        // Extract the period from the salary string
+        final parts = salaryRange.split('/');
+        numberPart = parts[0];
+        if (parts.length > 1) {
+          // Normalize the period format
+          final periodText = parts[1].toLowerCase().trim();
+          if (periodText.contains('hour') || periodText == 'hr') {
+            period = '/hr';
+          } else if (periodText.contains('month') || periodText == 'mo') {
+            period = '/Mo';
+          } else if (periodText.contains('year') || periodText == 'yr') {
+            period = '/yr';
+          } else if (periodText.contains('project')) {
+            period = '/project';
+          } else {
+            period = '/$periodText';
+          }
+        }
       }
-      return '\$$num/Mo';
+      
+      // Remove currency symbols and commas from number part
+      String cleaned = numberPart.replaceAll(RegExp(r'[₹$,\s]'), '');
+      
+      // Extract numbers (handle ranges like "10-16" or "50000-80000")
+      final numbers = RegExp(r'\d+').allMatches(cleaned);
+      if (numbers.isEmpty) {
+        return Text(
+          salaryRange,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF150B3D),
+            fontFamily: 'DM Sans',
+            height: 1.302,
+          ),
+        );
+      }
+      
+      // Get first number (min salary)
+      int minSalary = int.parse(numbers.first.group(0)!);
+      
+      // Format the amount
+      String formattedAmount = minSalary.toString();
+      
+      // If no period was in the original data, determine it from employment type
+      if (period.isEmpty) {
+        switch (employmentType.toLowerCase()) {
+          case 'full-time':
+          case 'full time':
+            period = '/Mo';
+            break;
+          case 'part-time':
+          case 'part time':
+            period = '/hr';
+            break;
+          case 'freelance':
+          case 'contract':
+            period = '/project';
+            break;
+          default:
+            period = '/Mo';
+        }
+      }
+      
+      // Always use $ symbol
+      String currency = '\$';
+      
+      // Return styled RichText with bold amount and gray period
+      return RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '$currency$formattedAmount',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF150B3D),
+                fontFamily: 'DM Sans',
+                height: 1.302,
+              ),
+            ),
+            TextSpan(
+              text: period,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFAAA6B9),
+                fontFamily: 'DM Sans',
+                height: 1.302,
+              ),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
-      return '\$15K/Mo';
+      debugPrint('Error formatting salary: $e');
+      return RichText(
+        text: const TextSpan(
+          children: [
+            TextSpan(
+              text: '\$0',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF150B3D),
+                fontFamily: 'DM Sans',
+                height: 1.302,
+              ),
+            ),
+            TextSpan(
+              text: '/Mo',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFFAAA6B9),
+                fontFamily: 'DM Sans',
+                height: 1.302,
+              ),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -546,7 +716,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 ),
                 child: Stack(
                   children: [
-                    // Handle bar at (173, 30) - centered
                     Positioned(
                       left: 173,
                       top: 30,
@@ -559,7 +728,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         ),
                       ),
                     ),
-                    // Send message at (35, 80)
                     Positioned(
                       left: 35,
                       top: 80,
@@ -575,14 +743,14 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         },
                       ),
                     ),
-                    // Shared at (35, 129)
                     Positioned(
                       left: 35,
                       top: 129,
                       child: _buildMenuOption(
-                        iconPath: 'assets/images/popup_send_message_icon.png', // Using share icon
+                        iconPath: 'assets/images/header_share_icon.png',
                         text: 'Shared',
                         width: 85,
+                        iconColor: const Color(0xFF150B3D),
                         onTap: () {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -591,7 +759,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         },
                       ),
                     ),
-                    // Delete at (35, 178)
                     Positioned(
                       left: 35,
                       top: 178,
@@ -601,20 +768,23 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         width: 81,
                         onTap: () {
                           bookmarkProvider.toggleBookmark(job.id);
-                          setState(() {
-                            _savedJobs.removeWhere((j) => j.id == job.id);
-                          });
+                          if (mounted) {
+                            setState(() {
+                              _savedJobs.removeWhere((j) => j.id == job.id);
+                            });
+                          }
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Job removed from bookmarks'),
-                              backgroundColor: AppColors.success,
-                            ),
-                          );
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Job removed from bookmarks'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                          }
                         },
                       ),
                     ),
-                    // Apply button at (20, 214)
                     Positioned(
                       left: 20,
                       top: 214,
@@ -636,9 +806,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                                   isBookmarked: bookmarkProvider.isBookmarked(job.id),
                                   onBookmarkToggled: (jobId) {
                                     bookmarkProvider.toggleBookmark(jobId);
-                                    setState(() {
-                                      _savedJobs.removeWhere((j) => j.id == jobId);
-                                    });
+                                    if (mounted) {
+                                      setState(() {
+                                        _savedJobs.removeWhere((j) => j.id == jobId);
+                                      });
+                                    }
                                   },
                                 ),
                               ),
@@ -655,7 +827,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              const SizedBox(width: 15), // Icon at x:15
+                              const SizedBox(width: 15),
                               Image.asset(
                                 'assets/images/popup_apply_icon.png',
                                 width: 24,
@@ -668,7 +840,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                                   );
                                 },
                               ),
-                              const SizedBox(width: 15), // Text at x:54 (15+24+15)
+                              const SizedBox(width: 15),
                               const Text(
                                 'Apply',
                                 style: TextStyle(
@@ -700,6 +872,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     required String text,
     required double width,
     required VoidCallback onTap,
+    Color? iconColor,
   }) {
     return InkWell(
       onTap: onTap,
@@ -708,11 +881,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         height: 24,
         child: Row(
           children: [
-            // Icon at x:0
             Image.asset(
               iconPath,
               width: 24,
               height: 24,
+              color: iconColor,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   width: 24,
@@ -721,7 +894,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 );
               },
             ),
-            const SizedBox(width: 15), // Text at x:39 (24+15)
+            const SizedBox(width: 15),
             Text(
               text,
               style: const TextStyle(
