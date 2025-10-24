@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,8 +42,11 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful!')),
+        CustomToast.show(
+          context,
+          message: 'Login successful!',
+          isSuccess: true,
+          duration: const Duration(seconds: 2),
         );
         
         // Get user role and navigate to appropriate home screen
@@ -67,9 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ErrorHandler.showErrorSnackBar(context, e);
       }
     }
   }
@@ -186,11 +189,11 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else {
           // Existing user - navigate to appropriate home screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Welcome back!'),
-              backgroundColor: Colors.green,
-            ),
+          CustomToast.show(
+            context,
+            message: 'Welcome back!',
+            isSuccess: true,
+            duration: const Duration(seconds: 2),
           );
           
           await _navigateBasedOnUserRole();
@@ -236,12 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ErrorHandler.showErrorSnackBar(context, e);
       }
     }
   }

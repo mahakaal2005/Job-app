@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -79,11 +81,11 @@ class _SignupScreenState extends State<SignupScreen> {
           _isLoading = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome ${_nameController.text.trim()}! Account created successfully!'),
-            backgroundColor: Colors.green,
-          ),
+        CustomToast.show(
+          context,
+          message: 'Welcome! Signup successful',
+          isSuccess: true,
+          duration: const Duration(seconds: 2),
         );
 
         await Future.delayed(const Duration(milliseconds: 500));
@@ -121,12 +123,7 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ErrorHandler.showErrorSnackBar(context, e);
       }
     }
   }
@@ -147,11 +144,11 @@ class _SignupScreenState extends State<SignupScreen> {
         });
         
         String displayName = userCredential.user?.displayName ?? 'User';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome $displayName! Account created successfully!'),
-            backgroundColor: Colors.green,
-          ),
+        CustomToast.show(
+          context,
+          message: 'Welcome $displayName! Signup successful',
+          isSuccess: true,
+          duration: const Duration(seconds: 2),
         );
 
         await Future.delayed(const Duration(milliseconds: 500));
@@ -212,12 +209,9 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        
+        print('DEBUG [GOOGLE_SIGNUP] Error: $e');
+        ErrorHandler.showErrorSnackBar(context, e);
       }
     }
   }

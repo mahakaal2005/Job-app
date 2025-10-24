@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:crypto/crypto.dart';
+import 'package:cloudinary/cloudinary.dart';
 
 class CloudinaryService {
   static final String _cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
@@ -12,6 +13,21 @@ class CloudinaryService {
       dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
 
   static const String _baseUrl = 'https://api.cloudinary.com/v1_1';
+
+  // Initialize Cloudinary SDK instance (lazy initialization)
+  static Cloudinary? _cloudinary;
+  
+  static Cloudinary _getCloudinaryInstance() {
+    if (_cloudinary == null) {
+      _cloudinary = Cloudinary.signedConfig(
+        apiKey: _apiKey,
+        apiSecret: _apiSecret,
+        cloudName: _cloudName,
+      );
+      print('🔧 [CLOUDINARY] SDK instance initialized');
+    }
+    return _cloudinary!;
+  }
 
   /// Upload an image to Cloudinary
   static Future<String?> uploadImage(File imageFile) async {
@@ -61,46 +77,117 @@ class CloudinaryService {
   }
 
   /// Upload a document (PDF, DOC, etc.) to Cloudinary
-  /// Uses auto resource type to bypass raw file restrictions
+  /// Uses Cloudinary SDK for proper authentication and file handling
   static Future<String?> uploadDocument(File documentFile) async {
     try {
-      if (_cloudName.isEmpty || _uploadPreset.isEmpty) {
+      print('🔧 [CLOUDINARY] Validating configuration...');
+      
+      if (_cloudName.isEmpty || _apiKey.isEmpty || _apiSecret.isEmpty) {
+        print('❌ [CLOUDINARY] Configuration missing:');
+        print('   Cloud Name: ${_cloudName.isEmpty ? 'MISSING' : 'OK'}');
+        print('   API Key: ${_apiKey.isEmpty ? 'MISSING' : 'OK'}');
+        print('   API Secret: ${_apiSecret.isEmpty ? 'MISSING' : 'OK'}');
         throw Exception('Cloudinary not configured. Check .env file.');
       }
 
-      // Use /auto/upload to let Cloudinary handle resource type automatically
-      // This bypasses account-level restrictions on raw file delivery
-      final url = Uri.parse('$_baseUrl/$_cloudName/auto/upload');
+      print('✅ [CLOUDINARY] Configuration validated');
+      print('   Cloud Name: $_cloudName');
+      print('   API Key: ${_apiKey.substring(0, 6)}...');
 
-      var request = http.MultipartRequest('POST', url);
-      request.files.add(
-        await http.MultipartFile.fromPath('file', documentFile.path),
+      // Get Cloudinary SDK instance (lazy initialization)
+      final cloudinary = _getCloudinaryInstance();
+
+      // Validate file exists and is accessible
+      if (!await documentFile.exists()) {
+        print('❌ [CLOUDINARY] File does not exist: ${documentFile.path}');
+        throw Exception('File not found: ${documentFile.path}');
+      }
+
+      final fileSize = await documentFile.length();
+      final fileName = documentFile.path.split('/').last;
+      final fileExtension = fileName.contains('.') 
+          ? fileName.substring(fileName.lastIndexOf('.'))
+          : '';
+      
+      print('📁 [CLOUDINARY] File validation:');
+      print('   Path: ${documentFile.path}');
+      print('   Name: $fileName');
+      print('   Size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+      print('   Extension: $fileExtension');
+      print('   Exists: ${await documentFile.exists()}');
+
+      // Generate unique public_id with timestamp and filename (with extension)
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final publicId = 'resumes/${timestamp}_$fileName';
+      
+      print('📤 [CLOUDINARY] Starting upload using SDK...');
+      print('   Public ID: $publicId');
+      print('   Resource Type: raw');
+
+      // Use Cloudinary SDK for upload (same as MediaUploadService)
+      final response = await cloudinary.upload(
+        file: documentFile.path,
+        fileBytes: documentFile.readAsBytesSync(),
+        resourceType: CloudinaryResourceType.raw, // Use 'raw' for documents
+        folder: null,
+        publicId: publicId,
+        progressCallback: (count, total) {
+          // Log progress at 25%, 50%, 75%, 100%
+          final percentage = (count / total * 100).toInt();
+          if (percentage % 25 == 0 || count == total) {
+            print('   📊 Upload Progress: $percentage%');
+          }
+        },
       );
 
-      // Minimal unsigned upload - let preset handle everything
-      request.fields['upload_preset'] = _uploadPreset;
-
-      print('📤 [CLOUDINARY] Uploading PDF...');
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(responseData);
-        final secureUrl = jsonResponse['secure_url'] as String?;
-
-        print('✅ [CLOUDINARY] Upload successful!');
-        print('   URL: $secureUrl');
-        print('   Resource Type: ${jsonResponse['resource_type']}');
+      if (response.isSuccessful) {
+        String finalUrl = response.secureUrl ?? '';
         
-        return secureUrl;
+        print('✅ [CLOUDINARY] Upload successful!');
+        print('📊 [CLOUDINARY] Response data:');
+        print('   secure_url: $finalUrl');
+        print('   public_id: ${response.publicId}');
+        print('   format: ${response.format}');
+        print('   bytes: ${response.bytes}');
+        print('   resource_type: ${response.resourceType}');
+
+        // Ensure URL has the file extension (same logic as MediaUploadService)
+        if (!finalUrl.endsWith(fileExtension) && fileExtension.isNotEmpty) {
+          print('🔧 [CLOUDINARY] Reconstructing URL to include extension...');
+          finalUrl = 'https://res.cloudinary.com/$_cloudName/raw/upload/$publicId';
+          print('   New URL: $finalUrl');
+        }
+
+        print('🎉 [CLOUDINARY] Final upload result:');
+        print('   URL: $finalUrl');
+        print('   Public ID: ${response.publicId}');
+        
+        return finalUrl;
       } else {
-        print('❌ [CLOUDINARY] Upload failed: ${response.statusCode}');
-        print('   Response: $responseData');
+        print('❌ [CLOUDINARY] Upload failed');
+        print('   Error: ${response.error}');
+        print('   Is Successful: ${response.isSuccessful}');
+        
         return null;
       }
     } catch (e, stackTrace) {
-      print('Error uploading document to Cloudinary: $e');
-      print('Stack trace: $stackTrace');
+      print('❌ [CLOUDINARY] Exception during upload: $e');
+      print('   Exception type: ${e.runtimeType}');
+      print('   Stack trace: $stackTrace');
+      
+      // Provide more specific error information
+      if (e.toString().contains('SocketException')) {
+        print('   Network error: Check internet connection');
+      } else if (e.toString().contains('TimeoutException')) {
+        print('   Timeout error: Request took too long');
+      } else if (e.toString().contains('FormatException')) {
+        print('   Format error: Invalid response format');
+      } else if (e.toString().contains('FileSystemException')) {
+        print('   File system error: Cannot access file');
+      } else if (e.toString().contains('CloudinaryException')) {
+        print('   Cloudinary service error: ${e.toString()}');
+      }
+      
       return null;
     }
   }

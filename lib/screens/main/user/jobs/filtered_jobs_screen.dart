@@ -6,8 +6,10 @@ import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
 import 'package:get_work_app/screens/main/user/jobs/job_filter_screen.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/jobs/no_results_screen.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:get_work_app/utils/salary_utils.dart';
 import 'package:get_work_app/utils/image_utils.dart';
+import 'package:get_work_app/utils/number_formatter.dart';
 
 class FilteredJobsScreen extends StatefulWidget {
   final String filterType; // 'Remote', 'Full-time', 'Part-time'
@@ -845,8 +847,14 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
                 (context) => JobDetailScreenNew(
                   job: job,
                   isBookmarked: isBookmarked,
-                  onBookmarkToggled: (jobId) {
-                    bookmarkProvider.toggleBookmark(jobId);
+                  onBookmarkToggled: (jobId) async {
+                    final canBookmark = await ProfileGatingService.canPerformAction(
+                      context,
+                      actionName: 'bookmark this job',
+                    );
+                    if (canBookmark) {
+                      bookmarkProvider.toggleBookmark(jobId);
+                    }
                   },
                 ),
           ),
@@ -899,16 +907,22 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
               left: 291,
               top: 20.5,
               child: IconButton(
-                onPressed: () {
-                  bookmarkProvider.toggleBookmark(job.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        isBookmarked ? 'Bookmark removed' : 'Job bookmarked',
-                      ),
-                      duration: const Duration(seconds: 1),
-                    ),
+                onPressed: () async {
+                  final canBookmark = await ProfileGatingService.canPerformAction(
+                    context,
+                    actionName: 'bookmark this job',
                   );
+                  if (canBookmark) {
+                    bookmarkProvider.toggleBookmark(job.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isBookmarked ? 'Bookmark removed' : 'Job bookmarked',
+                        ),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  }
                 },
                 icon: Icon(
                   isBookmarked ? Icons.bookmark : Icons.bookmark_border,
@@ -1156,7 +1170,7 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
       }
       
       int minSalary = int.parse(numbers.first.group(0)!);
-      String formattedAmount = minSalary.toString();
+      String formattedAmount = NumberFormatter.formatSalaryAmount(minSalary);
       
       if (period.isEmpty) {
         switch (employmentType.toLowerCase()) {

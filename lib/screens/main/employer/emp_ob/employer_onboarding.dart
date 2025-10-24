@@ -1,11 +1,100 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get_work_app/screens/main/employer/emp_ob/cd_servi.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/utils/error_handler.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
+import 'package:get_work_app/widgets/phone_input_field.dart';
+import 'package:get_work_app/widgets/custom_dropdown_field.dart';
 import 'dart:io';
+
+// Enhanced validation result class for employer onboarding
+class EmployerValidationResult {
+  final bool isValid;
+  final int? pageWithError;
+  final String? fieldName;
+  final String? errorMessage;
+  final FocusNode? focusNode;
+
+  EmployerValidationResult({
+    required this.isValid,
+    this.pageWithError,
+    this.fieldName,
+    this.errorMessage,
+    this.focusNode,
+  });
+
+  // Helper constructor for valid result
+  EmployerValidationResult.valid() : this(isValid: true);
+
+  // Helper constructor for invalid result
+  EmployerValidationResult.invalid({
+    required int pageWithError,
+    required String fieldName,
+    required String errorMessage,
+    FocusNode? focusNode,
+  }) : this(
+          isValid: false,
+          pageWithError: pageWithError,
+          fieldName: fieldName,
+          errorMessage: errorMessage,
+          focusNode: focusNode,
+        );
+}
+
+// Field hint widget for employer onboarding
+class EmployerFieldHintWidget extends StatelessWidget {
+  final String hint;
+  final IconData icon;
+  final Color? color;
+
+  const EmployerFieldHintWidget({
+    super.key,
+    required this.hint,
+    this.icon = Icons.info_outline,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: (color ?? AppColors.lookGigPurple).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: (color ?? AppColors.lookGigPurple).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color ?? AppColors.lookGigPurple,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              hint,
+              style: TextStyle(
+                fontSize: 12,
+                color: color ?? AppColors.lookGigPurple,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class EmployerOnboardingScreen extends StatefulWidget {
   const EmployerOnboardingScreen({super.key});
@@ -21,6 +110,8 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
   int _currentPage = 0;
   bool _isLoading = false;
+  bool _isPickingImage = false;
+  bool _isPickingDocument = false;
 
   // Company Information
   final TextEditingController _companyNameController = TextEditingController();
@@ -52,8 +143,152 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
   final List<File> _companyDocuments = [];
 
   String? _selectedIndustry;
+  String _selectedCountryCode = '+91'; // Default to India
+
+  // Visual enhancement fields
+  final Map<int, bool> _pageCompletionStatus = {};
+  String? _highlightedFieldError;
+  final Map<String, String> _fieldHints = {};
+  final Map<String, bool> _fieldValidationStatus = {};
   String? _selectedCompanySize;
   String? _selectedEmploymentType;
+
+  @override
+  void initState() {
+    super.initState();
+    _updatePageCompletionStatus();
+    
+    // Add listeners to update text color when content changes
+    _companyNameController.addListener(_onTextChanged);
+    _companyEmailController.addListener(_onTextChanged);
+    _companyAddressController.addListener(_onTextChanged);
+    _companyWebsiteController.addListener(_onTextChanged);
+    _EMPLOYERCountController.addListener(_onTextChanged);
+    _companyDescriptionController.addListener(_onTextChanged);
+    _jobTitleController.addListener(_onTextChanged);
+    _departmentController.addListener(_onTextChanged);
+    _EMPLOYERIdController.addListener(_onTextChanged);
+    _workLocationController.addListener(_onTextChanged);
+    _managerNameController.addListener(_onTextChanged);
+    _managerEmailController.addListener(_onTextChanged);
+    _establishedYearController.addListener(_onTextChanged);
+  }
+
+  // Dedicated method to handle text changes and update UI
+  void _onTextChanged() {
+    if (mounted) {
+      setState(() {
+        // Force rebuild to update text colors
+      });
+    }
+  }
+
+  // Helper method to get consistent text color for all fields
+  Color _getTextColor(TextEditingController controller) {
+    return controller.text.trim().isEmpty ? AppColors.hintText : Colors.black;
+  }
+
+  // Comprehensive validation helper methods
+  String? _validateEmail(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Please enter a valid email address (e.g., user@gmail.com)';
+    }
+    
+    return null;
+  }
+
+  String? _validateWebsite(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Company website is required';
+    }
+    
+    String url = value.trim();
+    
+    // Add protocol if missing
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
+    }
+    
+    // Validate URL format
+    final urlRegex = RegExp(
+      r'^https?:\/\/(www\.)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}(\/.*)?$'
+    );
+    
+    if (!urlRegex.hasMatch(url)) {
+      return 'Please enter a valid website URL (e.g., https://www.company.com)';
+    }
+    
+    return null;
+  }
+
+  String? _validateRequired(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    return null;
+  }
+
+  String? _validateNumeric(String? value, String fieldName, {int? minValue, int? maxValue}) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    
+    final numericValue = int.tryParse(value.trim());
+    if (numericValue == null) {
+      return '$fieldName must be a valid number';
+    }
+    
+    if (minValue != null && numericValue < minValue) {
+      return '$fieldName must be at least $minValue';
+    }
+    
+    if (maxValue != null && numericValue > maxValue) {
+      return '$fieldName must be at most $maxValue';
+    }
+    
+    return null;
+  }
+
+  String? _validateYear(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Established year is required';
+    }
+    
+    final year = int.tryParse(value.trim());
+    if (year == null) {
+      return 'Please enter a valid year';
+    }
+    
+    final currentYear = DateTime.now().year;
+    if (year < 1800 || year > currentYear) {
+      return 'Please enter a year between 1800 and $currentYear';
+    }
+    
+    return null;
+  }
+
+  String? _validateName(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    
+    if (value.trim().length < 2) {
+      return '$fieldName must be at least 2 characters long';
+    }
+    
+    // Check for valid name characters (letters, spaces, hyphens, apostrophes)
+    final nameRegex = RegExp(r"^[a-zA-Z\s\-'\.]+$");
+    if (!nameRegex.hasMatch(value.trim())) {
+      return '$fieldName can only contain letters, spaces, hyphens, and apostrophes';
+    }
+    
+    return null;
+  }
 
   final List<String> _industries = [
     'Technology',
@@ -69,11 +304,11 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
   ];
 
   final List<String> _companySizes = [
-    '1-10 EMPLOYERs',
-    '11-50 EMPLOYERs',
-    '51-200 EMPLOYERs',
-    '201-500 EMPLOYERs',
-    '500+ EMPLOYERs',
+    '1-10 Employees',
+    '11-50 Employees',
+    '51-200 Employees',
+    '201-500 Employees',
+    '500+ Employees',
   ];
 
   final List<String> _employmentTypes = [
@@ -83,6 +318,8 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
     'Freelance',
     'Internship',
   ];
+
+
 
   @override
   void dispose() {
@@ -105,40 +342,177 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
   }
 
   Future<void> _pickImage(String type) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      imageQuality: 85,
-    );
+    print('🎯 [PICK_IMAGE] Called for type: $type');
+    
+    // Prevent multiple simultaneous picker calls
+    if (_isPickingImage) {
+      print('⚠️ [PICK_IMAGE] Already active, ignoring request');
+      return;
+    }
 
-    if (image != null) {
+    try {
+      print('📱 [PICK_IMAGE] Setting picking flag to true');
       setState(() {
-        if (type == 'logo') {
-          _companyLogo = File(image.path);
-        } else if (type == 'idCard') {
-          _EMPLOYERIdCard = File(image.path);
+        _isPickingImage = true;
+      });
+
+      print('📸 [PICK_IMAGE] Creating ImagePicker instance');
+      final ImagePicker picker = ImagePicker();
+      
+      print('🖼️ [PICK_IMAGE] Opening gallery...');
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      
+      print('📊 [PICK_IMAGE] Picker returned: ${image != null ? image.path : 'null (cancelled)'}');
+
+      if (image != null) {
+        print('✅ Image selected: ${image.path}');
+        
+        final file = File(image.path);
+        
+        // Check if file exists and is accessible
+        if (!await file.exists()) {
+          _showSnackBar(
+            'Unable to access selected file',
+            isError: true,
+          );
+          return;
         }
+        
+        // Validate file size (max 5MB)
+        final fileSize = await file.length();
+        print('📊 File size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+        
+        if (fileSize > 5 * 1024 * 1024) {
+          _showSnackBar(
+            'Image must be less than 5MB',
+            isError: true,
+          );
+          return;
+        }
+
+        setState(() {
+          if (type == 'logo') {
+            _companyLogo = file;
+            print('✅ Company logo set: ${file.path}');
+            print('   File exists: ${file.existsSync()}');
+            _showSnackBar('Logo selected');
+          } else if (type == 'idCard') {
+            _EMPLOYERIdCard = file;
+            print('✅ ID card set: ${file.path}');
+            print('   File exists: ${file.existsSync()}');
+            _showSnackBar('ID card selected');
+          }
+        });
+        
+        // Update page completion status
+        _updatePageCompletionStatus();
+      } else {
+        print('ℹ️ User cancelled image selection');
+      }
+    } on PlatformException catch (e) {
+      print('❌ Platform exception: ${e.code} - ${e.message}');
+      
+      if (e.code == 'already_active') {
+        // Silently ignore - picker was already open
+        return;
+      } else if (e.code == 'photo_access_denied' || e.code == 'camera_access_denied') {
+        _showSnackBar(
+          'Please grant photo access in settings',
+          isError: true,
+        );
+      } else {
+        _showSnackBar(
+          'Failed to select image',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      print('❌ Error selecting image: $e');
+      _showSnackBar(
+        'Failed to select image',
+        isError: true,
+      );
+    } finally {
+      setState(() {
+        _isPickingImage = false;
       });
     }
   }
 
   Future<void> _pickDocument(String type) async {
-    final typeGroup = XTypeGroup(
-      label: 'Documents',
-      extensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-    );
+    // Prevent multiple simultaneous picker calls
+    if (_isPickingDocument) {
+      print('⚠️ Document picker already active, ignoring request');
+      return;
+    }
 
-    final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
-
-    if (file != null) {
+    try {
       setState(() {
-        if (type == 'license') {
-          _businessLicense = File(file.path);
-        } else if (type == 'documents') {
-          _companyDocuments.add(File(file.path));
+        _isPickingDocument = true;
+      });
+
+      final typeGroup = XTypeGroup(
+        label: 'Documents',
+        extensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      );
+
+      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
+
+      if (file != null) {
+        print('✅ Document selected: ${file.path}');
+        
+        final docFile = File(file.path);
+        
+        // Check if file exists and is accessible
+        if (!await docFile.exists()) {
+          _showSnackBar(
+            'Unable to access selected file',
+            isError: true,
+          );
+          return;
         }
+        
+        // Validate file size (max 10MB)
+        final fileSize = await docFile.length();
+        print('📊 File size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+        
+        if (fileSize > 10 * 1024 * 1024) {
+          _showSnackBar(
+            'Document must be less than 10MB',
+            isError: true,
+          );
+          return;
+        }
+
+        setState(() {
+          if (type == 'license') {
+            _businessLicense = docFile;
+            _showSnackBar('License selected');
+          } else if (type == 'documents') {
+            _companyDocuments.add(docFile);
+            _showSnackBar('Document added');
+          }
+        });
+        
+        // Update page completion status
+        _updatePageCompletionStatus();
+      } else {
+        print('ℹ️ User cancelled document selection');
+      }
+    } catch (e) {
+      print('❌ Error selecting document: $e');
+      _showSnackBar(
+        'Failed to select document',
+        isError: true,
+      );
+    } finally {
+      setState(() {
+        _isPickingDocument = false;
       });
     }
   }
@@ -172,7 +546,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
+              backgroundColor: AppColors.lookGigPurple,
             ),
             child: const Text('Skip'),
           ),
@@ -191,25 +565,47 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
     });
 
     try {
+      print('🔵 [SKIP_ONBOARDING] Starting skip process...');
+      
       // Mark onboarding as skipped in Firestore
       await AuthService.skipOnboarding();
+      print('✅ [SKIP_ONBOARDING] Firestore updated successfully');
 
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        print('✅ [SKIP_ONBOARDING] Loading state set to false');
 
         _showSnackBar('You can complete your profile later from Settings');
+        print('✅ [SKIP_ONBOARDING] Toast shown');
 
-        // Navigate to EMPLOYER home screen
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.employerHome,
-          (route) => false,
-        );
+        // Use a short delay to ensure the toast is shown and context is stable
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        if (mounted) {
+          print('🧭 [SKIP_ONBOARDING] Attempting navigation to ${AppRoutes.employerHome}');
+          
+          // Use Navigator.of(context, rootNavigator: true) to access the root navigator
+          // This ensures we're working with the app's main navigation stack
+          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+            AppRoutes.employerHome,
+            (route) => false,
+          );
+          
+          print('✅ [SKIP_ONBOARDING] Navigation command executed');
+        } else {
+          print('⚠️ [SKIP_ONBOARDING] Widget unmounted after delay, navigation cancelled');
+        }
+      } else {
+        print('⚠️ [SKIP_ONBOARDING] Widget not mounted, skipping navigation');
       }
     } catch (e) {
+      print('❌ [SKIP_ONBOARDING] Error occurred: $e');
+      print('❌ [SKIP_ONBOARDING] Stack trace: ${StackTrace.current}');
+      
       if (mounted) {
+        ErrorHandler.showErrorSnackBar(context, e);
         setState(() {
           _isLoading = false;
         });
@@ -223,26 +619,18 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
   }
 
   Future<void> _submitOnboarding() async {
-    if (!_formKey.currentState!.validate()) {
-      _showSnackBar('Please fill in all required fields', isError: true);
+    print('🎯 [EMPLOYER ONBOARDING] Starting completion process...');
+    
+    // Comprehensive validation of ALL pages
+    final validationResult = _validateAllPages();
+    if (!validationResult.isValid) {
+      print('❌ [EMPLOYER ONBOARDING] Validation failed, navigating to problematic page');
+      _showValidationError(validationResult);
+      _navigateToPageWithError(validationResult);
       return;
     }
-
-    // Additional validation for company documents
-    if (_companyLogo == null) {
-      _showSnackBar('Company logo is required', isError: true);
-      return;
-    }
-
-    if (_businessLicense == null) {
-      _showSnackBar('Business license is required', isError: true);
-      return;
-    }
-
-    if (_EMPLOYERIdCard == null) {
-      _showSnackBar('EMPLOYER ID card is required', isError: true);
-      return;
-    }
+    
+    print('✅ [EMPLOYER ONBOARDING] All validations passed, proceeding with completion');
 
     setState(() {
       _isLoading = true;
@@ -285,7 +673,9 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
         'companyInfo': {
           'companyName': _companyNameController.text.trim(),
           'companyEmail': _companyEmailController.text.trim(),
-          'companyPhone': _companyPhoneController.text.trim(),
+          'companyPhone': '$_selectedCountryCode ${_companyPhoneController.text.trim()}',
+          'companyPhoneCountryCode': _selectedCountryCode,
+          'companyPhoneNumber': _companyPhoneController.text.trim(),
           'companyAddress': _companyAddressController.text.trim(),
           'companyWebsite': _companyWebsiteController.text.trim(),
           'companyDescription': _companyDescriptionController.text.trim(),
@@ -331,11 +721,23 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
         print('ðŸ” DEBUG EMPLOYER Onboarding: Navigating to ${AppRoutes.employerHome}');
         
         if (role == 'employer') {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.employerHome,
-            (route) => false,
-          );
+          // Use a short delay to ensure the context is stable
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          if (mounted) {
+            print('🧭 [SUBMIT_ONBOARDING] Attempting navigation to ${AppRoutes.employerHome}');
+            
+            // Use Navigator.of(context, rootNavigator: true) to access the root navigator
+            // This ensures we're working with the app's main navigation stack and prevents unmounted widget errors
+            Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+              AppRoutes.employerHome,
+              (route) => false,
+            );
+            
+            print('✅ [SUBMIT_ONBOARDING] Navigation command executed');
+          } else {
+            print('⚠️ [SUBMIT_ONBOARDING] Widget unmounted after delay, navigation cancelled');
+          }
         } else {
           // Role mismatch - show error
           _showSnackBar(
@@ -346,10 +748,16 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
         }
       }
     } catch (e) {
-      _showSnackBar(
-        'Failed to complete onboarding: ${e.toString()}',
-        isError: true,
-      );
+      print('❌ [SUBMIT_ONBOARDING] Error occurred: $e');
+      print('❌ [SUBMIT_ONBOARDING] Stack trace: ${StackTrace.current}');
+      
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(context, e);
+        _showSnackBar(
+          'Failed to complete onboarding',
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -359,24 +767,29 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
     }
   }
 
-  void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : AppColors.primaryBlue,
-        duration: Duration(seconds: isError ? 4 : 2),
-      ),
+  void _showSnackBar(String message, {bool isError = false, int? duration, SnackBarAction? action}) {
+    if (!mounted) {
+      print('⚠️ [SHOW_SNACKBAR] Widget not mounted, skipping toast: $message');
+      return;
+    }
+    
+    CustomToast.show(
+      context,
+      message: message,
+      isSuccess: !isError,
+      duration: Duration(seconds: duration ?? (isError ? 3 : 2)),
     );
   }
 
   void _nextPage() {
     if (_currentPage < 2) {
-      // Validate current page before proceeding
-      if (_currentPage == 0 && !_validateCompanyInfo()) {
-        return;
-      } else if (_currentPage == 1 && !_validateEMPLOYERInfo()) {
+      // Validate and focus first empty field
+      if (!_validateAndFocusFirstEmptyField()) {
         return;
       }
+
+      // Update completion status
+      _updatePageCompletionStatus();
 
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -418,6 +831,393 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
     return true;
   }
 
+  // Enhanced validation for current page (backward compatibility)
+  bool _validateAndFocusFirstEmptyField() {
+    final result = _validateSpecificPage(_currentPage);
+    if (!result.isValid) {
+      _showValidationError(result);
+      return false;
+    }
+    return true;
+  }
+
+  // Comprehensive validation for ALL pages
+  EmployerValidationResult _validateAllPages() {
+    print('🔍 [EMPLOYER VALIDATION] Starting comprehensive validation of all pages...');
+    
+    for (int page = 0; page <= 2; page++) {
+      final result = _validateSpecificPage(page);
+      if (!result.isValid) {
+        print('❌ [EMPLOYER VALIDATION] Found issue on page $page: ${result.errorMessage}');
+        return result;
+      }
+    }
+    
+    print('✅ [EMPLOYER VALIDATION] All pages validated successfully');
+    return EmployerValidationResult.valid();
+  }
+
+  // Validate a specific page and return detailed result
+  EmployerValidationResult _validateSpecificPage(int pageIndex) {
+    switch (pageIndex) {
+      case 0: // Company Info page
+        if (_companyNameController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Company Name',
+            errorMessage: 'Company name is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_companyEmailController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Company Email',
+            errorMessage: 'Company email is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_companyPhoneController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Company Phone',
+            errorMessage: 'Company phone number is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_companyAddressController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Company Address',
+            errorMessage: 'Company address is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_companyWebsiteController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Company Website',
+            errorMessage: 'Company website is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_selectedIndustry == null) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Industry',
+            errorMessage: 'Please select your industry on Company Information page',
+          );
+        }
+        if (_selectedCompanySize == null) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Company Size',
+            errorMessage: 'Please select your company size on Company Information page',
+          );
+        }
+        if (_establishedYearController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Established Year',
+            errorMessage: 'Established year is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_EMPLOYERCountController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Employee Count',
+            errorMessage: 'Employee count is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_companyDescriptionController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Company Description',
+            errorMessage: 'Company description is required on Company Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        break;
+      
+      case 1: // EMPLOYER Info page
+        if (_jobTitleController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Job Title',
+            errorMessage: 'Your job title is required on Employee Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_departmentController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Department',
+            errorMessage: 'Department is required on Employee Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_EMPLOYERIdController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Employee ID',
+            errorMessage: 'Employee ID is required on Employee Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_selectedEmploymentType == null) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Employment Type',
+            errorMessage: 'Please select your employment type on Employee Information page',
+          );
+        }
+        if (_workLocationController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Work Location',
+            errorMessage: 'Work location is required on Employee Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_managerNameController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Manager Name',
+            errorMessage: 'Manager name is required on Employee Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_managerEmailController.text.trim().isEmpty) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Manager Email',
+            errorMessage: 'Manager email is required on Employee Information page',
+            focusNode: FocusNode(),
+          );
+        }
+        break;
+      
+      case 2: // Documents page
+        if (_companyLogo == null) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 2,
+            fieldName: 'Company Logo',
+            errorMessage: 'Company logo is required on Documents & Files page',
+          );
+        }
+        if (_businessLicense == null) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 2,
+            fieldName: 'Business License',
+            errorMessage: 'Business license document is required on Documents & Files page',
+          );
+        }
+        if (_EMPLOYERIdCard == null) {
+          return EmployerValidationResult.invalid(
+            pageWithError: 2,
+            fieldName: 'Employee ID Card',
+            errorMessage: 'Employee ID card is required on Documents & Files page',
+          );
+        }
+        break;
+    }
+    
+    return EmployerValidationResult.valid();
+  }
+
+  // Show validation error with enhanced messaging
+  void _showValidationError(EmployerValidationResult result) {
+    if (result.isValid) return;
+    
+    _showSnackBar(
+      result.errorMessage ?? 'Please complete all required fields',
+      isError: true,
+      duration: 4,
+      action: SnackBarAction(
+        label: 'Go to Page',
+        textColor: Colors.white,
+        onPressed: () => _navigateToPageWithError(result),
+      ),
+    );
+    
+    // Focus on field if it's a text field
+    if (result.focusNode != null) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        FocusScope.of(context).requestFocus(result.focusNode!);
+      });
+    }
+  }
+
+  // Navigate to page with validation error
+  void _navigateToPageWithError(EmployerValidationResult result) {
+    if (result.pageWithError == null) return;
+    
+    print('🧭 [EMPLOYER NAVIGATION] Auto-navigating to page ${result.pageWithError} for field: ${result.fieldName}');
+    
+    // Set highlighted field for visual feedback
+    setState(() {
+      _highlightedFieldError = result.fieldName;
+    });
+    
+    _pageController.animateToPage(
+      result.pageWithError!,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+    
+    // Focus on the field after navigation
+    if (result.focusNode != null) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        FocusScope.of(context).requestFocus(result.focusNode!);
+      });
+    }
+    
+    // Clear highlight after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _highlightedFieldError = null;
+        });
+      }
+    });
+  }
+
+  // Update page completion status
+  void _updatePageCompletionStatus() {
+    for (int page = 0; page <= 2; page++) {
+      final result = _validateSpecificPage(page);
+      _pageCompletionStatus[page] = result.isValid;
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  // Get completion percentage
+  double _getCompletionPercentage() {
+    int completedPages = _pageCompletionStatus.values.where((completed) => completed).length;
+    return completedPages / 3.0;
+  }
+
+  // Get page completion icon
+  Widget _getPageCompletionIcon(int pageIndex) {
+    final isCompleted = _pageCompletionStatus[pageIndex] ?? false;
+    final isCurrentPage = pageIndex == _currentPage;
+    
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isCompleted 
+            ? Colors.green 
+            : isCurrentPage 
+                ? AppColors.lookGigPurple 
+                : Colors.grey.withOpacity(0.3),
+        border: Border.all(
+          color: isCurrentPage ? AppColors.lookGigPurple : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: Icon(
+        isCompleted ? Icons.check : Icons.circle,
+        size: 12,
+        color: isCompleted || isCurrentPage ? Colors.white : Colors.grey,
+      ),
+    );
+  }
+
+  // Get page title for progress indicators
+  String _getPageTitle(int pageIndex) {
+    switch (pageIndex) {
+      case 0: return 'Company';
+      case 1: return 'Employee';
+      case 2: return 'Documents';
+      default: return 'Step ${pageIndex + 1}';
+    }
+  }
+
+
+
+  // Get helpful hint for employer fields
+  Widget? _getFieldHint(String fieldName) {
+    switch (fieldName) {
+      case 'Company Email':
+        return const EmployerFieldHintWidget(
+          hint: 'Enter your official company email address',
+          icon: Icons.email_outlined,
+        );
+      case 'Company Website':
+        return const EmployerFieldHintWidget(
+          hint: 'Enter your company website URL (e.g., www.company.com)',
+          icon: Icons.language_outlined,
+        );
+      case 'Established Year':
+        return const EmployerFieldHintWidget(
+          hint: 'Enter the year your company was established',
+          icon: Icons.calendar_today_outlined,
+        );
+      case 'Company Logo':
+        return const EmployerFieldHintWidget(
+          hint: 'Upload your company logo (PNG, JPG - max 5MB)',
+          icon: Icons.image_outlined,
+          color: Colors.blue,
+        );
+      case 'Business License':
+        return const EmployerFieldHintWidget(
+          hint: 'Upload your business registration or license document',
+          icon: Icons.description_outlined,
+          color: Colors.orange,
+        );
+      case 'Employee ID Card':
+        return const EmployerFieldHintWidget(
+          hint: 'Upload a photo of your employee ID card',
+          icon: Icons.badge_outlined,
+          color: Colors.green,
+        );
+      default:
+        return null;
+    }
+  }
+
+  // Show success feedback
+  Widget _getSuccessFeedback(String message) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.green.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle_outline,
+            size: 16,
+            color: Colors.green,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.green,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _previousPage() {
     if (_currentPage > 0) {
       _pageController.previousPage(
@@ -444,6 +1244,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
             borderSide: BorderSide(color: AppColors.grey.withOpacity(0.3)),
             borderRadius: BorderRadius.circular(8),
           ),
+          hintStyle: const TextStyle(color: AppColors.hintText),
         ),
       ),
       child: Scaffold(
@@ -503,10 +1304,28 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
               key: _formKey,
               child: PageView(
                 controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(), // Prevent swipe to change pages
                 onPageChanged: (index) {
                   setState(() {
                     _currentPage = index;
                   });
+                  
+                  // Debug: Check file status when page changes
+                  print('📄 Page changed to: $index');
+                  if (_companyLogo != null) {
+                    print('   Logo file: ${_companyLogo!.path}');
+                    print('   Logo exists: ${_companyLogo!.existsSync()}');
+                  } else {
+                    print('   Logo: null');
+                  }
+                  if (_businessLicense != null) {
+                    print('   License file: ${_businessLicense!.path}');
+                    print('   License exists: ${_businessLicense!.existsSync()}');
+                  }
+                  if (_EMPLOYERIdCard != null) {
+                    print('   ID card file: ${_EMPLOYERIdCard!.path}');
+                    print('   ID card exists: ${_EMPLOYERIdCard!.existsSync()}');
+                  }
                 },
                 children: [
                   _buildCompanyInfoPage(),
@@ -563,7 +1382,9 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                               ? null
                               : () {
                                 if (_currentPage == 2) {
-                                  _submitOnboarding();
+                                  if (_validateAndFocusFirstEmptyField()) {
+                                    _submitOnboarding();
+                                  }
                                 } else {
                                   _nextPage();
                                 }
@@ -633,61 +1454,54 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _companyNameController,
+            style: TextStyle(
+              color: _getTextColor(_companyNameController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Company Name *',
               hintText: 'Enter your company name',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Company name is required';
-              }
-              return null;
-            },
+            validator: (value) => _validateRequired(value, 'Company name'),
           ),
           const SizedBox(height: 16),
 
           TextFormField(
             controller: _companyEmailController,
+            style: TextStyle(
+              color: _getTextColor(_companyEmailController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Company Email *',
               hintText: 'company@example.com',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Company email is required';
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return 'Please enter a valid email address';
-              }
-              return null;
-            },
+            validator: (value) => _validateEmail(value, 'Company email'),
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
-            controller: _companyPhoneController,
-            decoration: const InputDecoration(
-              labelText: 'Company Phone *',
-              hintText: '+1234567890',
-            ),
-            keyboardType: TextInputType.phone,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Company phone is required';
-              }
-              return null;
+          PhoneInputField(
+            phoneController: _companyPhoneController,
+            labelText: 'Company Phone *',
+            hintText: '1234567890',
+            onCountryCodeChanged: (code) {
+              setState(() {
+                _selectedCountryCode = code;
+              });
             },
           ),
           const SizedBox(height: 16),
 
           TextFormField(
             controller: _companyAddressController,
+            style: TextStyle(
+              color: _getTextColor(_companyAddressController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Company Address *',
               hintText: 'Enter complete address',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             maxLines: 3,
             validator: (value) {
@@ -701,82 +1515,83 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _companyWebsiteController,
+            style: TextStyle(
+              color: _getTextColor(_companyWebsiteController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Company Website *',
               hintText: 'https://www.company.com',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             keyboardType: TextInputType.url,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Company website is required';
-              }
-              if (!value.startsWith('http://') &&
-                  !value.startsWith('https://')) {
-                return 'Please include http:// or https://';
-              }
-              return null;
-            },
+            validator: (value) => _validateWebsite(value),
           ),
           const SizedBox(height: 16),
 
-          DropdownButtonFormField<String>(
-            initialValue: _selectedIndustry,
-            decoration: const InputDecoration(labelText: 'Industry *'),
-            items:
-                _industries.map((industry) {
-                  return DropdownMenuItem(
-                    value: industry,
-                    child: Text(industry),
-                  );
-                }).toList(),
+          CustomDropdownField(
+            labelText: 'Industry *',
+            hintText: 'Select industry',
+            value: _selectedIndustry,
+            items: _industries.map((industry) {
+              return DropdownItem(value: industry, label: industry);
+            }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedIndustry = value;
               });
             },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select an industry';
-              }
-              return null;
-            },
+            enableSearch: true,
+            modalTitle: 'Select Industry',
           ),
           const SizedBox(height: 16),
 
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCompanySize,
-            decoration: const InputDecoration(labelText: 'Company Size *'),
-            items:
-                _companySizes.map((size) {
-                  return DropdownMenuItem(value: size, child: Text(size));
-                }).toList(),
+          CustomDropdownField(
+            labelText: 'Company Size *',
+            hintText: 'Select company size',
+            value: _selectedCompanySize,
+            items: _companySizes.map((size) {
+              return DropdownItem(value: size, label: size);
+            }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedCompanySize = value;
               });
             },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select company size';
-              }
-              return null;
-            },
+            enableSearch: false,
+            modalTitle: 'Select Company Size',
           ),
           const SizedBox(height: 16),
 
-          TextFormField(
-            controller: _establishedYearController,
+          DropdownButtonFormField<String>(
+            initialValue: _establishedYearController.text.isEmpty 
+                ? null 
+                : _establishedYearController.text,
+            style: TextStyle(
+              color: _getTextColor(_establishedYearController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Established Year *',
-              hintText: '2020',
+              hintText: 'Select year',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
-            keyboardType: TextInputType.number,
+            items: List.generate(
+              DateTime.now().year - 1799,
+              (index) {
+                final year = (DateTime.now().year - index).toString();
+                return DropdownMenuItem(
+                  value: year,
+                  child: Text(year),
+                );
+              },
+            ),
+            onChanged: (value) {
+              setState(() {
+                _establishedYearController.text = value ?? '';
+              });
+            },
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
                 return 'Established year is required';
-              }
-              if (int.tryParse(value) == null) {
-                return 'Please enter a valid year';
               }
               return null;
             },
@@ -785,14 +1600,18 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _EMPLOYERCountController,
+            style: TextStyle(
+              color: _getTextColor(_EMPLOYERCountController),
+            ),
             decoration: const InputDecoration(
-              labelText: 'EMPLOYER Count *',
+              labelText: 'Employee Count *',
               hintText: '50',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             keyboardType: TextInputType.number,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'EMPLOYER count is required';
+                return 'Employee count is required';
               }
               if (int.tryParse(value) == null) {
                 return 'Please enter a valid number';
@@ -804,9 +1623,13 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _companyDescriptionController,
+            style: TextStyle(
+              color: _getTextColor(_companyDescriptionController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Company Description *',
               hintText: 'Brief description of your company',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             maxLines: 4,
             validator: (value) {
@@ -843,9 +1666,13 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _jobTitleController,
+            style: TextStyle(
+              color: _getTextColor(_jobTitleController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Job Title *',
               hintText: 'Software Developer',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -858,9 +1685,13 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _departmentController,
+            style: TextStyle(
+              color: _getTextColor(_departmentController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Department *',
               hintText: 'Engineering',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -873,9 +1704,13 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _EMPLOYERIdController,
+            style: TextStyle(
+              color: _getTextColor(_EMPLOYERIdController),
+            ),
             decoration: const InputDecoration(
               labelText: 'EMPLOYER ID *',
               hintText: 'EMP001',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -886,32 +1721,32 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          DropdownButtonFormField<String>(
-            initialValue: _selectedEmploymentType,
-            decoration: const InputDecoration(labelText: 'Employment Type *'),
-            items:
-                _employmentTypes.map((type) {
-                  return DropdownMenuItem(value: type, child: Text(type));
-                }).toList(),
+          CustomDropdownField(
+            labelText: 'Employment Type *',
+            hintText: 'Select employment type',
+            value: _selectedEmploymentType,
+            items: _employmentTypes.map((type) {
+              return DropdownItem(value: type, label: type);
+            }).toList(),
             onChanged: (value) {
               setState(() {
                 _selectedEmploymentType = value;
               });
             },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select employment type';
-              }
-              return null;
-            },
+            enableSearch: false,
+            modalTitle: 'Select Employment Type',
           ),
           const SizedBox(height: 16),
 
           TextFormField(
             controller: _workLocationController,
+            style: TextStyle(
+              color: _getTextColor(_workLocationController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Work Location *',
               hintText: 'New York Office',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -924,9 +1759,13 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _managerNameController,
+            style: TextStyle(
+              color: _getTextColor(_managerNameController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Manager Name *',
               hintText: 'John Smith',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -939,22 +1778,16 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
           TextFormField(
             controller: _managerEmailController,
+            style: TextStyle(
+              color: _getTextColor(_managerEmailController),
+            ),
             decoration: const InputDecoration(
               labelText: 'Manager Email *',
               hintText: 'manager@company.com',
+              hintStyle: TextStyle(color: AppColors.hintText),
             ),
             keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Manager email is required';
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return 'Please enter a valid email address';
-              }
-              return null;
-            },
+            validator: (value) => _validateEmail(value, 'Manager email'),
           ),
         ],
       ),
@@ -962,6 +1795,21 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
   }
 
   Widget _buildDocumentsPage() {
+    // Debug: Check file status when building documents page
+    print('🏗️ Building documents page');
+    if (_companyLogo != null) {
+      print('   Logo: ${_companyLogo!.path}');
+      print('   Logo exists: ${_companyLogo!.existsSync()}');
+    } else {
+      print('   Logo: null');
+    }
+    
+    // Calculate completion status
+    final bool allRequiredDocsUploaded = 
+        _companyLogo != null && 
+        _businessLicense != null && 
+        _EMPLOYERIdCard != null;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -976,6 +1824,44 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
             'All documents are required for verification',
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
+          const SizedBox(height: 16),
+          
+          // Completion Status Indicator
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: allRequiredDocsUploaded 
+                  ? Colors.green.withOpacity(0.1) 
+                  : Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: allRequiredDocsUploaded ? Colors.green : Colors.orange,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  allRequiredDocsUploaded ? Icons.check_circle : Icons.info,
+                  color: allRequiredDocsUploaded ? Colors.green : Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    allRequiredDocsUploaded
+                        ? 'All required documents uploaded! Click COMPLETE to finish.'
+                        : 'Please upload all required documents to proceed',
+                    style: TextStyle(
+                      color: allRequiredDocsUploaded ? Colors.green : Colors.orange,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
 
           // Company Logo (Required)
@@ -983,7 +1869,10 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
             title: 'Company Logo *',
             subtitle: 'Upload your company logo (required)',
             file: _companyLogo,
-            onTap: () => _pickImage('logo'),
+            onTap: () {
+              print('🔘 [LOGO_TAP] Company logo section tapped');
+              _pickImage('logo');
+            },
             isImage: true,
             isRequired: true,
           ),
@@ -1099,16 +1988,16 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
         const SizedBox(height: 12),
 
         GestureDetector(
-          onTap: onTap,
+          onTap: () {
+            print('👆 [GESTURE_TAP] File upload section tapped: $title');
+            onTap();
+          },
           child: Container(
             width: double.infinity,
             height: isImage ? 150 : 80,
             decoration: BoxDecoration(
               border: Border.all(
-                color:
-                    isRequired && file == null
-                        ? Colors.red
-                        : AppColors.grey.withOpacity(0.3),
+                color: AppColors.grey.withOpacity(0.3),
                 style: BorderStyle.solid,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -1119,7 +2008,33 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                     ? isImage
                         ? ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                          child: Image.file(file, fit: BoxFit.cover),
+                          child: Image.file(
+                            file, 
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              print('❌ Error loading image: $error');
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      size: 32,
+                                      color: Colors.red,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Image unavailable',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         )
                         : Center(
                           child: Column(
@@ -1164,12 +2079,26 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                     ),
           ),
         ),
-        if (isRequired && file == null)
+        if (file != null)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              'This document is required',
-              style: TextStyle(color: Colors.red, fontSize: 12),
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'File uploaded successfully',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
       ],

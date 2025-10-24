@@ -503,7 +503,7 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
                 // Location
                 Flexible(
                   child: Text(
-                    widget.job.location,
+                    widget.job.location.isEmpty ? 'Remote' : widget.job.location,
                     style: const TextStyle(
                       fontFamily: 'DM Sans',
                       fontWeight: FontWeight.w400,

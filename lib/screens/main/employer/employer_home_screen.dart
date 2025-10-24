@@ -65,9 +65,15 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   }
 
   Future<void> _loadUserData() async {
+    print('🔵 [EMPLOYER_HOME] _loadUserData() called');
     try {
+      print('🔵 [EMPLOYER_HOME] Fetching user data from AuthService...');
       final userData = await AuthService.getUserData();
+      print('✅ [EMPLOYER_HOME] User data fetched: ${userData?['fullName'] ?? 'No name'}');
+      
+      print('🔵 [EMPLOYER_HOME] Fetching company info from AuthService...');
       final companyInfo = await AuthService.getEMPLOYERCompanyInfo();
+      print('✅ [EMPLOYER_HOME] Company info fetched: ${companyInfo != null ? "Company: ${companyInfo['companyName'] ?? 'No name'}" : "NULL - User likely skipped onboarding"}');
 
       if (mounted) {
         setState(() {
@@ -75,8 +81,15 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
           _companyInfo = companyInfo;
           _isLoading = false;
         });
+        print('✅ [EMPLOYER_HOME] State updated, _isLoading = false');
+        print('📊 [EMPLOYER_HOME] _userData is ${_userData != null ? "NOT NULL" : "NULL"}');
+        print('📊 [EMPLOYER_HOME] _companyInfo is ${_companyInfo != null ? "NOT NULL" : "NULL"}');
+      } else {
+        print('⚠️ [EMPLOYER_HOME] Widget not mounted, skipping state update');
       }
     } catch (e) {
+      print('❌ [EMPLOYER_HOME] Error in _loadUserData: $e');
+      print('❌ [EMPLOYER_HOME] Stack trace: ${StackTrace.current}');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -90,16 +103,26 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
   }
 
   Future<void> _loadJobs() async {
+    print('🔵 [EMPLOYER_HOME] _loadJobs() called');
     try {
       final jobs = await JobService.getCompanyJobs();
+      print('✅ [EMPLOYER_HOME] Jobs loaded: ${jobs.length} jobs found');
       if (mounted) {
         setState(() {
           _jobs = jobs;
         });
       }
     } catch (e) {
+      print('❌ [EMPLOYER_HOME] Error loading jobs: $e');
       if (mounted) {
-        _showSnackBar('Failed to load jobs: ${e.toString()}', isError: true);
+        // Don't show error for missing company info - this is expected when profile is incomplete
+        if (!e.toString().contains('Company profile must be completed')) {
+          _showSnackBar('Failed to load jobs: ${e.toString()}', isError: true);
+        }
+        // Set empty jobs list
+        setState(() {
+          _jobs = [];
+        });
       }
     }
   }
@@ -255,10 +278,16 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ [EMPLOYER_HOME] build() called');
+    print('📊 [EMPLOYER_HOME] _isLoading = $_isLoading');
+    print('📊 [EMPLOYER_HOME] _userData = ${_userData != null ? "NOT NULL" : "NULL"}');
+    print('📊 [EMPLOYER_HOME] _companyInfo = ${_companyInfo != null ? "NOT NULL" : "NULL"}');
+    
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
     if (_isLoading) {
+      print('🔄 [EMPLOYER_HOME] Showing loading spinner');
       return Scaffold(
         backgroundColor: AppColors.backgroundColor,
         body: Center(
@@ -269,15 +298,29 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
       );
     }
 
+    print('🏗️ [EMPLOYER_HOME] Building main scaffold with _buildBody()');
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: _buildBody(),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
+        onTap: (index) async {
           // Handle center button navigation
           if (index == 2) {
-            Navigator.pushNamed(context, AppRoutes.createJobOpening);
+            // Check profile completion before allowing job creation
+            final canCreate = await ProfileGatingService.canPerformAction(
+              context,
+              actionName: 'create job',
+            );
+            
+            if (canCreate && context.mounted) {
+              Navigator.pushNamed(context, AppRoutes.createJobOpening).then((result) {
+                if (result == true) {
+                  // Reload jobs when returning from job creation
+                  _loadJobs();
+                }
+              });
+            }
           } else {
             setState(() {
               _currentIndex = index;
@@ -302,6 +345,7 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
             });
           },
           onLogout: _showLogoutDialog,
+          onRefresh: _loadJobs,
         );
       case 1:
         return const Center(
@@ -324,6 +368,7 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
             });
           },
           onLogout: _showLogoutDialog,
+          onRefresh: _loadJobs,
         );
     }
   }
@@ -387,16 +432,49 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _companyInfo?['companyName'] ?? 'Company Name',
-                    style: TextStyle(
-                      color: AppColors.whiteText.withOpacity(0.8),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                  // Show different text based on whether company info exists
+                  if (_companyInfo != null && _companyInfo?['companyName'] != null)
+                    Text(
+                      _companyInfo!['companyName'],
+                      style: TextStyle(
+                        color: AppColors.whiteText.withOpacity(0.8),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 14,
+                            color: AppColors.whiteText,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Profile Incomplete',
+                            style: TextStyle(
+                              color: AppColors.whiteText,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
             ),
@@ -475,7 +553,12 @@ class _EmployerDashboardScreenState extends State<EmployerDashboardScreen> {
                           Navigator.pushNamed(
                             context,
                             AppRoutes.createJobOpening,
-                          );
+                          ).then((result) {
+                            if (result == true) {
+                              // Reload jobs when returning from job creation
+                              _loadJobs();
+                            }
+                          });
                         }
                       },
                     ),
@@ -587,6 +670,7 @@ class DashboardPage extends StatefulWidget {
   final Function(String, bool) onStatusChanged;
   final Function(int) onIndexChanged;
   final VoidCallback onLogout;
+  final Future<void> Function() onRefresh;
 
   const DashboardPage({
     super.key,
@@ -594,6 +678,7 @@ class DashboardPage extends StatefulWidget {
     required this.onStatusChanged,
     required this.onIndexChanged,
     required this.onLogout,
+    required this.onRefresh,
   });
 
   @override
@@ -617,9 +702,12 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _loadUserData() async {
+    print('🔵 [DASHBOARD_PAGE] _loadUserData() called');
     try {
       final userData = await AuthService.getUserData();
       final companyInfo = await AuthService.getEMPLOYERCompanyInfo();
+      
+      print('📊 [DASHBOARD_PAGE] Company info: ${companyInfo != null ? "EXISTS" : "NULL"}');
 
       if (mounted) {
         setState(() {
@@ -627,8 +715,10 @@ class _DashboardPageState extends State<DashboardPage> {
           _companyInfo = companyInfo;
           _isLoading = false;
         });
+        print('✅ [DASHBOARD_PAGE] State updated');
       }
     } catch (e) {
+      print('❌ [DASHBOARD_PAGE] Error loading user data: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -642,10 +732,21 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _loadRecentApplicants() async {
+    print('🔵 [DASHBOARD_PAGE] _loadRecentApplicants() called');
+    
+    // Skip if company info is not available (user skipped onboarding)
+    if (_companyInfo == null || 
+        _companyInfo?['companyName'] == null || 
+        _companyInfo!['companyName'].toString().trim().isEmpty) {
+      print('⚠️ [DASHBOARD_PAGE] Skipping applicants load - company info not available or empty');
+      return;
+    }
+    
     try {
       final List<Map<String, dynamic>> allApplicants = [];
 
       // Get all jobs for the company
+      print('🔵 [DASHBOARD_PAGE] Fetching jobs for company: ${_companyInfo?['companyName']}');
       final jobsSnapshot =
           await FirebaseFirestore.instance
               .collection('jobs')
@@ -700,6 +801,10 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildHeader() {
+    print('🏗️ [DASHBOARD_HEADER] Building header');
+    print('📊 [DASHBOARD_HEADER] _userData: ${_userData?['fullName'] ?? "NULL"}');
+    print('📊 [DASHBOARD_HEADER] _companyInfo: ${_companyInfo?['companyName'] ?? "NULL"}');
+    
     return Builder(
       builder:
           (context) => Container(
@@ -874,6 +979,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ [DASHBOARD_PAGE] build() called');
+    print('📊 [DASHBOARD_PAGE] _isLoading = $_isLoading');
+    print('📊 [DASHBOARD_PAGE] _companyInfo = ${_companyInfo != null ? "NOT NULL" : "NULL"}');
+    
     final userName = _userData?['fullName'] ?? 'User';
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -921,10 +1030,15 @@ class _DashboardPageState extends State<DashboardPage> {
                             );
                             
                             if (canPost && context.mounted) {
-                              Navigator.pushNamed(
+                              final result = await Navigator.pushNamed(
                                 context,
                                 AppRoutes.createJobOpening,
                               );
+                              
+                              if (result == true && mounted) {
+                                // Reload jobs when returning from job creation
+                                await widget.onRefresh();
+                              }
                             }
                           },
                           child: _buildDashboardCard(
@@ -993,9 +1107,24 @@ class _DashboardPageState extends State<DashboardPage> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    AllApplicantsNavigationCard(
-                      companyName: _companyInfo?['companyName'] ?? '',
-                    ),
+                    // Only show applicants card if company info is available
+                    if (_companyInfo != null && _companyInfo?['companyName'] != null && _companyInfo!['companyName'].toString().trim().isNotEmpty)
+                      AllApplicantsNavigationCard(
+                        companyName: _companyInfo!['companyName'],
+                      )
+                    else
+                      _buildPlaceholderCard(
+                        title: 'View All Applicants',
+                        subtitle: 'Complete your profile to view applicants',
+                        icon: Icons.people_outline,
+                        onTap: () async {
+                          final canView = await ProfileGatingService.canPerformAction(
+                            context,
+                            actionName: 'view applicants',
+                          );
+                          // ProfileGatingService will handle navigation to onboarding if needed
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -1058,6 +1187,69 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 48,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.lookGigPurple,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Complete Profile',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

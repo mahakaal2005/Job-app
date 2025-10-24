@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/routes/routes.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
+import 'package:get_work_app/screens/main/employer/profile/employer_update_password_screen.dart';
 
 class EMPLOYERSettingsScreen extends StatefulWidget {
   const EMPLOYERSettingsScreen({super.key});
@@ -41,9 +43,12 @@ class _EMPLOYERSettingsScreenState extends State<EMPLOYERSettingsScreen> {
                     icon: Icons.lock_outline,
                     title: 'Change Password',
                     onTap: () {
-                      // TODO: Navigate to change password screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Change password feature coming soon')),
+                      // Navigate to employer change password screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EmployerUpdatePasswordScreen(),
+                        ),
                       );
                     },
                   ),
@@ -410,19 +415,10 @@ class _EMPLOYERSettingsScreenState extends State<EMPLOYERSettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_rounded, color: AppColors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(child: Text('Error logging out: $e')),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
+        CustomToast.show(
+          context,
+          message: 'Error logging out: $e',
+          isSuccess: false,
         );
       }
     }

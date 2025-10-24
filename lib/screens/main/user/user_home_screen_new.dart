@@ -4,18 +4,22 @@ import 'package:get_work_app/provider/applicant_provider.dart';
 import 'package:get_work_app/provider/applicant_status_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
-import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
-import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
-import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
-import 'package:get_work_app/screens/main/user/jobs/filtered_jobs_screen.dart';
+import 'package:get_work_app/screens/main/user/applications/my_applications_screen.dart';
 import 'package:get_work_app/screens/main/user/bookmarks_screen.dart';
+import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
+import 'package:get_work_app/screens/main/user/jobs/filtered_jobs_screen.dart';
+import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
+import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/screens/main/user/user_chats.dart';
 import 'package:get_work_app/screens/main/user/user_help_and_support.dart';
-import 'package:get_work_app/screens/main/user/applications/my_applications_screen.dart';
 import 'package:get_work_app/services/auth_services.dart';
+import 'package:get_work_app/utils/number_formatter.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
 import 'package:get_work_app/utils/image_utils.dart';
 import 'package:get_work_app/widgets/custom_bottom_nav_bar.dart';
+// import 'package:get_work_app/widgets/profile_completion_widget.dart';
 import 'package:provider/provider.dart';
 
 class UserHomeScreenNew extends StatefulWidget {
@@ -108,7 +112,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
         debugPrint('Profile Image URL: $profilePic');
         debugPrint('Profile Image isEmpty: ${profilePic.isEmpty}');
         debugPrint('=======================');
-        
+
         setState(() {
           _userName = userData['fullName'] ?? 'User';
           _userId = userData['uid'];
@@ -131,19 +135,19 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
     try {
       // Use Firestore count() aggregation for efficient counting
       // Note: These queries require Firestore indexes to be created
-      
+
       // Count Full Time jobs
       final fullTimeQuery = _firestore
           .collectionGroup('jobPostings')
           .where('isActive', isEqualTo: true)
           .where('employmentType', isEqualTo: 'Full-time');
-      
+
       // Count Part Time jobs
       final partTimeQuery = _firestore
           .collectionGroup('jobPostings')
           .where('isActive', isEqualTo: true)
           .where('employmentType', isEqualTo: 'Part-time');
-      
+
       // Count Remote jobs
       final remoteQuery = _firestore
           .collectionGroup('jobPostings')
@@ -166,24 +170,33 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
       }
     } catch (e) {
       debugPrint('Error loading job statistics: $e');
-      
+
       // Check if it's an index error
-      if (e.toString().contains('FAILED_PRECONDITION') || 
+      if (e.toString().contains('FAILED_PRECONDITION') ||
           e.toString().contains('requires an index')) {
         debugPrint('⚠️  FIRESTORE INDEXES REQUIRED ⚠️');
-        debugPrint('Please create the required Firestore indexes by clicking the URLs in the error messages above.');
-        debugPrint('Once indexes are created, the statistics will load automatically.');
+        debugPrint(
+          'Please create the required Firestore indexes by clicking the URLs in the error messages above.',
+        );
+        debugPrint(
+          'Once indexes are created, the statistics will load automatically.',
+        );
       }
-      
+
       // Fallback: Calculate from loaded jobs
       if (mounted && _jobs.isNotEmpty) {
         setState(() {
-          _fullTimeJobsCount = _jobs.where((job) => job.employmentType == 'Full-time').length;
-          _partTimeJobsCount = _jobs.where((job) => job.employmentType == 'Part-time').length;
-          _remoteJobsCount = _jobs.where((job) => job.workFrom == 'Remote').length;
+          _fullTimeJobsCount =
+              _jobs.where((job) => job.employmentType == 'Full-time').length;
+          _partTimeJobsCount =
+              _jobs.where((job) => job.employmentType == 'Part-time').length;
+          _remoteJobsCount =
+              _jobs.where((job) => job.workFrom == 'Remote').length;
         });
-        
-        debugPrint('Using fallback: Calculated statistics from ${_jobs.length} loaded jobs');
+
+        debugPrint(
+          'Using fallback: Calculated statistics from ${_jobs.length} loaded jobs',
+        );
       } else {
         // No jobs loaded yet, set to 0
         if (mounted) {
@@ -221,16 +234,14 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
           // Note: lastDocument is handled by AllJobsService
           _lastDocument = null;
         });
-        
+
         // Reload statistics after jobs are loaded
         _loadJobStatistics();
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingJobs = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading jobs: $e')),
-        );
+        ErrorHandler.showErrorSnackBar(context, e);
       }
     }
   }
@@ -263,9 +274,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingJobs = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading more jobs: $e')),
-        );
+        ErrorHandler.showErrorSnackBar(context, e);
       }
     }
   }
@@ -296,7 +305,10 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
             height: 200,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.lookGigPurple, AppColors.lookGigPurple.withOpacity(0.8)],
+                colors: [
+                  AppColors.lookGigPurple,
+                  AppColors.lookGigPurple.withOpacity(0.8),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -309,31 +321,36 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                     CircleAvatar(
                       radius: 40,
                       backgroundColor: AppColors.white,
-                      child: _userProfilePic.isNotEmpty
-                          ? ClipOval(
-                              child: ImageUtils.buildSafeNetworkImage(
-                                imageUrl: _userProfilePic,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                errorWidget: Text(
-                                  _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.lookGigPurple,
+                      child:
+                          _userProfilePic.isNotEmpty
+                              ? ClipOval(
+                                child: ImageUtils.buildSafeNetworkImage(
+                                  imageUrl: _userProfilePic,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  errorWidget: Text(
+                                    _userName.isNotEmpty
+                                        ? _userName[0].toUpperCase()
+                                        : 'U',
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.lookGigPurple,
+                                    ),
                                   ),
                                 ),
+                              )
+                              : Text(
+                                _userName.isNotEmpty
+                                    ? _userName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.lookGigPurple,
+                                ),
                               ),
-                            )
-                          : Text(
-                              _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.lookGigPurple,
-                              ),
-                            ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -354,7 +371,10 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
               padding: const EdgeInsets.symmetric(vertical: 16),
               children: [
                 ListTile(
-                  leading: const Icon(Icons.person_outline, color: AppColors.lookGigPurple),
+                  leading: const Icon(
+                    Icons.person_outline,
+                    color: AppColors.lookGigPurple,
+                  ),
                   title: const Text('My Profile'),
                   onTap: () {
                     Navigator.pop(context);
@@ -362,7 +382,10 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.bookmark_outline, color: AppColors.lookGigPurple),
+                  leading: const Icon(
+                    Icons.bookmark_outline,
+                    color: AppColors.lookGigPurple,
+                  ),
                   title: const Text('Saved Jobs'),
                   onTap: () {
                     Navigator.pop(context);
@@ -370,34 +393,49 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.help_outline, color: AppColors.lookGigPurple),
+                  leading: const Icon(
+                    Icons.help_outline,
+                    color: AppColors.lookGigPurple,
+                  ),
                   title: const Text('Help & Support'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const UserHelpAndSupport()),
+                      MaterialPageRoute(
+                        builder: (context) => const UserHelpAndSupport(),
+                      ),
                     );
                   },
                 ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+                  title: const Text(
+                    'Sign Out',
+                    style: TextStyle(color: Colors.red),
+                  ),
                   onTap: () async {
                     Navigator.pop(context);
-                    
+
                     // Clear Firestore listeners before sign out
                     try {
-                      final applicantProvider = Provider.of<ApplicantProvider>(context, listen: false);
-                      final statusProvider = Provider.of<ApplicantStatusProvider>(context, listen: false);
+                      final applicantProvider = Provider.of<ApplicantProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final statusProvider =
+                          Provider.of<ApplicantStatusProvider>(
+                            context,
+                            listen: false,
+                          );
                       applicantProvider.clearData();
                       statusProvider.clearAllCache();
                       await Future.delayed(const Duration(milliseconds: 100));
                     } catch (e) {
                       print('⚠️ Warning: Error cleaning up listeners: $e');
                     }
-                    
+
                     await AuthService.signOut();
                     if (mounted) {
                       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -475,7 +513,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
         ),
       );
     }
-    
+
     // Show normal home screen
     return SafeArea(
       child: FadeTransition(
@@ -540,6 +578,9 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                // Profile completion badge
+                const SizedBox(height: 8),
+                const SizedBox.shrink(), // Profile completion badge removed
               ],
             ),
           ),
@@ -552,13 +593,10 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
             child: ImageUtils.buildSafeCircleAvatar(
               radius: 18, // 36px diameter
               imagePath: _userProfilePic,
-              child: _userProfilePic.isEmpty
-                  ? Icon(
-                      Icons.person,
-                      color: AppColors.black,
-                      size: 20,
-                    )
-                  : null,
+              child:
+                  _userProfilePic.isEmpty
+                      ? Icon(Icons.person, color: AppColors.black, size: 20)
+                      : null,
             ),
           ),
         ],
@@ -618,13 +656,17 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                     width: 216,
                     height: 193,
                     color: Colors.grey[300],
-                    child: const Icon(Icons.person, size: 80, color: Colors.white),
+                    child: const Icon(
+                      Icons.person,
+                      size: 80,
+                      color: Colors.white,
+                    ),
                   );
                 },
               ),
             ),
-          // Text overlay - Group 65 at (17, 62) within banner
-          Positioned(
+            // Text overlay - Group 65 at (17, 62) within banner
+            Positioned(
               left: 17,
               top: 62,
               child: SizedBox(
@@ -660,7 +702,9 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                     GestureDetector(
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Course feature coming soon!')),
+                          const SnackBar(
+                            content: Text('Course feature coming soon!'),
+                          ),
                         );
                       },
                       child: Container(
@@ -742,7 +786,11 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                     width: 34,
                     height: 34,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.work, size: 34, color: Color(0xFF0D0140));
+                      return const Icon(
+                        Icons.work,
+                        size: 34,
+                        color: Color(0xFF0D0140),
+                      );
                     },
                   ),
                   const SizedBox(height: 14),
@@ -937,13 +985,20 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => JobDetailScreenNew(
-              job: job,
-              isBookmarked: isBookmarked,
-              onBookmarkToggled: (jobId) {
-                bookmarkProvider.toggleBookmark(jobId);
-              },
-            ),
+            builder:
+                (context) => JobDetailScreenNew(
+                  job: job,
+                  isBookmarked: isBookmarked,
+                  onBookmarkToggled: (jobId) async {
+                    final canBookmark = await ProfileGatingService.canPerformAction(
+                      context,
+                      actionName: 'bookmark this job',
+                    );
+                    if (canBookmark) {
+                      bookmarkProvider.toggleBookmark(jobId);
+                    }
+                  },
+                ),
           ),
         );
       },
@@ -969,26 +1024,29 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                 // Company Logo - Circular
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: const Color(0xFFE8E0FF), // Light purple background
-                  child: job.companyLogo.isNotEmpty
-                      ? ClipOval(
-                          child: ImageUtils.buildSafeNetworkImage(
-                            imageUrl: job.companyLogo,
-                            width: 30,
-                            height: 30,
-                            fit: BoxFit.cover,
-                            errorWidget: const Icon(
-                              Icons.business,
-                              size: 20,
-                              color: Color(0xFF6B5CE7),
+                  backgroundColor: const Color(
+                    0xFFE8E0FF,
+                  ), // Light purple background
+                  child:
+                      job.companyLogo.isNotEmpty
+                          ? ClipOval(
+                            child: ImageUtils.buildSafeNetworkImage(
+                              imageUrl: job.companyLogo,
+                              width: 30,
+                              height: 30,
+                              fit: BoxFit.cover,
+                              errorWidget: const Icon(
+                                Icons.business,
+                                size: 20,
+                                color: Color(0xFF6B5CE7),
+                              ),
                             ),
+                          )
+                          : const Icon(
+                            Icons.business,
+                            size: 20,
+                            color: Color(0xFF6B5CE7),
                           ),
-                        )
-                      : const Icon(
-                          Icons.business,
-                          size: 20,
-                          color: Color(0xFF6B5CE7),
-                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1081,17 +1139,25 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   ),
                 ),
                 IconButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_userId != null) {
-                      bookmarkProvider.toggleBookmark(job.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isBookmarked ? 'Bookmark removed' : 'Job bookmarked',
-                          ),
-                          duration: const Duration(seconds: 1),
-                        ),
+                      final canBookmark = await ProfileGatingService.canPerformAction(
+                        context,
+                        actionName: 'bookmark this job',
                       );
+                      if (canBookmark) {
+                        bookmarkProvider.toggleBookmark(job.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isBookmarked
+                                  ? 'Bookmark removed'
+                                  : 'Job bookmarked',
+                            ),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: Icon(
@@ -1108,10 +1174,18 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
             Row(
               children: [
                 if (job.experienceLevel.isNotEmpty) ...[
-                  _buildJobTag(job.experienceLevel, const Color(0xFFCBC9D4), false),
+                  _buildJobTag(
+                    job.experienceLevel,
+                    const Color(0xFFCBC9D4),
+                    false,
+                  ),
                   const SizedBox(width: 8),
                 ],
-                _buildJobTag(job.employmentType, const Color(0xFFCBC9D4), false),
+                _buildJobTag(
+                  job.employmentType,
+                  const Color(0xFFCBC9D4),
+                  false,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildJobTag('Apply', const Color(0xFFFF6B2C), true),
@@ -1171,14 +1245,14 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
 
   Widget _buildFormattedSalary(String salaryRange, String employmentType) {
     final formattedSalary = _formatSalary(salaryRange, employmentType);
-    
+
     // Split the salary into amount and unit (e.g., "$10K" and "/Project")
     final parts = formattedSalary.split(RegExp(r'(/\w+)$'));
-    
+
     if (parts.length >= 2) {
       final amount = parts[0]; // e.g., "$10K"
       final unit = formattedSalary.substring(amount.length); // e.g., "/Project"
-      
+
       return RichText(
         text: TextSpan(
           children: [
@@ -1231,7 +1305,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
       final hasPeriod = salaryRange.contains('/');
       String period = '';
       String numberPart = salaryRange;
-      
+
       if (hasPeriod) {
         // Extract the period from the salary string
         final parts = salaryRange.split('/');
@@ -1252,20 +1326,22 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
           }
         }
       }
-      
+
       // Remove currency symbols and commas from number part
       String cleaned = numberPart.replaceAll(RegExp(r'[₹$,\s]'), '');
-      
+
       // Extract numbers (handle ranges like "10-16" or "50000-80000")
       final numbers = RegExp(r'\d+').allMatches(cleaned);
-      if (numbers.isEmpty) return salaryRange; // Return original if no numbers found
-      
+      if (numbers.isEmpty) {
+        return salaryRange; // Return original if no numbers found
+      }
+
       // Get first number (min salary)
       int minSalary = int.parse(numbers.first.group(0)!);
-      
-      // Format the amount
-      String formattedAmount = minSalary.toString();
-      
+
+      // Format the amount with commas
+      String formattedAmount = NumberFormatter.formatSalaryAmount(minSalary);
+
       // If no period was in the original data, determine it from employment type
       if (period.isEmpty) {
         switch (employmentType.toLowerCase()) {
@@ -1285,10 +1361,10 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
             period = '/mo'; // Default to monthly
         }
       }
-      
+
       // Use ₹ for Indian currency, $ for others
       String currency = salaryRange.contains('₹') ? '₹' : '\$';
-      
+
       return '$currency$formattedAmount$period';
     } catch (e) {
       debugPrint('Error formatting salary: $e');
@@ -1302,8 +1378,6 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   }
 
   Widget _buildAddScreen() {
-    return const Center(
-      child: Text('Add Screen - Coming Soon'),
-    );
+    return const Center(child: Text('Add Screen - Coming Soon'));
   }
 }

@@ -3,10 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:get_work_app/screens/main/user/profile/education_level_selection_screen.dart';
-import 'package:get_work_app/screens/main/user/profile/institution_selection_screen.dart';
-import 'package:get_work_app/screens/main/user/profile/field_of_study_selection_screen.dart';
 import 'package:get_work_app/widgets/custom_date_picker.dart';
+import 'package:get_work_app/widgets/custom_dropdown_field.dart';
 
 class EducationScreen extends StatefulWidget {
   final Map<String, dynamic>? educationToEdit;
@@ -1311,84 +1309,40 @@ class _EducationScreenState extends State<EducationScreen> {
 
   // Education level selection field
   Widget _buildEducationLevelField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Level of education',
-          style: TextStyle(
-            fontFamily: 'DM Sans',
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-            height: 1.302,
-            color: Color(0xFF150B3D),
-          ),
-        ),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: _navigateToEducationLevelSelection,
-          child: Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
-                  blurRadius: 62,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _levelController.text.isEmpty 
-                          ? 'e.g., Bachelor\'s Degree, Master\'s Degree'
-                          : _levelController.text,
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        color: _levelController.text.isEmpty
-                            ? const Color(0xFFAAA6B9)
-                            : const Color(0xFF524B6B),
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    color: Color(0xFF524B6B),
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+    // Education levels matching the onboarding screen
+    final List<DropdownItem> educationLevels = [
+      DropdownItem(value: 'High School Diploma', label: 'High School Diploma'),
+      DropdownItem(value: 'High School (In Progress)', label: 'High School (In Progress)'),
+      DropdownItem(value: 'Associate Degree', label: 'Associate Degree'),
+      DropdownItem(value: 'Bachelor\'s Degree', label: 'Bachelor\'s Degree'),
+      DropdownItem(value: 'Bachelor\'s Degree (In Progress)', label: 'Bachelor\'s Degree (In Progress)'),
+      DropdownItem(value: 'Master\'s Degree', label: 'Master\'s Degree'),
+      DropdownItem(value: 'Master\'s Degree (In Progress)', label: 'Master\'s Degree (In Progress)'),
+      DropdownItem(value: 'Doctorate (PhD)', label: 'Doctorate (PhD)'),
+      DropdownItem(value: 'Doctorate (In Progress)', label: 'Doctorate (In Progress)'),
+      DropdownItem(value: 'Professional Degree', label: 'Professional Degree'),
+      DropdownItem(value: 'Certification', label: 'Certification'),
+      DropdownItem(value: 'Bootcamp', label: 'Bootcamp'),
+      DropdownItem(value: 'Self-Taught', label: 'Self-Taught'),
+      DropdownItem(value: 'Other', label: 'Other'),
+    ];
 
-  Future<void> _navigateToEducationLevelSelection() async {
-    final selectedLevel = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EducationLevelSelectionScreen(
-          selectedLevel: _levelController.text.isEmpty ? null : _levelController.text,
-        ),
-      ),
+    return CustomDropdownField(
+      labelText: 'Level of education',
+      hintText: 'e.g., Bachelor\'s Degree, Master\'s Degree',
+      value: _levelController.text.isEmpty ? null : _levelController.text,
+      items: educationLevels,
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _levelController.text = value;
+          });
+          _onFieldChanged();
+        }
+      },
+      enableSearch: true,
+      modalTitle: 'Select Education Level',
     );
-
-    if (selectedLevel != null && mounted) {
-      setState(() {
-        _levelController.text = selectedLevel;
-      });
-      _onFieldChanged(); // Trigger unsaved changes detection
-    }
   }
 
   // Institution selection field
@@ -1407,70 +1361,42 @@ class _EducationScreenState extends State<EducationScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        GestureDetector(
-          onTap: _navigateToInstitutionSelection,
-          child: Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
-                  blurRadius: 62,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _institutionController.text.isEmpty 
-                          ? 'e.g., Harvard University'
-                          : _institutionController.text,
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        color: _institutionController.text.isEmpty
-                            ? const Color(0xFFAAA6B9)
-                            : const Color(0xFF524B6B),
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    color: Color(0xFF524B6B),
-                    size: 20,
-                  ),
-                ],
+        Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
+                blurRadius: 62,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: TextFormField(
+            controller: _institutionController,
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontWeight: FontWeight.w400,
+              fontSize: 12,
+              color: Color(0xFF524B6B),
+            ),
+            decoration: const InputDecoration(
+              hintText: 'e.g., Harvard University',
+              hintStyle: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w400,
+                fontSize: 12,
+                color: Color(0xFFAAA6B9),
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
           ),
         ),
       ],
     );
-  }
-
-  Future<void> _navigateToInstitutionSelection() async {
-    final selectedInstitution = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => InstitutionSelectionScreen(
-          selectedInstitution: _institutionController.text.isEmpty ? null : _institutionController.text,
-        ),
-      ),
-    );
-
-    if (selectedInstitution != null && mounted) {
-      setState(() {
-        _institutionController.text = selectedInstitution;
-      });
-      _onFieldChanged(); // Trigger unsaved changes detection
-    }
   }
 
   // Field of study selection field
@@ -1489,70 +1415,42 @@ class _EducationScreenState extends State<EducationScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        GestureDetector(
-          onTap: _navigateToFieldOfStudySelection,
-          child: Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
-                  blurRadius: 62,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _fieldController.text.isEmpty 
-                          ? 'e.g., Computer Science'
-                          : _fieldController.text,
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        color: _fieldController.text.isEmpty
-                            ? const Color(0xFFAAA6B9)
-                            : const Color(0xFF524B6B),
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_drop_down,
-                    color: Color(0xFF524B6B),
-                    size: 20,
-                  ),
-                ],
+        Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
+                blurRadius: 62,
+                offset: const Offset(0, 4),
               ),
+            ],
+          ),
+          child: TextFormField(
+            controller: _fieldController,
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontWeight: FontWeight.w400,
+              fontSize: 12,
+              color: Color(0xFF524B6B),
+            ),
+            decoration: const InputDecoration(
+              hintText: 'e.g., Computer Science',
+              hintStyle: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w400,
+                fontSize: 12,
+                color: Color(0xFFAAA6B9),
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
           ),
         ),
       ],
     );
-  }
-
-  Future<void> _navigateToFieldOfStudySelection() async {
-    final selectedField = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FieldOfStudySelectionScreen(
-          selectedField: _fieldController.text.isEmpty ? null : _fieldController.text,
-        ),
-      ),
-    );
-
-    if (selectedField != null && mounted) {
-      setState(() {
-        _fieldController.text = selectedField;
-      });
-      _onFieldChanged(); // Trigger unsaved changes detection
-    }
   }
 
   Widget _buildInputField({

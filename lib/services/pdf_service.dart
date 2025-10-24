@@ -83,7 +83,7 @@ class PDFService {
       print('   File: ${pdfFile.path}');
       print('   Size: ${await pdfFile.length()} bytes');
 
-      // Upload the original PDF to Cloudinary
+      // Upload the original PDF to Cloudinary (now uses /raw/upload with proper extension)
       print('📤 [PDF SERVICE] Uploading PDF file to Cloudinary...');
       final pdfUrl = await CloudinaryService.uploadDocument(pdfFile);
       if (pdfUrl == null) {
@@ -91,9 +91,8 @@ class PDFService {
       }
       print('✅ [PDF SERVICE] PDF uploaded successfully: $pdfUrl');
 
-      // Generate BOTH preview URL and proper PDF viewing URL
+      // Generate preview URL for thumbnail display
       String? previewUrl;
-      String? viewablePdfUrl;
       
       try {
         // Extract public ID and cloud name from the PDF URL
@@ -101,30 +100,25 @@ class PDFService {
         final cloudName = pdfUrl.split('/')[3];
         
         if (publicId != null) {
-          // Generate preview URL by converting PDF first page to JPG (THIS WORKS!)
+          // Generate preview URL by converting PDF first page to JPG
+          // This works because Cloudinary can convert PDFs to images on-the-fly
           previewUrl = 'https://res.cloudinary.com/$cloudName/image/upload/pg_1,w_800,h_1000,c_fit,q_auto/$publicId.jpg';
           
-          // Generate viewable PDF URL using EXACT same pattern as preview (no transformations)
-          // Just change .jpg to .pdf - if preview works, this should too
-          viewablePdfUrl = 'https://res.cloudinary.com/$cloudName/image/upload/$publicId.pdf';
-          
           print('✅ [PDF SERVICE] Preview URL generated: $previewUrl');
-          print('✅ [PDF SERVICE] Viewable PDF URL generated: $viewablePdfUrl');
         } else {
           print('⚠️ [PDF SERVICE] Could not extract public ID from PDF URL');
         }
       } catch (e) {
-        print('⚠️ [PDF SERVICE] Error generating URLs: $e');
+        print('⚠️ [PDF SERVICE] Error generating preview URL: $e');
       }
 
       print('🎉 [PDF SERVICE] Upload complete!');
-      print('   Original PDF URL: $pdfUrl');
-      print('   Viewable PDF URL: $viewablePdfUrl');
-      print('   Preview URL: $previewUrl');
+      print('   PDF URL (for sharing/opening): $pdfUrl');
+      print('   Preview URL (for thumbnail): $previewUrl');
       
-      // Return the viewable PDF URL instead of the original
+      // Return the raw PDF URL (now has proper .pdf extension) and preview URL
       return {
-        'pdfUrl': viewablePdfUrl ?? pdfUrl, 
+        'pdfUrl': pdfUrl, // This now has .pdf extension and will open correctly
         'previewUrl': previewUrl
       };
     } catch (e, stackTrace) {

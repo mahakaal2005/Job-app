@@ -4,6 +4,7 @@ import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/employer/new post/emp_job_details_screen.dart';
 import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 
@@ -214,8 +215,23 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.createJobOpening);
+                    onTap: () async {
+                      print('🔵 [ALL_JOBS] Create job button clicked');
+                      
+                      // Check profile completion before allowing job creation
+                      final canCreate = await ProfileGatingService.canPerformAction(
+                        context,
+                        actionName: 'create job',
+                      );
+                      
+                      print('📊 [ALL_JOBS] ProfileGatingService result: $canCreate');
+                      
+                      if (canCreate && context.mounted) {
+                        print('✅ [ALL_JOBS] Profile complete, navigating to job creation');
+                        Navigator.pushNamed(context, AppRoutes.createJobOpening);
+                      } else {
+                        print('❌ [ALL_JOBS] Profile incomplete, job creation blocked');
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.all(8),
@@ -532,8 +548,23 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createJobOpening);
+            onPressed: () async {
+              print('🔵 [ALL_JOBS] Empty state Create Job button clicked');
+              
+              // Check profile completion before allowing job creation
+              final canCreate = await ProfileGatingService.canPerformAction(
+                context,
+                actionName: 'create job',
+              );
+              
+              print('📊 [ALL_JOBS] Empty state ProfileGatingService result: $canCreate');
+              
+              if (canCreate && context.mounted) {
+                print('✅ [ALL_JOBS] Profile complete, navigating to job creation');
+                Navigator.pushNamed(context, AppRoutes.createJobOpening);
+              } else {
+                print('❌ [ALL_JOBS] Profile incomplete, job creation blocked');
+              }
             },
             icon: const Icon(Icons.add, color: AppColors.whiteText),
             label: const Text(

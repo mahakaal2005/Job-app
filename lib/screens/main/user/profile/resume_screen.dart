@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ResumeScreen extends StatefulWidget {
   const ResumeScreen({super.key});
@@ -405,112 +406,145 @@ class _ResumeScreenState extends State<ResumeScreen> {
     );
   }
 
+  Future<void> _openResume() async {
+    final resumeUrl = _userData['resumeUrl'];
+    if (resumeUrl == null) return;
+
+    try {
+      final uri = Uri.parse(resumeUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        _showErrorSnackBar('Could not open resume');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error opening resume: $e');
+    }
+  }
+
   Widget _buildResumeDisplay() {
     final fileName = _userData['resumeFileName'] ?? 'Resume.pdf';
     final fileSize = _getFileSize();
     final uploadDate = _getUploadDate();
 
-    return Container(
-      width: 335,
-      decoration: BoxDecoration(
-        color: const Color(0xFF3F13E4).withOpacity(0.05), // From Figma fill_R1A134
-        borderRadius: BorderRadius.circular(20), // From Figma borderRadius
-        border: Border.all(
-          color: const Color(0xFF9D97B5), // From Figma stroke_UFLR1V
-          width: 0.5,
+    return GestureDetector(
+      onTap: _openResume,
+      child: Container(
+        width: 335,
+        decoration: BoxDecoration(
+          color: const Color(
+            0xFF3F13E4,
+          ).withOpacity(0.05), // From Figma fill_R1A134
+          borderRadius: BorderRadius.circular(20), // From Figma borderRadius
+          border: Border.all(
+            color: const Color(0xFF9D97B5), // From Figma stroke_UFLR1V
+            width: 0.5,
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Resume file info
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // PDF icon
-                Image.asset(
-                  'assets/images/pdf_icon_expanded.png',
-                  width: 44,
-                  height: 44,
-                ),
-                const SizedBox(width: 15),
-                // File details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // File name
-                      Text(
-                        fileName,
-                        style: const TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 12,
-                          height: 1.302,
-                          color: Color(0xFF150B3D),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // File size and date
-                      Text(
-                        '$fileSize • $uploadDate',
-                        style: const TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 12,
-                          height: 1.302,
-                          color: Color(0xFF8983A3),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // Remove file section
-            GestureDetector(
-              onTap: _isSaving ? null : _removeResume,
-              child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Resume file info
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Delete icon
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Image.asset(
-                      'assets/images/language_delete_icon.png',
-                      width: 24,
-                      height: 24,
-                      color: const Color(0xFFFC4646),
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.delete_outline,
-                          size: 24,
-                          color: Color(0xFFFC4646),
-                        );
-                      },
-                    ),
+                  // PDF icon
+                  Image.asset(
+                    'assets/images/pdf_icon_expanded.png',
+                    width: 44,
+                    height: 44,
                   ),
-                  const SizedBox(width: 10),
-                  // Remove text
-                  const Text(
-                    'Remove file',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      height: 1.302,
-                      color: Color(0xFFFC4646),
+                  const SizedBox(width: 15),
+                  // File details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // File name
+                        Text(
+                          fileName,
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            height: 1.302,
+                            color: Color(0xFF150B3D),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // File size and date
+                        Text(
+                          '$fileSize • $uploadDate',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                            height: 1.302,
+                            color: Color(0xFF8983A3),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Tap to open hint
+                        const Text(
+                          'Tap to open',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 10,
+                            height: 1.302,
+                            color: Color(0xFF130160),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              // Remove file section
+              GestureDetector(
+                onTap: _isSaving ? null : _removeResume,
+                child: Row(
+                  children: [
+                    // Delete icon
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Image.asset(
+                        'assets/images/language_delete_icon.png',
+                        width: 24,
+                        height: 24,
+                        color: const Color(0xFFFC4646),
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.delete_outline,
+                            size: 24,
+                            color: Color(0xFFFC4646),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // Remove text
+                    const Text(
+                      'Remove file',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 1.302,
+                        color: Color(0xFFFC4646),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

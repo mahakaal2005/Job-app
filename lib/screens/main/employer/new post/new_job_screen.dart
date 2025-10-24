@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get_work_app/provider/emp_job_provider.dart';
 import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/skills_list.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
+import 'package:get_work_app/utils/currency_input_formatter.dart';
 import 'package:provider/provider.dart';
 
 class CreateJobScreen extends StatefulWidget {
@@ -203,7 +206,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
       _showSnackBar('Job created successfully!');
       Navigator.pop(context, true);
     } catch (e) {
-      _showSnackBar('Failed to create job: ${e.toString()}', isError: true);
+      ErrorHandler.showErrorSnackBar(context, e);
     } finally {
       setState(() {
         _isLoading = false;
@@ -295,8 +298,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     _buildInputField(
                       'Salary Range *',
                       _salaryController,
-                      'e.g., ₹50,000 - ₹80,000',
+                      'e.g., 50000',
                       Icons.currency_rupee,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [CurrencyInputFormatter()],
                     ),
                     const SizedBox(height: 20),
                     _buildSearchableSkillsSection(),
@@ -704,6 +709,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     String hint,
     IconData icon, {
     int maxLines = 1,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,6 +739,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             style: TextStyle(color: AppColors.primaryText),
             decoration: InputDecoration(
               hintText: hint,

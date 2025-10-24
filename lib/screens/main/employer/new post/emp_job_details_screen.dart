@@ -9,6 +9,7 @@ import 'package:get_work_app/utils/image_utils.dart';
 import 'package:get_work_app/screens/main/employer/applicants/applicant_details_screen.dart';
 import 'package:get_work_app/screens/main/employer/applicants/all_applicants_screen.dart';
 import 'package:get_work_app/provider/applicant_status_provider.dart';
+import 'package:get_work_app/utils/error_handler.dart';
 import 'package:intl/intl.dart';
 
 class JobDetailsScreen extends StatefulWidget {
@@ -125,40 +126,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         );
     } catch (e) {
       if (!mounted) return;
-      
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Failed to update job status',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: 'DM Sans',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+      ErrorHandler.showErrorSnackBar(context, e);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -322,40 +290,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           );
       } catch (e) {
         if (!mounted) return;
-        
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Failed to delete job',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontFamily: 'DM Sans',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              margin: const EdgeInsets.all(16),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+        ErrorHandler.showErrorSnackBar(context, e);
       } finally {
         if (mounted) {
           setState(() => _isLoading = false);

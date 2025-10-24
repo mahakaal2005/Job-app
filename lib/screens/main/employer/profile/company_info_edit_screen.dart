@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
+import 'package:get_work_app/widgets/custom_dropdown_field.dart';
 
 class CompanyInfoEditScreen extends StatefulWidget {
   final Map<String, dynamic> companyInfo;
@@ -14,22 +16,37 @@ class CompanyInfoEditScreen extends StatefulWidget {
 
 class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _industryController;
+  late TextEditingController _companyNameController;
   late TextEditingController _addressController;
   late TextEditingController _descriptionController;
+  String? _selectedIndustry;
   bool _isSaving = false;
+
+  final List<String> _industries = [
+    'Technology',
+    'Healthcare',
+    'Finance',
+    'Education',
+    'Manufacturing',
+    'Retail',
+    'Construction',
+    'Transportation',
+    'Hospitality',
+    'Other',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _industryController = TextEditingController(text: widget.companyInfo['industry'] ?? '');
+    _companyNameController = TextEditingController(text: widget.companyInfo['companyName'] ?? '');
+    _selectedIndustry = widget.companyInfo['industry'];
     _addressController = TextEditingController(text: widget.companyInfo['companyAddress'] ?? '');
     _descriptionController = TextEditingController(text: widget.companyInfo['companyDescription'] ?? '');
   }
 
   @override
   void dispose() {
-    _industryController.dispose();
+    _companyNameController.dispose();
     _addressController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -43,26 +60,33 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        // Update in employers collection
         await FirebaseFirestore.instance
-            .collection('users')
+            .collection('employers')
             .doc(user.uid)
-            .collection('companyInfo')
-            .doc('details')
-            .set({
-          'industry': _industryController.text.trim(),
-          'companyAddress': _addressController.text.trim(),
-          'companyDescription': _descriptionController.text.trim(),
+            .update({
+          'companyInfo.companyName': _companyNameController.text.trim(),
+          'companyInfo.industry': _selectedIndustry,
+          'companyInfo.companyAddress': _addressController.text.trim(),
+          'companyInfo.companyDescription': _descriptionController.text.trim(),
           'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        });
 
         if (mounted) {
+          CustomToast.show(
+            context,
+            message: 'Company information updated successfully',
+            isSuccess: true,
+          );
           Navigator.pop(context, true); // Return true to indicate success
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: AppColors.error),
+        CustomToast.show(
+          context,
+          message: 'Error saving: $e',
+          isSuccess: false,
         );
       }
     } finally {
@@ -87,11 +111,13 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
                 child: Column(
                   children: [
                     _buildTextField(
-                      controller: _industryController,
-                      label: 'Industry',
-                      hint: 'e.g., Technology, Healthcare',
-                      icon: Icons.business_center,
+                      controller: _companyNameController,
+                      label: 'Company Name',
+                      hint: 'Enter company name',
+                      icon: Icons.business,
                     ),
+                    const SizedBox(height: 20),
+                    _buildDropdownField(),
                     const SizedBox(height: 20),
                     _buildTextField(
                       controller: _addressController,
@@ -204,6 +230,33 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDropdownField() {
+    final List<DropdownItem> industryItems = _industries.map((industry) {
+      return DropdownItem(value: industry, label: industry);
+    }).toList();
+
+    return CustomDropdownField(
+      labelText: 'Industry',
+      hintText: 'Select industry',
+      value: _selectedIndustry,
+      items: industryItems,
+      onChanged: (value) {
+        setState(() {
+          _selectedIndustry = value;
+        });
+      },
+      prefixIcon: Icons.business_center,
+      enableSearch: true,
+      modalTitle: 'Select Industry',
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please select an industry';
+        }
+        return null;
+      },
     );
   }
 

@@ -194,11 +194,15 @@ class _SkillSearchScreenState extends State<SkillSearchScreen> {
 
                     // Search bar with current search (positioned at x: 0, y: 52 from Figma)
                     Container(
-                      width: 335,
+                      width: double.infinity,
                       height: 40,
                       decoration: BoxDecoration(
                         color: AppColors.white, // From Figma fill_872M80
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFF130160), // Blue border
+                          width: 2,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -228,6 +232,10 @@ class _SkillSearchScreenState extends State<SkillSearchScreen> {
                                 ),
                                 decoration: const InputDecoration(
                                   border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  errorBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
                                   hintText: 'Search skills',
                                   hintStyle: TextStyle(
                                     fontFamily: 'DM Sans',
@@ -236,6 +244,8 @@ class _SkillSearchScreenState extends State<SkillSearchScreen> {
                                     height: 1.302,
                                     color: Color(0xFFAAA6B9),
                                   ),
+                                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                                  isDense: true,
                                 ),
                               ),
                             ),

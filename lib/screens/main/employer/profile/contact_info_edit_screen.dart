@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
 
 class ContactInfoEditScreen extends StatefulWidget {
   final Map<String, dynamic> companyInfo;
@@ -43,26 +44,32 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        // Update in employers collection
         await FirebaseFirestore.instance
-            .collection('users')
+            .collection('employers')
             .doc(user.uid)
-            .collection('companyInfo')
-            .doc('details')
-            .set({
-          'companyWebsite': _websiteController.text.trim(),
-          'companyEmail': _emailController.text.trim(),
-          'companyPhone': _phoneController.text.trim(),
+            .update({
+          'companyInfo.companyWebsite': _websiteController.text.trim(),
+          'companyInfo.companyEmail': _emailController.text.trim(),
+          'companyInfo.companyPhone': _phoneController.text.trim(),
           'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        });
 
         if (mounted) {
+          CustomToast.show(
+            context,
+            message: 'Contact information updated successfully',
+            isSuccess: true,
+          );
           Navigator.pop(context, true);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: AppColors.error),
+        CustomToast.show(
+          context,
+          message: 'Error saving: $e',
+          isSuccess: false,
         );
       }
     } finally {

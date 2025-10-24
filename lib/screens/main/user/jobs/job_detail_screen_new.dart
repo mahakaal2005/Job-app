@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_work_app/screens/main/user/applications/application_detail_screen.dart';
 import 'package:get_work_app/services/profile_gating_service.dart';
+import 'package:get_work_app/widgets/job_location_map.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class JobDetailScreenNew extends StatefulWidget {
   final Job job;
@@ -29,13 +31,23 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
   late bool _isBookmarked;
   bool _hasApplied = false;
   bool _isCheckingApplication = true;
+  
+  // Read more functionality
+  bool _isDescriptionExpanded = false;
+  bool _isTextTruncated = false;
+  
   Map<String, dynamic>? _applicationData;
+  String? _companyHeadOffice;
+  String? _companySize;
+  String? _companyIndustry;
+  String? _establishedYear;
 
   @override
   void initState() {
     super.initState();
     _isBookmarked = widget.isBookmarked;
     _checkIfApplied();
+    _fetchCompanyDetails();
   }
 
   Future<void> _checkIfApplied() async {
@@ -68,11 +80,19 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
     }
   }
 
-  void _toggleBookmark() {
-    setState(() {
-      _isBookmarked = !_isBookmarked;
-    });
-    widget.onBookmarkToggled(widget.job.id);
+  Future<void> _toggleBookmark() async {
+    // Check profile completion before allowing bookmark
+    final canBookmark = await ProfileGatingService.canPerformAction(
+      context,
+      actionName: 'bookmark this job',
+    );
+    
+    if (canBookmark) {
+      setState(() {
+        _isBookmarked = !_isBookmarked;
+      });
+      widget.onBookmarkToggled(widget.job.id);
+    }
   }
 
   String _getTimeAgo() {
@@ -94,6 +114,57 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
     } else {
       return 'Just now';
     }
+  }
+
+  Future<void> _fetchCompanyDetails() async {
+    try {
+      // Fetch company information from employer's profile
+      final employerDoc = await FirebaseFirestore.instance
+          .collection('employers')
+          .doc(widget.job.employerId)
+          .get();
+
+      if (employerDoc.exists && mounted) {
+        final employerData = employerDoc.data();
+        final companyInfo = employerData?['companyInfo'] as Map<String, dynamic>?;
+        
+        // Try to get company address from different possible locations
+        String? headOffice = companyInfo?['companyAddress'] ?? 
+                            employerData?['companyAddress'] ?? 
+                            companyInfo?['address'] ??
+                            employerData?['address'];
+
+        // Get company size
+        String? companySize = companyInfo?['companySize'] ?? 
+                             employerData?['companySize'];
+
+        // Get company industry
+        String? industry = companyInfo?['industry'] ?? 
+                          employerData?['industry'];
+
+        // Get established year
+        String? establishedYear = companyInfo?['establishedYear'] ?? 
+                                 employerData?['establishedYear'];
+
+        setState(() {
+          _companyHeadOffice = headOffice;
+          _companySize = companySize;
+          _companyIndustry = industry;
+          _establishedYear = establishedYear;
+        });
+      }
+    } catch (e) {
+      print('Error fetching company details: $e');
+      // Don't set state on error, keep company details as null
+    }
+  }
+
+  String _getCompanySize() {
+    if (_companySize != null && _companySize!.isNotEmpty) {
+      // Convert "1-10 EMPLOYERs" to "1-10 employees"
+      return _companySize!.replaceAll('EMPLOYERs', 'employees').replaceAll('EMPLOYER', 'employee');
+    }
+    return 'Not specified';
   }
 
   @override
@@ -133,6 +204,61 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
         ),
       ),
     );
+  }
+
+  Future<void> _launchURL(String url) async {
+    try {
+      // Ensure URL has proper protocol
+      String formattedUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        formattedUrl = 'https://$url';
+      }
+      
+      final Uri uri = Uri.parse(formattedUrl);
+      
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        // Show error message if URL can't be launched
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open website'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Show error message if there's an exception
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error opening website'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  bool _checkIfTextOverflows(String text, TextStyle style, double maxWidth) {
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 5,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout(maxWidth: maxWidth);
+    return textPainter.didExceedMaxLines;
+  }
+
+  void _toggleDescriptionExpansion() {
+    setState(() {
+      _isDescriptionExpanded = !_isDescriptionExpanded;
+    });
   }
 
   Widget _buildHeader() {
@@ -251,7 +377,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                   // Location
                   Flexible(
                     child: Text(
-                      widget.job.location,
+                      widget.job.location.isNotEmpty ? widget.job.location : 'Remote',
                       style: const TextStyle(
                         fontFamily: 'DM Sans',
                         fontWeight: FontWeight.w400,
@@ -353,6 +479,8 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
             onTap: () {
               setState(() {
                 _isDescriptionTab = true;
+                // Reset description expansion when switching to description tab
+                _isDescriptionExpanded = false;
               });
             },
             child: AnimatedScale(
@@ -474,6 +602,14 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
   }
 
   Widget _buildJobDescriptionSection() {
+    const textStyle = TextStyle(
+      fontFamily: 'Open Sans',
+      fontWeight: FontWeight.w400,
+      fontSize: 12,
+      height: 1.3618,
+      color: Color(0xFF524B6B),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -488,38 +624,63 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
           ),
         ),
         const SizedBox(height: 15),
-        Text(
-          widget.job.description,
-          maxLines: 5,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontFamily: 'Open Sans',
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-            height: 1.3618,
-            color: Color(0xFF524B6B),
-          ),
-        ),
-        const SizedBox(height: 10),
-        // Read more button
-        Container(
-          width: 91,
-          height: 30,
-          decoration: BoxDecoration(
-            color: const Color(0xFF7551FF).withOpacity(0.2),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'Read more',
-            style: TextStyle(
-              fontFamily: 'Open Sans',
-              fontWeight: FontWeight.w400,
-              fontSize: 12,
-              height: 1.3618,
-              color: Color(0xFF0D0140),
-            ),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Check if text overflows - do this synchronously to avoid setState during build
+            final isOverflowing = _checkIfTextOverflows(
+              widget.job.description,
+              textStyle,
+              constraints.maxWidth,
+            );
+            
+            // Update truncation state if needed (only on first build)
+            if (_isTextTruncated != isOverflowing && !_isDescriptionExpanded) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _isTextTruncated = isOverflowing;
+                  });
+                }
+              });
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.job.description,
+                  maxLines: _isDescriptionExpanded ? null : 5,
+                  overflow: _isDescriptionExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                  style: textStyle,
+                ),
+                if (_isTextTruncated || _isDescriptionExpanded) ...[
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _toggleDescriptionExpansion,
+                    child: Container(
+                      width: _isDescriptionExpanded ? 85 : 91,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7551FF).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _isDescriptionExpanded ? 'Read less' : 'Read more',
+                        style: const TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                          height: 1.3618,
+                          color: Color(0xFF0D0140),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
       ],
     );
@@ -624,6 +785,8 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
   }
 
   Widget _buildLocationSection() {
+    final locationText = widget.job.location.isNotEmpty ? widget.job.location : 'Remote';
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -639,7 +802,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
         ),
         const SizedBox(height: 15),
         Text(
-          widget.job.location,
+          locationText,
           style: const TextStyle(
             fontFamily: 'DM Sans',
             fontWeight: FontWeight.w400,
@@ -649,21 +812,10 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
           ),
         ),
         const SizedBox(height: 17),
-        // Map placeholder
-        Container(
-          width: double.infinity,
+        // Interactive map
+        JobLocationMap(
+          locationText: locationText,
           height: 151,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.location_on,
-              size: 48,
-              color: Colors.red,
-            ),
-          ),
         ),
       ],
     );
@@ -805,15 +957,15 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
         const SizedBox(height: 20),
         
         // Industry
-        _buildDetailItem('Industry', 'Internet product'),
+        _buildDetailItem('Industry', _companyIndustry ?? 'Not specified'),
         const SizedBox(height: 20),
         
-        // EMPLOYER size
-        _buildDetailItem('EMPLOYER size', '132,121 EMPLOYERs'),
+        // Company size
+        _buildDetailItem('Company size', _getCompanySize()),
         const SizedBox(height: 20),
         
         // Head office
-        _buildDetailItem('Head office', widget.job.location),
+        _buildDetailItem('Head office', _companyHeadOffice ?? 'Not specified'),
         const SizedBox(height: 20),
         
         // Type
@@ -821,7 +973,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
         const SizedBox(height: 20),
         
         // Since
-        _buildDetailItem('Since', '1998'),
+        _buildDetailItem('Since', _establishedYear ?? 'Not specified'),
         const SizedBox(height: 20),
         
         // Specialization
@@ -850,16 +1002,31 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
           ),
         ),
         const SizedBox(height: 5),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Open Sans',
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-            height: 1.3618,
-            color: isLink ? const Color(0xFF7551FF) : const Color(0xFF524B6B),
-          ),
-        ),
+        isLink
+            ? GestureDetector(
+                onTap: () => _launchURL(value),
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontFamily: 'Open Sans',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                    height: 1.3618,
+                    color: Color(0xFF7551FF),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              )
+            : Text(
+                value,
+                style: const TextStyle(
+                  fontFamily: 'Open Sans',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  height: 1.3618,
+                  color: Color(0xFF524B6B),
+                ),
+              ),
       ],
     );
   }

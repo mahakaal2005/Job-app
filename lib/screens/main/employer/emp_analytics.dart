@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/services/auth_services.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:get_work_app/screens/main/employer/applicants/all_applicants_screen.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:intl/intl.dart';
@@ -31,8 +32,49 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
     super.initState();
     // Defer initialization to after the first frame to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+      _checkProfileAndLoadData();
     });
+  }
+
+  Future<void> _checkProfileAndLoadData() async {
+    try {
+      // Check if profile is complete before loading analytics
+      final canViewAnalytics = await ProfileGatingService.canPerformAction(
+        context,
+        actionName: 'view analytics',
+        showDialog: false, // Don't show dialog yet, just check
+      );
+
+      if (!canViewAnalytics && mounted) {
+        // Profile is incomplete, show the gating dialog
+        final result = await ProfileGatingService.canPerformAction(
+          context,
+          actionName: 'view analytics',
+          showDialog: true, // Now show the dialog
+        );
+        
+        // If user didn't choose to complete profile, show placeholder
+        if (!result && mounted) {
+          setState(() {
+            _isLoading = false;
+            _error = 'profile_incomplete';
+          });
+          return;
+        }
+      }
+
+      // Profile is complete or user chose to complete it, load data
+      if (mounted) {
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'check_failed';
+        });
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -239,6 +281,91 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
     }
 
     if (_error != null) {
+      // Show different UI based on error type
+      if (_error == 'profile_incomplete') {
+        return Scaffold(
+          backgroundColor: AppColors.lookGigLightGray,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.lookGigPurple.withOpacity(0.15),
+                          const Color(0xFF6C5CE7).withOpacity(0.15),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.analytics_outlined,
+                      size: 64,
+                      color: AppColors.lookGigPurple,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Analytics Locked',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.lookGigProfileText,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Complete your company profile to unlock detailed analytics about your job postings and applicant insights.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.lookGigDescriptionText,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await ProfileGatingService.canPerformAction(
+                        context,
+                        actionName: 'view analytics',
+                      );
+                      if (result && mounted) {
+                        // Profile completed, reload data
+                        _checkProfileAndLoadData();
+                      }
+                    },
+                    icon: const Icon(Icons.lock_open, color: Colors.white),
+                    label: const Text(
+                      'Complete Profile',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'DM Sans',
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lookGigPurple,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+      
+      // Show error UI for other errors
       return Scaffold(
         backgroundColor: AppColors.lookGigLightGray,
         body: Center(

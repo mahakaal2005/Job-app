@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
+import 'package:get_work_app/widgets/custom_dropdown_field.dart';
 
 class CompanyDetailsEditScreen extends StatefulWidget {
   final Map<String, dynamic> companyInfo;
@@ -20,11 +22,11 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
   bool _isSaving = false;
 
   final List<String> _companySizes = [
-    '1-10 EMPLOYERs',
-    '11-50 EMPLOYERs',
-    '51-200 EMPLOYERs',
-    '201-500 EMPLOYERs',
-    '500+ EMPLOYERs',
+    '1-10 Employees',
+    '11-50 Employees',
+    '51-200 Employees',
+    '201-500 Employees',
+    '500+ Employees',
   ];
 
   @override
@@ -32,7 +34,18 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
     super.initState();
     _EMPLOYERCountController = TextEditingController(text: widget.companyInfo['EMPLOYERCount'] ?? '');
     _establishedYearController = TextEditingController(text: widget.companyInfo['establishedYear'] ?? '');
-    _selectedCompanySize = widget.companyInfo['companySize'];
+    
+    // Normalize company size value to match dropdown items
+    final storedSize = widget.companyInfo['companySize'];
+    if (storedSize != null && _companySizes.contains(storedSize)) {
+      _selectedCompanySize = storedSize;
+    } else if (storedSize != null) {
+      // Try to find a case-insensitive match
+      _selectedCompanySize = _companySizes.firstWhere(
+        (size) => size.toLowerCase() == storedSize.toLowerCase(),
+        orElse: () => _companySizes[0],
+      );
+    }
   }
 
   @override
@@ -50,26 +63,32 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        // Update in employers collection
         await FirebaseFirestore.instance
-            .collection('users')
+            .collection('employers')
             .doc(user.uid)
-            .collection('companyInfo')
-            .doc('details')
-            .set({
-          'companySize': _selectedCompanySize,
-          'EMPLOYERCount': _EMPLOYERCountController.text.trim(),
-          'establishedYear': _establishedYearController.text.trim(),
+            .update({
+          'companyInfo.companySize': _selectedCompanySize,
+          'companyInfo.EMPLOYERCount': _EMPLOYERCountController.text.trim(),
+          'companyInfo.establishedYear': _establishedYearController.text.trim(),
           'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        });
 
         if (mounted) {
+          CustomToast.show(
+            context,
+            message: 'Company details updated successfully',
+            isSuccess: true,
+          );
           Navigator.pop(context, true);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: AppColors.error),
+        CustomToast.show(
+          context,
+          message: 'Error saving: $e',
+          isSuccess: false,
         );
       }
     } finally {
@@ -97,7 +116,7 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
                     const SizedBox(height: 20),
                     _buildTextField(
                       controller: _EMPLOYERCountController,
-                      label: 'EMPLOYER Count',
+                      label: 'Employee Count',
                       hint: 'e.g., 50',
                       icon: Icons.people,
                       keyboardType: TextInputType.number,
@@ -210,65 +229,29 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
   }
 
   Widget _buildDropdownField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Company Size',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.lookGigProfileText,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.profileCardShadow,
-                blurRadius: 62,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: DropdownButtonFormField<String>(
-            initialValue: _selectedCompanySize,
-            decoration: InputDecoration(
-              hintText: 'Select company size',
-              hintStyle: const TextStyle(color: AppColors.lookGigDescriptionText),
-              prefixIcon: const Icon(Icons.business, color: Color(0xFFFF9228)),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFFF9228), width: 2),
-              ),
-              filled: true,
-              fillColor: AppColors.white,
-              contentPadding: const EdgeInsets.all(16),
-            ),
-            items: _companySizes.map((size) {
-              return DropdownMenuItem(value: size, child: Text(size));
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedCompanySize = value;
-              });
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select company size';
-              }
-              return null;
-            },
-          ),
-        ),
-      ],
+    final List<DropdownItem> companySizeItems = _companySizes.map((size) {
+      return DropdownItem(value: size, label: size);
+    }).toList();
+
+    return CustomDropdownField(
+      labelText: 'Company Size',
+      hintText: 'Select company size',
+      value: _selectedCompanySize,
+      items: companySizeItems,
+      onChanged: (value) {
+        setState(() {
+          _selectedCompanySize = value;
+        });
+      },
+      prefixIcon: Icons.business,
+      enableSearch: false,
+      modalTitle: 'Select Company Size',
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please select company size';
+        }
+        return null;
+      },
     );
   }
 

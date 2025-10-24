@@ -13,8 +13,10 @@ import 'package:get_work_app/screens/main/user/user_chats.dart';
 import 'package:get_work_app/screens/main/user/user_my_gigs.dart';
 import 'package:get_work_app/screens/main/user/user_profile.dart';
 import 'package:get_work_app/screens/main/user/user_help_and_support.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/number_formatter.dart';
 import 'package:provider/provider.dart';
 
 class UserHomeScreen extends StatefulWidget {
@@ -352,13 +354,19 @@ class _UserHomeScreenState extends State<UserHomeScreen>
   }
 
   Future<void> _toggleBookmark(String jobId) async {
-    final bookmarkProvider = Provider.of<BookmarkProvider>(
+    final canBookmark = await ProfileGatingService.canPerformAction(
       context,
-      listen: false,
+      actionName: 'bookmark this job',
     );
-    bookmarkProvider.toggleBookmark(jobId);
+    
+    if (canBookmark) {
+      final bookmarkProvider = Provider.of<BookmarkProvider>(
+        context,
+        listen: false,
+      );
+      bookmarkProvider.toggleBookmark(jobId);
 
-    ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -385,6 +393,7 @@ class _UserHomeScreenState extends State<UserHomeScreen>
         duration: const Duration(seconds: 2),
       ),
     );
+    }
   }
 
   String _formatSalary(String salary) {
@@ -394,30 +403,11 @@ class _UserHomeScreenState extends State<UserHomeScreen>
       final min = int.tryParse(parts[0].trim()) ?? 0;
       final max = int.tryParse(parts[1].trim()) ?? 0;
 
-      String formatAmount(int amount) {
-        if (amount >= 10000000) {
-          return '${(amount / 10000000).toStringAsFixed(1)}Cr';
-        } else if (amount >= 100000) {
-          return '${(amount / 100000).toStringAsFixed(1)}L';
-        } else if (amount >= 1000) {
-          return '${(amount / 1000).toStringAsFixed(1)}K';
-        }
-        return '$amount';
-      }
-
-      return '${formatAmount(min)} - ${formatAmount(max)}';
+      return '${NumberFormatter.formatSalaryAmount(min)} - ${NumberFormatter.formatSalaryAmount(max)}';
     } else {
       // Single value
       final num = int.tryParse(salary) ?? 0;
-
-      if (num >= 10000000) {
-        return '${(num / 10000000).toStringAsFixed(1)}Cr';
-      } else if (num >= 100000) {
-        return '${(num / 100000).toStringAsFixed(1)}L';
-      } else if (num >= 1000) {
-        return '${(num / 1000).toStringAsFixed(1)}K';
-      }
-      return '$num';
+      return NumberFormatter.formatSalaryAmount(num);
     }
   }
 
@@ -1340,8 +1330,15 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                         (context) => JobDetailScreen(
                           job: job,
                           isBookmarked: isBookmarked,
-                          onBookmarkToggled:
-                              (jobId) => bookmarkProvider.toggleBookmark(jobId),
+                          onBookmarkToggled: (jobId) async {
+                            final canBookmark = await ProfileGatingService.canPerformAction(
+                              context,
+                              actionName: 'bookmark this job',
+                            );
+                            if (canBookmark) {
+                              bookmarkProvider.toggleBookmark(jobId);
+                            }
+                          },
                         ),
                   ),
                 );
@@ -1506,8 +1503,15 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
-                            onPressed:
-                                () => bookmarkProvider.toggleBookmark(job.id),
+                            onPressed: () async {
+                              final canBookmark = await ProfileGatingService.canPerformAction(
+                                context,
+                                actionName: 'bookmark this job',
+                              );
+                              if (canBookmark) {
+                                bookmarkProvider.toggleBookmark(job.id);
+                              }
+                            },
                             icon: Icon(
                               isBookmarked
                                   ? Icons.bookmark_rounded
@@ -1687,9 +1691,15 @@ class _UserHomeScreenState extends State<UserHomeScreen>
                                       (context) => JobDetailScreen(
                                         job: job,
                                         isBookmarked: isBookmarked,
-                                        onBookmarkToggled:
-                                            (jobId) => bookmarkProvider
-                                                .toggleBookmark(jobId),
+                                        onBookmarkToggled: (jobId) async {
+                                          final canBookmark = await ProfileGatingService.canPerformAction(
+                                            context,
+                                            actionName: 'bookmark this job',
+                                          );
+                                          if (canBookmark) {
+                                            bookmarkProvider.toggleBookmark(jobId);
+                                          }
+                                        },
                                       ),
                                 ),
                               );

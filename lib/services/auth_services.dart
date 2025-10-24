@@ -1,17 +1,39 @@
-﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final GoogleSignIn _googleSignIn = GoogleSignIn();
+  
+  // Debug logging helper
+  static void _debugLog(String message) {
+    if (kDebugMode) {
+      debugPrint('🔵 [AUTH_SERVICE] $message');
+    }
+  }
+  
+  static void _errorLog(String message, dynamic error) {
+    if (kDebugMode) {
+      debugPrint('🔴 [AUTH_SERVICE] $message');
+      debugPrint('🔴 [AUTH_SERVICE] Error: $error');
+      debugPrint('🔴 [AUTH_SERVICE] Error Type: ${error.runtimeType}');
+    }
+  }
 
   // Get current user
   static User? get currentUser => _auth.currentUser;
 
   // Auth state changes stream
-  static Stream<User?> get authStateChanges => _auth.authStateChanges();
+  static Stream<User?> get authStateChanges {
+    print('🔵 [AUTH_SERVICE] authStateChanges stream requested');
+    return _auth.authStateChanges().map((user) {
+      print('🔵 [AUTH_SERVICE] Auth state changed - User: ${user?.uid ?? 'null'}');
+      return user;
+    });
+  }
 
   // Sign up with email and password
   static Future<UserCredential?> signUpWithEmailAndPassword({
@@ -21,9 +43,12 @@ class AuthService {
     required String role, // 'employer' or 'user'
   }) async {
     try {
+      _debugLog('Starting email signup for: $email with role: $role');
+      
       // Check if email is already registered before creating account
       bool isRegistered = await isEmailRegistered(email);
       if (isRegistered) {
+        _debugLog('Email already registered: $email');
         throw FirebaseAuthException(
           code: 'email-already-in-use',
           message: 'An account already exists for this email address.',
@@ -31,11 +56,13 @@ class AuthService {
       }
 
       // Create user with email and password
+      _debugLog('Creating Firebase Auth user...');
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
 
       // Update display name
       await userCredential.user?.updateDisplayName(fullName);
+      _debugLog('User created with UID: ${userCredential.user?.uid}');
 
       // Prepare user data
       Map<String, dynamic> userData = {
@@ -46,23 +73,25 @@ class AuthService {
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
         'onboardingCompleted': false, // Both roles need onboarding now
-        'profileCompleted': false, // NEW - tracks if profile is fully filled
-        'profileCompletionPercentage': 0, // NEW - 0-100 percentage
         'skippedOnboarding': false, // NEW - tracks if they skipped
       };
 
       // Save to role-specific collection only
       String collectionName =
           role == 'employer' ? 'employers' : 'users_specific';
+      _debugLog('Saving user data to Firestore collection: $collectionName');
       await _firestore
           .collection(collectionName)
           .doc(userCredential.user?.uid)
           .set(userData);
 
+      _debugLog('Email signup completed successfully');
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      throw FirebaseAuthException(code: e.code);
+      _errorLog('Firebase Auth error during signup', e);
+      throw FirebaseAuthException(code: e.code, message: e.message);
     } catch (e) {
+      _errorLog('Unexpected error during signup', e);
       throw Exception('An unexpected error occurred: ${e.toString()}');
     }
   }
@@ -191,8 +220,6 @@ class AuthService {
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
         'onboardingCompleted': false,
-        'profileCompleted': false, // NEW - tracks if profile is fully filled
-        'profileCompletionPercentage': 0, // NEW - 0-100 percentage
         'skippedOnboarding': false, // NEW - tracks if they skipped
         'signInMethod': 'google',
         'photoURL': user.photoURL,
@@ -260,46 +287,64 @@ class AuthService {
   // Migration helper: Check old 'employees' collection and migrate to 'employers'
   static Future<bool> _migrateEmployeeToEmployer(String uid) async {
     try {
-      print(
-        'DEBUG [MIGRATION] Checking for user in old employees collection: $uid',
-      );
+      print('DEBUG [MIGRATION] Starting migration check for user: $uid');
 
-      // Check if user exists in old 'employees' collection
-      DocumentSnapshot oldEmployeeDoc =
-          await _firestore.collection('employees').doc(uid).get();
+      print('DEBUG [MIGRATION] About to query employees collection...');
+      
+      // Add shorter timeout and better error handling
+      DocumentSnapshot oldEmployeeDoc = await _firestore
+          .collection('employees')
+          .doc(uid)
+          .get()
+          .timeout(const Duration(seconds: 3), onTimeout: () {
+        print('DEBUG [MIGRATION] Timeout checking employees collection - skipping migration');
+        throw Exception('Timeout checking employees collection');
+      });
+
+      print('DEBUG [MIGRATION] Employees collection query completed');
 
       if (!oldEmployeeDoc.exists) {
         print('DEBUG [MIGRATION] User not found in old employees collection');
         return false;
       }
 
-      print(
-        'DEBUG [MIGRATION] Found user in old employees collection, migrating...',
-      );
+      print('DEBUG [MIGRATION] Found user in old employees collection, migrating...');
 
       // Get the data
-      Map<String, dynamic> userData =
-          oldEmployeeDoc.data() as Map<String, dynamic>;
+      Map<String, dynamic> userData = oldEmployeeDoc.data() as Map<String, dynamic>;
 
-      // Add migration timestamp
+      // Add migration timestamp and ensure role is set correctly
       userData['migratedAt'] = FieldValue.serverTimestamp();
       userData['migratedFrom'] = 'employees';
+      userData['role'] = 'employer'; // Ensure role is set correctly
 
-      // Copy to new 'employers' collection
-      await _firestore.collection('employers').doc(uid).set(userData);
+      // Copy to new 'employers' collection with timeout
+      print('DEBUG [MIGRATION] About to copy data to employers collection...');
+      await _firestore
+          .collection('employers')
+          .doc(uid)
+          .set(userData)
+          .timeout(const Duration(seconds: 5));
       print('DEBUG [MIGRATION] Data copied to employers collection');
 
-      // Mark old document as migrated
-      await _firestore.collection('employees').doc(uid).update({
-        'migrated': true,
-        'migratedAt': FieldValue.serverTimestamp(),
-        'migratedTo': 'employers',
-      });
-      print('DEBUG [MIGRATION] Old document marked as migrated');
+      // Mark old document as migrated (don't fail if this fails)
+      try {
+        print('DEBUG [MIGRATION] About to mark old document as migrated...');
+        await _firestore.collection('employees').doc(uid).update({
+          'migrated': true,
+          'migratedAt': FieldValue.serverTimestamp(),
+          'migratedTo': 'employers',
+        }).timeout(const Duration(seconds: 3));
+        print('DEBUG [MIGRATION] Old document marked as migrated');
+      } catch (e) {
+        print('DEBUG [MIGRATION] Failed to mark old document as migrated (non-critical): $e');
+        // Don't fail the migration if we can't mark the old document
+      }
 
       return true;
     } catch (e) {
       print('DEBUG [MIGRATION] Error during migration: $e');
+      print('DEBUG [MIGRATION] Error type: ${e.runtimeType}');
       return false;
     }
   }
@@ -307,103 +352,146 @@ class AuthService {
   // Get user role with better error handling and migration support
   static Future<String?> getUserRole() async {
     try {
-      print('DEBUG [GET_ROLE] Starting getUserRole');
+      print('\n🔵 ═══════════════════════════════════════════════════════');
+      print('🔵 [GET_ROLE] Starting getUserRole');
+      print('🔵 ═══════════════════════════════════════════════════════');
 
       if (currentUser == null) {
-        print('DEBUG [GET_ROLE] No current user');
+        print('🔴 [GET_ROLE] No current user - returning null');
         return null;
       }
 
-      print('DEBUG [GET_ROLE] Getting role for user: ${currentUser!.uid}');
+      print('📧 [GET_ROLE] User Email: ${currentUser!.email}');
+      print('🆔 [GET_ROLE] User UID: ${currentUser!.uid}');
+      print('👤 [GET_ROLE] Display Name: ${currentUser!.displayName}');
 
-      // Check employers collection first
-      DocumentSnapshot employerDoc =
-          await _firestore.collection('employers').doc(currentUser!.uid).get();
+      // STEP 1: Check employers collection FIRST
+      print('\n📁 [GET_ROLE] STEP 1: Checking EMPLOYERS collection...');
+      try {
+        final startTime = DateTime.now();
+        DocumentSnapshot employerDoc = await _firestore
+            .collection('employers')
+            .doc(currentUser!.uid)
+            .get()
+            .timeout(const Duration(seconds: 5), onTimeout: () {
+          print('⏱️ [GET_ROLE] TIMEOUT checking employers collection (5 seconds)');
+          throw Exception('Timeout checking employers collection');
+        });
+        final duration = DateTime.now().difference(startTime);
+        print('⏱️ [GET_ROLE] Query completed in ${duration.inMilliseconds}ms');
 
-      if (employerDoc.exists) {
-        print(
-          'DEBUG [GET_ROLE] Found in employers collection - role: employer',
-        );
-        return 'employer';
+        if (employerDoc.exists) {
+          print('✅ [GET_ROLE] FOUND in employers collection');
+          final data = employerDoc.data() as Map<String, dynamic>?;
+          print('📋 [GET_ROLE] Document data:');
+          data?.forEach((key, value) {
+            print('   $key: $value');
+          });
+          print('🎯 [GET_ROLE] Returning role: EMPLOYER');
+          print('🔵 ═══════════════════════════════════════════════════════\n');
+          return 'employer';
+        } else {
+          print('❌ [GET_ROLE] Document does NOT exist in employers collection');
+        }
+      } catch (e) {
+        print('⚠️ [GET_ROLE] ERROR checking employers collection:');
+        print('   Error: $e');
+        print('   Type: ${e.runtimeType}');
+        print('   Continuing to check users_specific...');
       }
 
-      print(
-        'DEBUG [GET_ROLE] Not found in employers collection, checking old employees collection...',
-      );
+      // STEP 2: Check users_specific collection
+      print('\n📁 [GET_ROLE] STEP 2: Checking USERS_SPECIFIC collection...');
+      try {
+        final startTime = DateTime.now();
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users_specific')
+            .doc(currentUser!.uid)
+            .get()
+            .timeout(const Duration(seconds: 5), onTimeout: () {
+          print('⏱️ [GET_ROLE] TIMEOUT checking users_specific collection (5 seconds)');
+          throw Exception('Timeout checking users_specific collection');
+        });
+        final duration = DateTime.now().difference(startTime);
+        print('⏱️ [GET_ROLE] Query completed in ${duration.inMilliseconds}ms');
 
-      // Try to migrate from old 'employees' collection
-      bool migrated = await _migrateEmployeeToEmployer(currentUser!.uid);
-      if (migrated) {
-        print('DEBUG [GET_ROLE] Migration successful - role: employer');
-        return 'employer';
+        if (userDoc.exists) {
+          print('✅ [GET_ROLE] FOUND in users_specific collection');
+          final data = userDoc.data() as Map<String, dynamic>?;
+          print('📋 [GET_ROLE] Document data:');
+          data?.forEach((key, value) {
+            print('   $key: $value');
+          });
+          print('🎯 [GET_ROLE] Returning role: USER');
+          print('🔵 ═══════════════════════════════════════════════════════\n');
+          return 'user';
+        } else {
+          print('❌ [GET_ROLE] Document does NOT exist in users_specific collection');
+          print('📊 [GET_ROLE] Document ID checked: ${currentUser!.uid}');
+        }
+      } catch (e) {
+        print('⚠️ [GET_ROLE] ERROR checking users_specific collection:');
+        print('   Error: $e');
+        print('   Type: ${e.runtimeType}');
       }
 
-      // Check users_specific collection
-      print('DEBUG [GET_ROLE] Checking users_specific collection...');
-      DocumentSnapshot userDoc =
-          await _firestore
-              .collection('users_specific')
-              .doc(currentUser!.uid)
-              .get();
+      // STEP 3: Check old employees collection for migration
+      print('\n📁 [GET_ROLE] STEP 3: Checking EMPLOYEES collection (legacy)...');
+      try {
+        bool migrated = await _migrateEmployeeToEmployer(currentUser!.uid);
+        if (migrated) {
+          print('✅ [GET_ROLE] Successfully migrated from employees to employers');
+          print('🎯 [GET_ROLE] Returning role: EMPLOYER');
+          print('🔵 ═══════════════════════════════════════════════════════\n');
+          return 'employer';
+        }
+      } catch (e) {
+        print('⚠️ [GET_ROLE] Migration failed: $e');
+      }
 
-      if (userDoc.exists) {
-        print(
-          'DEBUG [GET_ROLE] Found in users_specific collection - role: user',
-        );
+      // User document doesn't exist - create default
+      print('\n🔨 [GET_ROLE] No user document found - creating default document...');
+      print('📧 [GET_ROLE] Email: ${currentUser!.email}');
+      print('🆔 [GET_ROLE] UID: ${currentUser!.uid}');
+      print('👤 [GET_ROLE] Name: ${currentUser!.displayName ?? "Unknown"}');
+      
+      try {
+        print('⏳ [GET_ROLE] Calling _createUserDocument with role: user');
+        await _createUserDocument('user'); // Default to regular user
+        print('✅ [GET_ROLE] Default user document created successfully');
+        print('🎯 [GET_ROLE] Returning role: user');
+        print('🔵 ═══════════════════════════════════════════════════════\n');
+        return 'user';
+      } catch (e) {
+        print('⚠️ [GET_ROLE] FAILED to create default user document:');
+        print('   Error: $e');
+        print('   Type: ${e.runtimeType}');
+        print('🎯 [GET_ROLE] Returning fallback role: user');
+        print('🔵 ═══════════════════════════════════════════════════════\n');
         return 'user';
       }
-
-      // User document doesn't exist in any collection
-      print(
-        'DEBUG [GET_ROLE] No user document found in any collection for ${currentUser!.uid}',
-      );
-      return null;
     } catch (e) {
-      print('DEBUG [GET_ROLE] Error: $e');
+      print('\n🔴 ═══════════════════════════════════════════════════════');
+      print('🔴 [GET_ROLE] CRITICAL ERROR in getUserRole');
+      print('🔴 ═══════════════════════════════════════════════════════');
+      print('❌ Error: $e');
+      print('📝 Error type: ${e.runtimeType}');
+      print('📚 Stack trace:');
+      print(StackTrace.current);
+      print('🔴 ═══════════════════════════════════════════════════════\n');
       throw Exception('Failed to get user role: ${e.toString()}');
     }
   }
+
 
   static Future<String?> getCurrentUserId() async {
     try {
       if (currentUser == null) return null;
-
-      // Check EMPLOYERs collection first
-      DocumentSnapshot employerDoc =
-          await _firestore.collection('employers').doc(currentUser!.uid).get();
-
-      if (employerDoc.exists) {
-        return 'employer';
-      }
-
-      // Check users_specific collection
-      DocumentSnapshot userDoc =
-          await _firestore
-              .collection('users_specific')
-              .doc(currentUser!.uid)
-              .get();
-
-      if (userDoc.exists) {
-        return 'user';
-      }
-
-      // User document doesn't exist in either collection
-      // Don't create a default - return null to indicate no role found
-      print('âš ï¸ WARNING: No user document found for ${currentUser!.uid}');
-      return null;
+      return currentUser!.uid;
     } catch (e) {
-      throw Exception('Failed to get user role: ${e.toString()}');
+      throw Exception('Failed to get current user ID: ${e.toString()}');
     }
   }
-
-  // static Future<String?> getCurrentUserId() async {
-  //   try {
-  //     if (currentUser == null) return null;
-  //     return currentUser!.uid;
-  //   } catch (e) {
-  //     throw Exception('Failed to get current user ID: ${e.toString()}');
-  //   }
-  // }
 
   // Alias for getUserRole() for consistency
   static Future<String?> getCurrentUserRole() async {
@@ -703,7 +791,16 @@ class AuthService {
 
   // Create user document if it doesn't exist
   static Future<void> _createUserDocument(String defaultRole) async {
-    if (currentUser == null) return;
+    print('\n🔨 [CREATE_USER_DOC] Starting document creation...');
+    
+    if (currentUser == null) {
+      print('🔴 [CREATE_USER_DOC] No current user - aborting');
+      return;
+    }
+
+    print('📧 [CREATE_USER_DOC] Email: ${currentUser!.email}');
+    print('🆔 [CREATE_USER_DOC] UID: ${currentUser!.uid}');
+    print('🎭 [CREATE_USER_DOC] Role: $defaultRole');
 
     Map<String, dynamic> userData = {
       'uid': currentUser!.uid,
@@ -715,12 +812,29 @@ class AuthService {
       'onboardingCompleted': false,
     };
 
+    print('📋 [CREATE_USER_DOC] User data to be saved:');
+    userData.forEach((key, value) {
+      print('   $key: $value');
+    });
+
     String collectionName =
         defaultRole == 'employer' ? 'employers' : 'users_specific';
-    await _firestore
-        .collection(collectionName)
-        .doc(currentUser!.uid)
-        .set(userData);
+    print('📁 [CREATE_USER_DOC] Target collection: $collectionName');
+    print('🆔 [CREATE_USER_DOC] Document ID: ${currentUser!.uid}');
+    
+    try {
+      print('⏳ [CREATE_USER_DOC] Writing to Firestore...');
+      await _firestore
+          .collection(collectionName)
+          .doc(currentUser!.uid)
+          .set(userData);
+      print('✅ [CREATE_USER_DOC] Document created successfully!');
+    } catch (e) {
+      print('🔴 [CREATE_USER_DOC] ERROR creating document:');
+      print('   Error: $e');
+      print('   Type: ${e.runtimeType}');
+      rethrow;
+    }
   }
 
   // Update user role
@@ -853,17 +967,31 @@ class AuthService {
   // Private method to get user data from the appropriate role collection
   static Future<Map<String, dynamic>?> _getUserDataFromRoleCollection() async {
     try {
-      if (currentUser == null) return null;
+      print('\n🔍 [GET_USER_DATA] Fetching user data from role-specific collection...');
+      
+      if (currentUser == null) {
+        print('🔴 [GET_USER_DATA] No current user');
+        return null;
+      }
 
-      // Check EMPLOYERs collection first
+      print('🆔 [GET_USER_DATA] UID: ${currentUser!.uid}');
+
+      // Check EMPLOYERS collection first
+      print('📁 [GET_USER_DATA] Checking employers collection...');
       DocumentSnapshot employerDoc =
           await _firestore.collection('employers').doc(currentUser!.uid).get();
 
       if (employerDoc.exists) {
-        return employerDoc.data() as Map<String, dynamic>?;
+        print('✅ [GET_USER_DATA] FOUND in employers collection');
+        final data = employerDoc.data() as Map<String, dynamic>?;
+        print('📋 [GET_USER_DATA] Role from data: ${data?['role']}');
+        return data;
+      } else {
+        print('❌ [GET_USER_DATA] NOT found in employers collection');
       }
 
       // Check users_specific collection
+      print('📁 [GET_USER_DATA] Checking users_specific collection...');
       DocumentSnapshot userDoc =
           await _firestore
               .collection('users_specific')
@@ -871,11 +999,18 @@ class AuthService {
               .get();
 
       if (userDoc.exists) {
-        return userDoc.data() as Map<String, dynamic>?;
+        print('✅ [GET_USER_DATA] FOUND in users_specific collection');
+        final data = userDoc.data() as Map<String, dynamic>?;
+        print('📋 [GET_USER_DATA] Role from data: ${data?['role']}');
+        return data;
+      } else {
+        print('❌ [GET_USER_DATA] NOT found in users_specific collection');
       }
 
+      print('🔴 [GET_USER_DATA] User data not found in any collection');
       return null;
     } catch (e) {
+      print('🔴 [GET_USER_DATA] ERROR: $e');
       throw Exception('Failed to get user data: ${e.toString()}');
     }
   }
@@ -997,8 +1132,6 @@ class AuthService {
       await _firestore.collection(collectionName).doc(currentUser!.uid).update({
         'skippedOnboarding': true,
         'onboardingCompleted': false,
-        'profileCompleted': false,
-        'profileCompletionPercentage': 0,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -1006,200 +1139,122 @@ class AuthService {
     }
   }
 
-  /// Get profile completion status including percentage and flags
-  /// Returns a map with profileCompleted, completionPercentage, and skippedOnboarding
-  static Future<Map<String, dynamic>> getProfileCompletionStatus() async {
-    try {
-      if (currentUser == null) {
-        return {
-          'profileCompleted': false,
-          'completionPercentage': 0,
-          'skippedOnboarding': false,
-        };
-      }
 
-      String? role = await getUserRole();
-      if (role == null) {
-        return {
-          'profileCompleted': false,
-          'completionPercentage': 0,
-          'skippedOnboarding': false,
-        };
-      }
 
-      String collectionName =
-          role == 'employer' ? 'employers' : 'users_specific';
-
-      DocumentSnapshot doc =
-          await _firestore
-              .collection(collectionName)
-              .doc(currentUser!.uid)
-              .get();
-
-      if (doc.exists) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-        // Calculate completion percentage if not already set
-        int percentage = data['profileCompletionPercentage'] ?? 0;
-        if (percentage == 0) {
-          percentage = await calculateProfileCompletion();
-        }
-
-        return {
-          'profileCompleted': data['profileCompleted'] ?? false,
-          'completionPercentage': percentage,
-          'skippedOnboarding': data['skippedOnboarding'] ?? false,
-          'onboardingCompleted': data['onboardingCompleted'] ?? false,
-        };
-      }
-
-      return {
-        'profileCompleted': false,
-        'completionPercentage': 0,
-        'skippedOnboarding': false,
-      };
-    } catch (e) {
-      throw Exception(
-        'Failed to get profile completion status: ${e.toString()}',
-      );
+  // Debug method to check user existence in all collections
+  static Future<void> debugCheckUserInAllCollections() async {
+    if (currentUser == null) {
+      print('🔴 [CHECK_USER] No current user');
+      return;
     }
-  }
 
-  /// Calculate profile completion percentage based on filled fields
-  /// Returns 0-100 percentage
-  static Future<int> calculateProfileCompletion() async {
+    final uid = currentUser!.uid;
+    final email = currentUser!.email;
+    print('═══════════════════════════════════════════════════════');
+    print('🔍 [CHECK_USER] FULL USER DATA CHECK');
+    print('═══════════════════════════════════════════════════════');
+    print('📧 Email: $email');
+    print('🆔 UID: $uid');
+    print('👤 Display Name: ${currentUser!.displayName}');
+    print('📱 Phone: ${currentUser!.phoneNumber}');
+    print('📸 Photo URL: ${currentUser!.photoURL}');
+    print('✅ Email Verified: ${currentUser!.emailVerified}');
+    print('───────────────────────────────────────────────────────');
+
+    // Check employers collection with timeout
+    print('\n📁 Checking EMPLOYERS collection...');
     try {
-      if (currentUser == null) return 0;
-
-      String? role = await getUserRole();
-      if (role == null) return 0;
-
-      String collectionName =
-          role == 'employer' ? 'employers' : 'users_specific';
-
-      DocumentSnapshot doc =
-          await _firestore
-              .collection(collectionName)
-              .doc(currentUser!.uid)
-              .get();
-
-      if (!doc.exists) return 0;
-
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-      if (role == 'employer') {
-        // EMPLOYER profile has 3 main sections
-        int completedSections = 0;
-        int totalSections = 3;
-
-        // Section 1: Company Info
-        if (data['companyInfo'] != null) {
-          Map<String, dynamic> companyInfo =
-              data['companyInfo'] as Map<String, dynamic>;
-          if (companyInfo['companyName'] != null &&
-              companyInfo['companyEmail'] != null &&
-              companyInfo['companyPhone'] != null) {
-            completedSections++;
-          }
-        }
-
-        // Section 2: EMPLOYER Info
-        if (data['employerInfo'] != null) {
-          Map<String, dynamic> employerInfo =
-              data['employerInfo'] as Map<String, dynamic>;
-          if (employerInfo['jobTitle'] != null &&
-              employerInfo['department'] != null &&
-              employerInfo['EMPLOYERId'] != null) {
-            completedSections++;
-          }
-        }
-
-        // Section 3: Documents
-        if (data['companyInfo'] != null) {
-          Map<String, dynamic> companyInfo =
-              data['companyInfo'] as Map<String, dynamic>;
-          if (companyInfo['companyLogo'] != null &&
-              companyInfo['businessLicense'] != null) {
-            completedSections++;
-          }
-        }
-
-        int percentage = ((completedSections / totalSections) * 100).round();
-
-        // Update the percentage in Firestore
-        await _firestore
-            .collection(collectionName)
-            .doc(currentUser!.uid)
-            .update({
-              'profileCompletionPercentage': percentage,
-              'profileCompleted': percentage == 100,
-            });
-
-        return percentage;
+      final employerDoc = await _firestore
+          .collection('employers')
+          .doc(uid)
+          .get()
+          .timeout(const Duration(seconds: 3));
+      
+      if (employerDoc.exists) {
+        print('✅ FOUND in employers collection');
+        final data = employerDoc.data() as Map<String, dynamic>?;
+        print('   📋 Full Data:');
+        data?.forEach((key, value) {
+          print('      $key: $value');
+        });
       } else {
-        // User/Student profile has 5 main sections
-        int completedSections = 0;
-        int totalSections = 5;
-
-        // Section 1: Personal Info (phone, gender, dateOfBirth)
-        if (data['phone'] != null &&
-            data['gender'] != null &&
-            data['dateOfBirth'] != null) {
-          completedSections++;
-        }
-
-        // Section 2: Address (address, city, state, zipCode)
-        if (data['address'] != null &&
-            data['city'] != null &&
-            data['state'] != null &&
-            data['zipCode'] != null) {
-          completedSections++;
-        }
-
-        // Section 3: Education (educationLevel, college)
-        if (data['educationLevel'] != null && data['college'] != null) {
-          completedSections++;
-        }
-
-        // Section 4: Skills & Availability
-        if (data['skills'] != null &&
-            (data['skills'] as List).isNotEmpty &&
-            data['availability'] != null) {
-          completedSections++;
-        }
-
-        // Section 5: Resume
-        if (data['resumeUrl'] != null) {
-          completedSections++;
-        }
-
-        int percentage = ((completedSections / totalSections) * 100).round();
-
-        // Update the percentage in Firestore
-        await _firestore
-            .collection(collectionName)
-            .doc(currentUser!.uid)
-            .update({
-              'profileCompletionPercentage': percentage,
-              'profileCompleted': percentage == 100,
-            });
-
-        return percentage;
+        print('❌ NOT FOUND in employers collection');
       }
     } catch (e) {
-      throw Exception(
-        'Failed to calculate profile completion: ${e.toString()}',
-      );
+      print('⚠️ ERROR checking employers: $e');
     }
-  }
 
-  /// Update profile completion percentage manually
-  /// Useful when profile is updated from various screens
-  static Future<void> updateProfileCompletionPercentage() async {
+    // Check users_specific collection with timeout
+    print('\n📁 Checking USERS_SPECIFIC collection...');
     try {
-      await calculateProfileCompletion();
+      final userDoc = await _firestore
+          .collection('users_specific')
+          .doc(uid)
+          .get()
+          .timeout(const Duration(seconds: 3));
+      
+      if (userDoc.exists) {
+        print('✅ FOUND in users_specific collection');
+        final data = userDoc.data() as Map<String, dynamic>?;
+        print('   📋 Full Data:');
+        data?.forEach((key, value) {
+          print('      $key: $value');
+        });
+      } else {
+        print('❌ NOT FOUND in users_specific collection');
+      }
     } catch (e) {
-      throw Exception('Failed to update profile completion: ${e.toString()}');
+      print('⚠️ ERROR checking users_specific: $e');
     }
+
+    // Check old employees collection with timeout
+    print('\n📁 Checking EMPLOYEES collection (legacy)...');
+    try {
+      final employeeDoc = await _firestore
+          .collection('employees')
+          .doc(uid)
+          .get()
+          .timeout(const Duration(seconds: 3));
+      
+      if (employeeDoc.exists) {
+        print('✅ FOUND in employees collection');
+        final data = employeeDoc.data() as Map<String, dynamic>?;
+        print('   📋 Full Data:');
+        data?.forEach((key, value) {
+          print('      $key: $value');
+        });
+      } else {
+        print('❌ NOT FOUND in employees collection');
+      }
+    } catch (e) {
+      print('⚠️ ERROR checking employees: $e');
+    }
+
+    // Check old users collection with timeout
+    print('\n📁 Checking USERS collection (legacy)...');
+    try {
+      final oldUserDoc = await _firestore
+          .collection('users')
+          .doc(uid)
+          .get()
+          .timeout(const Duration(seconds: 3));
+      
+      if (oldUserDoc.exists) {
+        print('✅ FOUND in users collection');
+        final data = oldUserDoc.data() as Map<String, dynamic>?;
+        print('   📋 Full Data:');
+        data?.forEach((key, value) {
+          print('      $key: $value');
+        });
+      } else {
+        print('❌ NOT FOUND in users collection');
+      }
+    } catch (e) {
+      print('⚠️ ERROR checking users: $e');
+    }
+
+    print('\n═══════════════════════════════════════════════════════');
+    print('✅ [CHECK_USER] Collection check completed');
+    print('═══════════════════════════════════════════════════════\n');
   }
 }

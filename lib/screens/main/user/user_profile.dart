@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_selector/file_selector.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get_work_app/screens/main/user/profile/about_me_screen.dart';
+import 'package:get_work_app/screens/main/user/profile/address_edit_screen.dart';
 import 'package:get_work_app/screens/main/user/profile/appreciation_screen.dart';
 import 'package:get_work_app/screens/main/user/profile/education_screen.dart';
 import 'package:get_work_app/screens/main/user/profile/language_screen.dart';
@@ -16,11 +18,17 @@ import 'package:get_work_app/screens/main/user/profile/work_experience_screen.da
 import 'package:get_work_app/screens/main/user/applications/my_applications_screen.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
+// import 'package:get_work_app/widgets/profile_completion_widget.dart';
+
+import 'package:provider/provider.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/image_utils.dart';
+import 'package:get_work_app/widgets/phone_input_field.dart';
+import 'package:get_work_app/widgets/custom_dropdown_field.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart' as path;
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -39,6 +47,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isSavingFromSettingsIcon = false; // Track if save was triggered from settings icon
   bool _isUploadingImage = false;
   bool _isUploadingResume = false;
+  bool _isPickingImage = false; // Prevent multiple simultaneous picker calls
+
+  // Helper method to check if any uploads are in progress
+  bool get _isAnyUploadInProgress => _isUploadingImage || _isUploadingResume;
   Map<String, dynamic> _userData = {};
   final _skillSearchController = TextEditingController();
   // Removed unused fields to fix analyzer warnings
@@ -83,6 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    // Profile completion refresh temporarily disabled
   }
 
   @override
@@ -122,8 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 .get();
 
         if (doc.exists && mounted) {
-          // Load profile completion status
-          final completionStatus = await AuthService.getProfileCompletionStatus();
+          // Profile completion status removed
           
           setState(() {
             _userData = doc.data() ?? {};
@@ -134,19 +146,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             debugPrint('Profile Image URL: ${profileImg.isNotEmpty ? profileImg : '(empty)'}');
             debugPrint('=======================');
             
-            // Set profile completion data
-            // Only show banner if user explicitly skipped OR has incomplete profile
-            _skippedOnboarding = completionStatus['skippedOnboarding'] ?? false;
-            _profileCompletionPercentage = completionStatus['completionPercentage'] ?? 100;
-            _profileCompleted = completionStatus['profileCompleted'] ?? true;
-            
-            // If user has onboardingCompleted=true, they completed it before this feature
-            // So don't show the banner even if new fields are missing
-            bool hasCompletedOnboarding = completionStatus['onboardingCompleted'] ?? false;
-            if (hasCompletedOnboarding && !_skippedOnboarding) {
-              _profileCompleted = true;
-              _profileCompletionPercentage = 100;
-            }
+            // Set profile completion data - simplified
+            _skippedOnboarding = false;
+            _profileCompletionPercentage = 100; // Always complete
+            _profileCompleted = true; // Always complete
             
             _populateControllers();
             _isLoading = false;
@@ -213,74 +216,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _uploadImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    print('🎯 [UPLOAD_IMAGE] Called');
+    
+    // Prevent multiple simultaneous picker calls
+    if (_isPickingImage) {
+      print('⚠️ [UPLOAD_IMAGE] Already picking, ignoring request');
+      return;
+    }
 
-    if (pickedFile != null) {
+    try {
+      print('📱 [UPLOAD_IMAGE] Setting picking flag to true');
       setState(() {
-        _selectedImage = File(pickedFile.path);
-        _isUploadingImage = true;
+        _isPickingImage = true;
       });
 
-      try {
-        final url = await _uploadToCloudinary(_selectedImage!);
+      print('📸 [UPLOAD_IMAGE] Opening image picker...');
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
 
-        final user = FirebaseAuth.instance.currentUser;
-        if (user != null) {
-          final role = await AuthService.getUserRole();
-          final collectionName =
-              role == 'employer' ? 'employers' : 'users_specific';
+      print('📊 [UPLOAD_IMAGE] Picker returned: ${pickedFile != null ? pickedFile.path : 'null (cancelled)'}');
 
-          await FirebaseFirestore.instance
-              .collection(collectionName)
-              .doc(user.uid)
-              .update({
-                'profileImageUrl': url,
-                'updatedAt': FieldValue.serverTimestamp(),
+      if (pickedFile != null) {
+        print('✅ Image selected: ${pickedFile.path}');
+        
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+          _isUploadingImage = true;
+        });
+
+        try {
+          final url = await _uploadToCloudinary(_selectedImage!);
+
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            final role = await AuthService.getUserRole();
+            final collectionName =
+                role == 'employer' ? 'employers' : 'users_specific';
+
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .update({
+                  'profileImageUrl': url,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+
+            if (mounted) {
+              setState(() {
+                _userData['profileImageUrl'] = url;
+                _isUploadingImage = false;
+                _selectedImage = null; // Clear selected image after successful upload
               });
 
-          setState(() {
-            _userData['profileImageUrl'] = url;
-            _isUploadingImage = false;
-          });
-
-          _showSuccessSnackBar('Profile picture updated successfully!');
+              _showSuccessSnackBar('Profile picture updated successfully!');
+            }
+          }
+        } catch (e) {
+          print('❌ [UPLOAD_IMAGE] Error uploading: $e');
+          if (mounted) {
+            setState(() => _isUploadingImage = false);
+            _showErrorSnackBar('Error uploading image: $e');
+          }
         }
-      } catch (e) {
-        setState(() => _isUploadingImage = false);
-        _showErrorSnackBar('Error uploading image: $e');
+      } else {
+        print('ℹ️ [UPLOAD_IMAGE] User cancelled selection');
+      }
+    } on PlatformException catch (e) {
+      print('❌ [UPLOAD_IMAGE] Platform exception: ${e.code} - ${e.message}');
+      
+      if (e.code == 'already_active') {
+        // Silently ignore - picker was already open
+        return;
+      } else if (e.code == 'photo_access_denied' || e.code == 'camera_access_denied') {
+        if (mounted) {
+          _showErrorSnackBar('Please grant photo access in settings');
+        }
+      } else {
+        if (mounted) {
+          _showErrorSnackBar('Failed to select image');
+        }
+      }
+    } catch (e) {
+      print('❌ [UPLOAD_IMAGE] Error: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to select image');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPickingImage = false;
+        });
       }
     }
   }
 
   Future<void> _uploadResume() async {
     try {
-      final typeGroup = XTypeGroup(label: 'PDFs', extensions: ['pdf']);
+      // Use file_picker for mobile compatibility
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
 
-      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
-
-      if (file != null) {
+      if (result != null && result.files.single.path != null) {
+        final filePath = result.files.single.path!;
+        final fileName = result.files.single.name;
+        
         setState(() {
-          _selectedResume = File(file.path);
+          _selectedResume = File(filePath);
           _isUploadingResume = true;
         });
+
+        // Verify file exists
+        if (!await _selectedResume!.exists()) {
+          throw Exception('Selected file not found');
+        }
 
         // Use PDFService to handle the upload and preview generation
         final uploadResult = await PDFService.uploadResumePDF(_selectedResume!);
         if (uploadResult['pdfUrl'] == null) {
-          throw Exception('Failed to upload resume');
+          throw Exception('Failed to upload resume to server');
         }
 
         final user = FirebaseAuth.instance.currentUser;
-        if (user != null) {
+        if (user != null && mounted) {
+          print('🔍 [PROFILE] Getting user role...');
           final role = await AuthService.getUserRole();
+          print('✅ [PROFILE] User role obtained: $role');
+          
+          if (!mounted) {
+            print('⚠️ [PROFILE] Widget unmounted after getUserRole, aborting');
+            return;
+          }
+          
           final collectionName =
               role == 'employer' ? 'employers' : 'users_specific';
+          print('📁 [PROFILE] Using collection: $collectionName');
 
           // Update Firestore with available data
           final updateData = {
             'resumeUrl': uploadResult['pdfUrl'],
-            'resumeFileName': file.name,
+            'resumeFileName': fileName,
             'updatedAt': FieldValue.serverTimestamp(),
           };
 
@@ -289,39 +371,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
             updateData['resumePreviewUrl'] = uploadResult['previewUrl'];
           }
 
+          print('💾 [PROFILE] Updating Firestore...');
           await FirebaseFirestore.instance
               .collection(collectionName)
               .doc(user.uid)
               .update(updateData);
+          print('✅ [PROFILE] Firestore updated successfully');
 
+          if (!mounted) {
+            print('⚠️ [PROFILE] Widget unmounted after Firestore update, aborting');
+            return;
+          }
+
+          print('🔄 [PROFILE] Updating UI state...');
           setState(() {
             _userData['resumeUrl'] = uploadResult['pdfUrl'];
-            _userData['resumeFileName'] = file.name;
+            _userData['resumeFileName'] = fileName;
             if (uploadResult['previewUrl'] != null) {
               _userData['resumePreviewUrl'] = uploadResult['previewUrl'];
             }
+            _selectedResume = null; // Clear selected resume after successful upload
           });
+          print('✅ [PROFILE] UI state updated successfully');
 
           _showSuccessSnackBar(
             uploadResult['previewUrl'] != null
                 ? 'Resume updated successfully!'
                 : 'Resume uploaded successfully (preview generation failed)',
           );
+          print('✅ [PROFILE] Success message shown');
+        } else if (!mounted) {
+          print('⚠️ [PROFILE] Widget not mounted at start, aborting upload process');
         }
+      } else {
+        // User cancelled the picker
+        debugPrint('Resume selection cancelled by user');
       }
     } catch (e) {
+      debugPrint('Error uploading resume: $e');
       _showErrorSnackBar('Error uploading resume: $e');
     } finally {
-      setState(() {
-        _isUploadingResume = false;
-        _selectedResume = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isUploadingResume = false;
+          _selectedResume = null;
+        });
+      }
     }
   }
 
   Future<String> _uploadToCloudinary(File file) async {
-    const cloudName = 'dteigt5oc';
-    const uploadPreset = 'get_work';
+    // Use environment variables instead of hardcoded values
+    final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
+    final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
+    
+    if (cloudName.isEmpty || uploadPreset.isEmpty) {
+      throw Exception('Cloudinary configuration missing in .env file');
+    }
 
     final uri = Uri.parse(
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload?upload_preset=$uploadPreset',
@@ -350,6 +456,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _saveProfile() async {
     if (!_validateInputs()) return;
+
+    // Prevent saving if uploads are in progress
+    if (_isAnyUploadInProgress) {
+      _showErrorSnackBar('Please wait for file uploads to complete before saving your profile');
+      return;
+    }
 
     setState(() => _isSaving = true);
 
@@ -395,15 +507,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             .doc(user.uid)
             .update(updatedData);
 
-        // Upload image if selected
-        if (_selectedImage != null) {
-          await _uploadImage();
-        }
-
-        // Upload resume if selected
-        if (_selectedResume != null) {
-          await _uploadResume();
-        }
+        // Note: Image and resume uploads are handled immediately when selected
+        // No need to upload again here to avoid duplicates
 
         if (mounted) {
           setState(() {
@@ -543,18 +648,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shareText += '\n\n📝 About:\n$bio';
       }
 
-      // Add resume preview image link if available (works better than PDF)
+      // Add resume link - PDF URL now works correctly with proper file extension
       final resumePreviewUrl = _userData['resumePreviewUrl'];
       final resumeUrl = _userData['resumeUrl'];
       
       debugPrint('Resume Preview URL: $resumePreviewUrl');
       debugPrint('Resume PDF URL: $resumeUrl');
       
-      // Prefer preview image URL over PDF URL (preview images work, PDFs don't on Cloudinary free tier)
-      if (resumePreviewUrl != null && resumePreviewUrl.toString().isNotEmpty) {
-        shareText += '\n\n📄 Resume Preview: $resumePreviewUrl';
-      } else if (resumeUrl != null && resumeUrl.toString().isNotEmpty) {
+      // Share the PDF URL (now has proper .pdf extension and opens correctly)
+      if (resumeUrl != null && resumeUrl.toString().isNotEmpty) {
         shareText += '\n\n📄 Resume: $resumeUrl';
+      } else if (resumePreviewUrl != null && resumePreviewUrl.toString().isNotEmpty) {
+        // Fallback to preview image if PDF URL not available
+        shareText += '\n\n📄 Resume Preview: $resumePreviewUrl';
       }
 
       shareText += '\n\n✨ Shared from Look Gig App';
@@ -684,12 +790,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         return '';
       case 'address':
+        final address = _userData['address'] ?? '';
         final city = _userData['city'] ?? '';
         final state = _userData['state'] ?? '';
-        if (city.isNotEmpty || state.isNotEmpty) {
-          return '$city${city.isNotEmpty && state.isNotEmpty ? ', ' : ''}$state';
+        final zipCode = _userData['zipCode'] ?? '';
+        
+        List<String> addressParts = [];
+        
+        if (address.isNotEmpty) {
+          addressParts.add(address);
         }
-        return '';
+        
+        if (city.isNotEmpty && state.isNotEmpty) {
+          addressParts.add('$city, $state');
+        } else if (city.isNotEmpty) {
+          addressParts.add(city);
+        } else if (state.isNotEmpty) {
+          addressParts.add(state);
+        }
+        
+        if (zipCode.isNotEmpty) {
+          addressParts.add(zipCode);
+        }
+        
+        return addressParts.join('\n');
+      
       case 'resume':
         return _userData['resumeFileName'] ?? '';
       default:
@@ -727,11 +852,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProfileSections() {
     return Column(
       children: [
-        // Profile completion banner (show ONLY if profile is less than 100% complete)
-        if (_profileCompletionPercentage < 100) 
-          _buildProfileCompletionBanner(),
-        if (_profileCompletionPercentage < 100) 
-          const SizedBox(height: 20),
+        // Profile completion widget temporarily disabled
+        const SizedBox.shrink(),
         
         _buildProfileSection(
           title: 'About me',
@@ -946,12 +1068,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 15),
 
-          // Phone number field
-          _buildPhoneField(
-            label: 'Phone number',
-            controller: _phoneController,
-            value: _userData['phone'] ?? '',
-          ),
+          // Phone number field with country code
+          _buildPhoneFieldWithCountryCode(),
           const SizedBox(height: 15),
 
           // Location field
@@ -960,6 +1078,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: _addressController,
             value: _userData['address'] ?? '',
           ),
+          const SizedBox(height: 15),
+
+          // Availability field
+          _buildAvailabilityField(),
           const SizedBox(height: 40),
 
           // Save button
@@ -2159,12 +2281,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       GestureDetector(
                         onTap: () {
                           if (_isEditing) {
-                            // Only allow save if not already saving
-                            if (!_isSaving) {
+                            // Only allow save if not already saving and no uploads in progress
+                            if (!_isSaving && !_isAnyUploadInProgress) {
                               setState(() {
                                 _isSavingFromSettingsIcon = true;
                               });
                               _saveProfile();
+                            } else if (_isAnyUploadInProgress) {
+                              _showErrorSnackBar('Please wait for file uploads to complete');
                             }
                           } else {
                             _navigateToSettings();
@@ -2632,6 +2756,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // Helper method to refresh profile completion after edits
+  void _refreshProfileCompletion() {
+    // Profile completion refresh temporarily disabled
+  }
+
   // Navigation methods for each section (will navigate to separate screens later)
   void _navigateToAboutMe() async {
     final result = await Navigator.push(
@@ -2642,6 +2771,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Reload user data if changes were made
     if (result == true) {
       _loadUserData();
+      _refreshProfileCompletion(); // Update profile completion
     }
   }
 
@@ -2689,6 +2819,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Reload user data if changes were made
     if (result == true) {
       _loadUserData();
+      _refreshProfileCompletion(); // Update profile completion
     }
   }
 
@@ -2731,9 +2862,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _navigateToAddress() {
-    // TODO: Navigate to Address screen
-    _showAddressDialog(); // Temporary - using dialog for now
+  void _navigateToAddress() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddressEditScreen(),
+      ),
+    );
+    
+    // Reload user data if address was updated
+    if (result == true) {
+      _loadUserData();
+      _refreshProfileCompletion(); // Update profile completion
+    }
   }
 
   void _navigateToResume() async {
@@ -2745,6 +2886,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (result == true) {
       // Reload user data if resume was updated
       _loadUserData();
+      _refreshProfileCompletion(); // Update profile completion
     }
   }
 
@@ -3366,6 +3508,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPhoneFieldWithCountryCode() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Phone number',
+          style: TextStyle(
+            fontFamily: 'DM Sans',
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            height: 1.302,
+            color: Color(0xFF150A33),
+          ),
+        ),
+        const SizedBox(height: 10),
+        PhoneInputField(
+          phoneController: _phoneController,
+          labelText: '',
+          hintText: 'Enter phone number',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvailabilityField() {
+    final List<DropdownItem> availabilityOptions = [
+      DropdownItem(value: 'Full-time', label: 'Full-time'),
+      DropdownItem(value: 'Part-time', label: 'Part-time'),
+      DropdownItem(value: 'Contract', label: 'Contract'),
+      DropdownItem(value: 'Freelance', label: 'Freelance'),
+      DropdownItem(value: 'Internship', label: 'Internship'),
+    ];
+
+    return CustomDropdownField(
+      labelText: 'Availability',
+      hintText: 'Select availability',
+      value: _selectedAvailability,
+      items: availabilityOptions,
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedAvailability = value;
+          });
+        }
+      },
+      enableSearch: false,
+      modalTitle: 'Select Availability',
     );
   }
 

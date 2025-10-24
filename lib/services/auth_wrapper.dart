@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/user/student_ob_screen/student_ob.dart';
 import 'package:get_work_app/screens/main/employer/emp_ob/employer_onboarding.dart';
 import 'package:get_work_app/services/auth_services.dart';
@@ -15,9 +14,16 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🔵 [AUTH_WRAPPER] AuthWrapper build() called');
     return StreamBuilder<User?>(
       stream: AuthService.authStateChanges,
       builder: (context, snapshot) {
+        print('🔵 [AUTH_WRAPPER] StreamBuilder called - ConnectionState: ${snapshot.connectionState}');
+        print('🔵 [AUTH_WRAPPER] StreamBuilder - HasData: ${snapshot.hasData}');
+        print('🔵 [AUTH_WRAPPER] StreamBuilder - HasError: ${snapshot.hasError}');
+        if (snapshot.hasData) {
+          print('🔵 [AUTH_WRAPPER] User UID: ${snapshot.data?.uid}');
+        }
         // Show loading while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -233,6 +239,11 @@ class AuthWrapper extends StatelessWidget {
     try {
       print('DEBUG [AUTH_WRAPPER] Getting user state for uid: $uid');
       
+      // Run comprehensive debug check in background
+      AuthService.debugCheckUserInAllCollections().catchError((e) {
+        print('🔴 [AUTH_WRAPPER] Background debug check failed: $e');
+      });
+      
       // Get user role from AuthService
       final String? userRole = await AuthService.getCurrentUserRole();
       print('DEBUG [AUTH_WRAPPER] User role: $userRole');
@@ -241,11 +252,10 @@ class AuthWrapper extends StatelessWidget {
       bool onboardingCompleted = await AuthService.hasUserCompletedOnboarding(uid);
       print('DEBUG [AUTH_WRAPPER] Onboarding completed: $onboardingCompleted');
       
-      // Get profile completion status (includes skippedOnboarding flag)
-      final completionStatus = await AuthService.getProfileCompletionStatus();
-      bool skippedOnboarding = completionStatus['skippedOnboarding'] ?? false;
+      // Get skipped onboarding status from user data
+      final userData = await AuthService.getUserData();
+      bool skippedOnboarding = userData?['skippedOnboarding'] ?? false;
       print('DEBUG [AUTH_WRAPPER] Skipped onboarding: $skippedOnboarding');
-      print('DEBUG [AUTH_WRAPPER] Profile completion status: $completionStatus');
 
       final result = {
         'role': userRole,

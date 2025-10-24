@@ -48,8 +48,10 @@ class AppRoutes {
   static const String noResults = '/no-results';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    print('🔵 [ROUTES] Generating route for: ${settings.name}');
     switch (settings.name) {
       case home:
+        print('🔵 [ROUTES] Navigating to AuthWrapper');
         return MaterialPageRoute(builder: (_) => const AuthWrapper());
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashScreen());

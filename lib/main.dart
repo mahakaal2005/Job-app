@@ -10,10 +10,27 @@ import 'package:get_work_app/provider/applicant_provider.dart';
 import 'package:get_work_app/provider/all_applicants_provider.dart';
 import 'package:get_work_app/provider/applicant_status_provider.dart';
 
+
 void main() async {
+  print('🔵 [MAIN] App starting...');
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await dotenv.load(fileName: ".env");
+  print('🔵 [MAIN] Flutter binding initialized');
+  
+  try {
+    await Firebase.initializeApp();
+    print('🔵 [MAIN] Firebase initialized successfully');
+  } catch (e) {
+    print('🔴 [MAIN] Firebase initialization failed: $e');
+  }
+  
+  try {
+    await dotenv.load(fileName: ".env");
+    print('🔵 [MAIN] Environment loaded successfully');
+  } catch (e) {
+    print('🔴 [MAIN] Environment loading failed: $e');
+  }
+  
+  print('🔵 [MAIN] Running app...');
   runApp(const MyApp());
 }
 
@@ -21,6 +38,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
+    print('🔵 [MAIN] MyApp build() called');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => JobProvider()),

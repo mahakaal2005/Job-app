@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/employer/new%20post/job_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
 
 class EditJobScreen extends StatefulWidget {
   final Job job;
@@ -159,50 +160,38 @@ class _EditJobScreenState extends State<EditJobScreen> {
       );
 
       await JobService.updateJob(updatedJob);
-      
+
       if (!mounted) return;
-      
+
       Navigator.pop(context, updatedJob);
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
+        ErrorHandler.showErrorSnackBar(context, e);
       }
-      
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(
-                  Icons.error_outline,
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Failed to update job',
+                style: const TextStyle(
                   color: Colors.white,
-                  size: 20,
+                  fontSize: 14,
+                  fontFamily: 'DM Sans',
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Failed to update job',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: 'DM Sans',
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+          ],
+        ),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
     }
   }
 
@@ -221,88 +210,100 @@ class _EditJobScreenState extends State<EditJobScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-              _buildSection(
-                'Basic Information',
-                [
-                  _buildTextField(
-                    controller: _titleController,
-                    label: 'Job Title',
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Please enter job title' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _descriptionController,
-                    label: 'Job Description',
-                    maxLines: 4,
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Please enter job description' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _locationController,
-                    label: 'Location',
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Please enter location' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDropdown(
-                    label: 'Employment Type',
-                    value: _selectedEmploymentType,
-                    items: _employmentTypes,
-                    onChanged: (value) => setState(() => _selectedEmploymentType = value!),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDropdown(
-                    label: 'Experience Level',
-                    value: _selectedExperienceLevel,
-                    items: _experienceLevels,
-                    onChanged: (value) => setState(() => _selectedExperienceLevel = value!),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _salaryRangeController,
-                    label: 'Salary Range (Optional)',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildListSection(
-                'Requirements',
-                _requirements,
-                _requirementController,
-                'Add requirement',
-                _addRequirement,
-                _removeRequirement,
-              ),
-              const SizedBox(height: 24),
-              _buildListSection(
-                'Required Skills',
-                _requiredSkills,
-                _skillController,
-                'Add skill',
-                _addSkill,
-                _removeSkill,
-              ),
-              const SizedBox(height: 24),
-              _buildListSection(
-                'Responsibilities',
-                _responsibilities,
-                _responsibilityController,
-                'Add responsibility',
-                _addResponsibility,
-                _removeResponsibility,
-              ),
-              const SizedBox(height: 24),
-              _buildListSection(
-                'Benefits',
-                _benefits,
-                _benefitController,
-                'Add benefit',
-                _addBenefit,
-                _removeBenefit,
-              ),
-              const SizedBox(height: 32),
+                    _buildSection('Basic Information', [
+                      _buildTextField(
+                        controller: _titleController,
+                        label: 'Job Title',
+                        validator:
+                            (value) =>
+                                value?.isEmpty == true
+                                    ? 'Please enter job title'
+                                    : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _descriptionController,
+                        label: 'Job Description',
+                        maxLines: 4,
+                        validator:
+                            (value) =>
+                                value?.isEmpty == true
+                                    ? 'Please enter job description'
+                                    : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _locationController,
+                        label: 'Location',
+                        validator:
+                            (value) =>
+                                value?.isEmpty == true
+                                    ? 'Please enter location'
+                                    : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDropdown(
+                        label: 'Employment Type',
+                        value: _selectedEmploymentType,
+                        items: _employmentTypes,
+                        onChanged:
+                            (value) => setState(
+                              () => _selectedEmploymentType = value!,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDropdown(
+                        label: 'Experience Level',
+                        value: _selectedExperienceLevel,
+                        items: _experienceLevels,
+                        onChanged:
+                            (value) => setState(
+                              () => _selectedExperienceLevel = value!,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _salaryRangeController,
+                        label: 'Salary Range (Optional)',
+                      ),
+                    ]),
+                    const SizedBox(height: 24),
+                    _buildListSection(
+                      'Requirements',
+                      _requirements,
+                      _requirementController,
+                      'Add requirement',
+                      _addRequirement,
+                      _removeRequirement,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildListSection(
+                      'Required Skills',
+                      _requiredSkills,
+                      _skillController,
+                      'Add skill',
+                      _addSkill,
+                      _removeSkill,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildListSection(
+                      'Responsibilities',
+                      _responsibilities,
+                      _responsibilityController,
+                      'Add responsibility',
+                      _addResponsibility,
+                      _removeResponsibility,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildListSection(
+                      'Benefits',
+                      _benefits,
+                      _benefitController,
+                      'Add benefit',
+                      _addBenefit,
+                      _removeBenefit,
+                    ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -392,7 +393,9 @@ class _EditJobScreenState extends State<EditJobScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.white,
+                              ),
                             ),
                           ),
                         )
@@ -400,7 +403,10 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         GestureDetector(
                           onTap: _updateJob,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.white.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
@@ -522,7 +528,10 @@ class _EditJobScreenState extends State<EditJobScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.lookGigPurple, width: 2),
+          borderSide: const BorderSide(
+            color: AppColors.lookGigPurple,
+            width: 2,
+          ),
         ),
         filled: true,
         fillColor: AppColors.surfaceColor,
@@ -566,12 +575,13 @@ class _EditJobScreenState extends State<EditJobScreen> {
               fontFamily: 'DM Sans',
             ),
             dropdownColor: AppColors.cardBackground,
-            items: items.map((String item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(item),
-              );
-            }).toList(),
+            items:
+                items.map((String item) {
+                  return DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(item),
+                  );
+                }).toList(),
           ),
         ),
       ],
@@ -629,15 +639,22 @@ class _EditJobScreenState extends State<EditJobScreen> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.dividerColor),
+                      borderSide: const BorderSide(
+                        color: AppColors.dividerColor,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.dividerColor),
+                      borderSide: const BorderSide(
+                        color: AppColors.dividerColor,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.lookGigPurple, width: 2),
+                      borderSide: const BorderSide(
+                        color: AppColors.lookGigPurple,
+                        width: 2,
+                      ),
                     ),
                     filled: true,
                     fillColor: AppColors.surfaceColor,
@@ -648,10 +665,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
               Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFF9228),
-                      Color(0xFFFFB347),
-                    ],
+                    colors: [Color(0xFFFF9228), Color(0xFFFFB347)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -674,7 +688,11 @@ class _EditJobScreenState extends State<EditJobScreen> {
                     ),
                     padding: const EdgeInsets.all(16),
                   ),
-                  child: const Icon(Icons.add, color: AppColors.whiteText, size: 20),
+                  child: const Icon(
+                    Icons.add,
+                    color: AppColors.whiteText,
+                    size: 20,
+                  ),
                 ),
               ),
             ],

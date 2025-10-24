@@ -5,6 +5,8 @@ import 'package:get_work_app/screens/main/user/jobs/job_detail_screen_new.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/image_utils.dart';
+import 'package:get_work_app/utils/number_formatter.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:provider/provider.dart';
 
 class BookmarksScreen extends StatefulWidget {
@@ -63,13 +65,19 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              final bookmarkProvider = Provider.of<BookmarkProvider>(context, listen: false);
-              for (var job in _savedJobs) {
-                bookmarkProvider.toggleBookmark(job.id);
-              }
-              if (mounted) {
-                setState(() => _savedJobs.clear());
+            onPressed: () async {
+              final canBookmark = await ProfileGatingService.canPerformAction(
+                context,
+                actionName: 'bookmark jobs',
+              );
+              if (canBookmark) {
+                final bookmarkProvider = Provider.of<BookmarkProvider>(context, listen: false);
+                for (var job in _savedJobs) {
+                  bookmarkProvider.toggleBookmark(job.id);
+                }
+                if (mounted) {
+                  setState(() => _savedJobs.clear());
+                }
               }
               Navigator.pop(context);
             },
@@ -294,12 +302,18 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 builder: (context) => JobDetailScreenNew(
                   job: job,
                   isBookmarked: isBookmarked,
-                  onBookmarkToggled: (jobId) {
-                    bookmarkProvider.toggleBookmark(jobId);
-                    if (mounted) {
-                      setState(() {
-                        _savedJobs.removeWhere((j) => j.id == jobId);
-                      });
+                  onBookmarkToggled: (jobId) async {
+                    final canBookmark = await ProfileGatingService.canPerformAction(
+                      context,
+                      actionName: 'bookmark this job',
+                    );
+                    if (canBookmark) {
+                      bookmarkProvider.toggleBookmark(jobId);
+                      if (mounted) {
+                        setState(() {
+                          _savedJobs.removeWhere((j) => j.id == jobId);
+                        });
+                      }
                     }
                   },
                 ),
@@ -603,8 +617,8 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       // Get first number (min salary)
       int minSalary = int.parse(numbers.first.group(0)!);
       
-      // Format the amount
-      String formattedAmount = minSalary.toString();
+      // Format the amount with commas
+      String formattedAmount = NumberFormatter.formatSalaryAmount(minSalary);
       
       // If no period was in the original data, determine it from employment type
       if (period.isEmpty) {
@@ -766,12 +780,18 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         iconPath: 'assets/images/popup_delete_icon.png',
                         text: 'Delete',
                         width: 81,
-                        onTap: () {
-                          bookmarkProvider.toggleBookmark(job.id);
-                          if (mounted) {
-                            setState(() {
-                              _savedJobs.removeWhere((j) => j.id == job.id);
-                            });
+                        onTap: () async {
+                          final canBookmark = await ProfileGatingService.canPerformAction(
+                            context,
+                            actionName: 'bookmark this job',
+                          );
+                          if (canBookmark) {
+                            bookmarkProvider.toggleBookmark(job.id);
+                            if (mounted) {
+                              setState(() {
+                                _savedJobs.removeWhere((j) => j.id == job.id);
+                              });
+                            }
                           }
                           Navigator.pop(context);
                           if (mounted) {
@@ -804,12 +824,18 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                                 builder: (context) => JobDetailScreenNew(
                                   job: job,
                                   isBookmarked: bookmarkProvider.isBookmarked(job.id),
-                                  onBookmarkToggled: (jobId) {
-                                    bookmarkProvider.toggleBookmark(jobId);
-                                    if (mounted) {
-                                      setState(() {
-                                        _savedJobs.removeWhere((j) => j.id == jobId);
-                                      });
+                                  onBookmarkToggled: (jobId) async {
+                                    final canBookmark = await ProfileGatingService.canPerformAction(
+                                      context,
+                                      actionName: 'bookmark this job',
+                                    );
+                                    if (canBookmark) {
+                                      bookmarkProvider.toggleBookmark(jobId);
+                                      if (mounted) {
+                                        setState(() {
+                                          _savedJobs.removeWhere((j) => j.id == jobId);
+                                        });
+                                      }
                                     }
                                   },
                                 ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
 
 class UpdatePasswordScreen extends StatefulWidget {
   const UpdatePasswordScreen({super.key});
@@ -164,8 +166,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       ),
     );
   }
-  Widget
- _buildPasswordField({
+  Widget _buildPasswordField({
     required String label,
     required TextEditingController controller,
     required bool isVisible,
@@ -190,15 +191,13 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
           ),
           const SizedBox(height: 10), // Gap between label and input
           
-          // Input field container
+          // Input field with proper validation border and shadow
           Container(
-            height: 40, // From Figma layout_L7FIME
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF), // From Figma fill_80TU3Y
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF99ABC6).withOpacity(0.18), // From Figma effect_P3HNLM
+                  color: const Color(0xFF99ABC6).withOpacity(0.18),
                   blurRadius: 62,
                   offset: const Offset(0, 4),
                 ),
@@ -214,8 +213,29 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                 color: Color(0xFF150A33),
               ),
               decoration: InputDecoration(
-                border: InputBorder.none,
+                filled: true,
+                fillColor: const Color(0xFFFFFFFF),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFF130160), width: 1),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.red, width: 2),
+                ),
                 suffixIcon: GestureDetector(
                   onTap: onVisibilityToggle,
                   child: Container(
@@ -288,17 +308,66 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
     });
 
     try {
-      // TODO: Implement password update logic with Firebase Auth
-      // This will require backend integration
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Step 1: Re-authenticate user with old password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: _oldPasswordController.text.trim(),
+      );
+
+      // This will throw an exception if the old password is wrong
+      await user.reauthenticateWithCredential(credential);
+
+      // Step 2: If re-authentication succeeds, update to new password
+      await user.updatePassword(_newPasswordController.text.trim());
+
       if (mounted) {
-        _showSuccessSnackBar('Password updated successfully!');
+        CustomToast.show(
+          context,
+          message: 'Password updated successfully!',
+          isSuccess: true,
+        );
         Navigator.pop(context);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String errorMessage;
+        switch (e.code) {
+          case 'wrong-password':
+            errorMessage = 'The entered old password is incorrect';
+            break;
+          case 'weak-password':
+            errorMessage = 'The new password is too weak. Please choose a stronger password';
+            break;
+          case 'requires-recent-login':
+            errorMessage = 'Please log out and log back in before changing your password';
+            break;
+          case 'network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection';
+            break;
+          case 'too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later';
+            break;
+          default:
+            errorMessage = 'Error updating password: ${e.message ?? e.code}';
+        }
+        CustomToast.show(
+          context,
+          message: errorMessage,
+          isSuccess: false,
+        );
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Error updating password: $e');
+        CustomToast.show(
+          context,
+          message: 'Error updating password: $e',
+          isSuccess: false,
+        );
       }
     } finally {
       if (mounted) {

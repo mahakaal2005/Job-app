@@ -1,8 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:get_work_app/widgets/custom_toast.dart';
 
 class EmpHelpSupportScreen extends StatelessWidget {
   const EmpHelpSupportScreen({super.key});
+
+  // Support contact information
+  static const String supportEmail = 'support@lookgig.com';
+  static const String supportPhone = '+1-555-123-4567';
+
+  // Launch email app with pre-filled support email
+  Future<void> _launchEmail(BuildContext context) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: supportEmail,
+      query: 'subject=Support Request - Look Gig App',
+    );
+
+    try {
+      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (context.mounted) {
+        CustomToast.show(
+          context,
+          message: 'Could not open email app',
+          isSuccess: false,
+        );
+      }
+    }
+  }
+
+  // Launch phone app with support number
+  Future<void> _launchPhone(BuildContext context) async {
+    final Uri phoneUri = Uri(
+      scheme: 'tel',
+      path: supportPhone,
+    );
+
+    try {
+      await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (context.mounted) {
+        CustomToast.show(
+          context,
+          message: 'Could not open phone app',
+          isSuccess: false,
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +59,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
         children: [
           _buildHeader(context),
           Expanded(
-            child: _buildBody(),
+            child: _buildBody(context),
           ),
         ],
       ),
@@ -106,7 +153,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -119,21 +166,19 @@ class EmpHelpSupportScreen extends StatelessWidget {
             title: 'Contact Information',
             children: [
               _buildContactCard(
+                context: context,
                 icon: Icons.email_outlined,
                 title: 'Email Support',
-                subtitle: 'support@getwork.com',
-                onTap: () {
-                  // Handle email tap
-                },
+                subtitle: supportEmail,
+                onTap: () => _launchEmail(context),
               ),
               const SizedBox(height: 16),
               _buildContactCard(
+                context: context,
                 icon: Icons.phone_outlined,
                 title: 'Phone Support',
-                subtitle: '+1 (555) 123-4567',
-                onTap: () {
-                  // Handle phone tap
-                },
+                subtitle: supportPhone,
+                onTap: () => _launchPhone(context),
               ),
             ],
           ),
@@ -231,6 +276,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
   }
 
   Widget _buildContactCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,

@@ -4,13 +4,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/screens/main/employer/emp_ob/cd_servi.dart';
-import 'package:get_work_app/screens/main/employer/profile/EMPLOYER_settings_screen.dart';
+import 'package:get_work_app/screens/main/employer/profile/employer_settings_screen.dart';
 import 'package:get_work_app/screens/main/employer/profile/company_info_edit_screen.dart';
 import 'package:get_work_app/screens/main/employer/profile/company_details_edit_screen.dart';
 import 'package:get_work_app/screens/main/employer/profile/contact_info_edit_screen.dart';
 import 'package:get_work_app/screens/main/employer/profile/company_logo_edit_screen.dart';
+import 'package:get_work_app/screens/main/employer/profile/employer_personal_info_edit_screen.dart';
+import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
+// import 'package:get_work_app/widgets/profile_completion_widget.dart';
+
+import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EmpProfile extends StatefulWidget {
@@ -26,6 +32,7 @@ class _EmpProfileState extends State<EmpProfile> {
   bool isEditing = false;
   bool isUploadingLogo = false;
   bool isLoading = true;
+  int _jobCount = 0; // Count of jobs posted by employer
   
   // Profile completion tracking
   bool _profileCompleted = true;
@@ -65,6 +72,8 @@ class _EmpProfileState extends State<EmpProfile> {
     // Defer initialization to after the first frame to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchEmployerData();
+      // Refresh profile completion data when screen loads
+      // Profile completion refresh temporarily disabled
     });
   }
 
@@ -76,7 +85,18 @@ class _EmpProfileState extends State<EmpProfile> {
 
       final userData = await AuthService.getUserData();
       final companyData = await AuthService.getEMPLOYERCompanyInfo();
-      final completionStatus = await AuthService.getProfileCompletionStatus();
+      // Profile completion status removed
+      
+      // Fetch job count from nested collection structure
+      if (companyData != null && companyData['companyName'] != null) {
+        final companyName = companyData['companyName'];
+        final jobsSnapshot = await FirebaseFirestore.instance
+            .collection('jobs')
+            .doc(companyName)
+            .collection('jobPostings')
+            .get();
+        _jobCount = jobsSnapshot.docs.length;
+      }
 
       if (mounted) {
         setState(() {
@@ -85,17 +105,10 @@ class _EmpProfileState extends State<EmpProfile> {
           logoUrl = companyData?['companyLogo'] ?? '';
           _selectedCompanySize = companyData?['companySize'];
           
-          // Set profile completion data
-          _skippedOnboarding = completionStatus['skippedOnboarding'] ?? false;
-          _profileCompletionPercentage = completionStatus['completionPercentage'] ?? 100;
-          _profileCompleted = completionStatus['profileCompleted'] ?? true;
-          
-          // If user has onboardingCompleted=true, they completed it before this feature
-          bool hasCompletedOnboarding = completionStatus['onboardingCompleted'] ?? false;
-          if (hasCompletedOnboarding && !_skippedOnboarding) {
-            _profileCompleted = true;
-            _profileCompletionPercentage = 100;
-          }
+          // Set profile completion data - simplified
+          _skippedOnboarding = userData?['skippedOnboarding'] ?? false;
+          _profileCompletionPercentage = 100; // Always complete
+          _profileCompleted = true; // Always complete
           
           _populateControllers();
           isLoading = false;
@@ -158,7 +171,7 @@ class _EmpProfileState extends State<EmpProfile> {
         }
       }
     } catch (e) {
-      _showSnackBar('Error uploading logo: $e', isError: true);
+      ErrorHandler.showErrorSnackBar(context, e);
       debugPrint('Logo upload error: $e');
     } finally {
       setState(() {
@@ -216,7 +229,7 @@ class _EmpProfileState extends State<EmpProfile> {
       }
     } catch (e) {
       debugPrint('Error updating profile: $e');
-      _showSnackBar('Error updating profile: ${e.toString()}', isError: true);
+      ErrorHandler.showErrorSnackBar(context, e);
     }
   }
 
@@ -338,12 +351,12 @@ class _EmpProfileState extends State<EmpProfile> {
   Future<void> _navigateToCompleteProfile() async {
     try {
       if (mounted) {
-        await Navigator.pushNamed(context, '/EMPLOYER-onboarding');
+        await Navigator.pushNamed(context, AppRoutes.employerOnboarding);
         // Reload profile data after returning from onboarding
         _fetchEmployerData();
       }
     } catch (e) {
-      _showSnackBar('Error: ${e.toString()}', isError: true);
+      ErrorHandler.showErrorSnackBar(context, e);
     }
   }
 
@@ -506,8 +519,9 @@ class _EmpProfileState extends State<EmpProfile> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
@@ -704,20 +718,17 @@ class _EmpProfileState extends State<EmpProfile> {
                 children: [
                   const SizedBox(height: 20),
                   
-                  // Profile completion banner (show ONLY if profile is less than 100% complete)
-                  if (_profileCompletionPercentage < 100) ...[
-                    _buildProfileCompletionBanner(),
-                    const SizedBox(height: 20),
-                  ],
+                  // Profile completion widget temporarily disabled
+                  const SizedBox.shrink(),
                   
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
                         _buildStatCard(
-                          title: 'employers',
-                          value: EMPLOYERCount,
-                          icon: Icons.people_outline,
+                          title: 'Jobs',
+                          value: _jobCount.toString(),
+                          icon: Icons.work_outline,
                           color: const Color(0xFFFF9228),
                         ),
                         _buildStatCard(
@@ -737,6 +748,24 @@ class _EmpProfileState extends State<EmpProfile> {
                   ),
                   const SizedBox(height: 24),
 
+                  _buildNavigationCard(
+                    title: 'Personal Information',
+                    icon: Icons.person_outline,
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EmployerPersonalInfoEditScreen(
+                            employerData: employerData ?? {},
+                          ),
+                        ),
+                      );
+                      if (result == true && mounted) {
+                        _fetchEmployerData();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
                   _buildNavigationCard(
                     title: 'Company Information',
                     icon: Icons.business,

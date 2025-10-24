@@ -72,6 +72,8 @@ class ChatService {
     String? fileName,
     int? fileSize,
   }) async {
+    print('💬 [CHAT] Sending $messageType message: ${fileName ?? message}');
+    
     final String currentUserId = _auth.currentUser!.uid;
     final String chatId = getChatId(currentUserId, receiverId);
     final Timestamp timestamp = Timestamp.now();
@@ -90,11 +92,13 @@ class ChatService {
     };
 
     // Add message to the chat collection
-    await _firestore
+    final docRef = await _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .add(newMessage);
+    
+    print('✅ [CHAT] Message saved: ${docRef.id}');
 
     // Update the chat metadata with appropriate preview
     String lastMessagePreview = message;

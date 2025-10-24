@@ -1,15 +1,102 @@
 import 'dart:io';
 
-import 'package:file_selector/file_selector.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/screens/main/employer/emp_ob/cd_servi.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
+import 'package:get_work_app/widgets/custom_dropdown_field.dart';
+import 'package:get_work_app/widgets/phone_input_field.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'skills_list.dart';
+
+// Enhanced validation result class
+class ValidationResult {
+  final bool isValid;
+  final int? pageWithError;
+  final String? fieldName;
+  final String? errorMessage;
+  final FocusNode? focusNode;
+
+  ValidationResult({
+    required this.isValid,
+    this.pageWithError,
+    this.fieldName,
+    this.errorMessage,
+    this.focusNode,
+  });
+
+  // Helper constructor for valid result
+  ValidationResult.valid() : this(isValid: true);
+
+  // Helper constructor for invalid result
+  ValidationResult.invalid({
+    required int pageWithError,
+    required String fieldName,
+    required String errorMessage,
+    FocusNode? focusNode,
+  }) : this(
+          isValid: false,
+          pageWithError: pageWithError,
+          fieldName: fieldName,
+          errorMessage: errorMessage,
+          focusNode: focusNode,
+        );
+}
+
+// Field hint widget for helpful tooltips
+class FieldHintWidget extends StatelessWidget {
+  final String hint;
+  final IconData icon;
+  final Color? color;
+
+  const FieldHintWidget({
+    super.key,
+    required this.hint,
+    this.icon = Icons.info_outline,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: (color ?? AppColors.lookGigPurple).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: (color ?? AppColors.lookGigPurple).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color ?? AppColors.lookGigPurple,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              hint,
+              style: TextStyle(
+                fontSize: 12,
+                color: color ?? AppColors.lookGigPurple,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class StudentOnboardingScreen extends StatefulWidget {
   const StudentOnboardingScreen({super.key});
@@ -31,6 +118,11 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _zipController = TextEditingController();
+  
+  // Address dropdown selections
+  String? _selectedCity;
+  String? _selectedState;
+  String? _selectedCountry = 'US'; // Default to US
   final _bioController = TextEditingController();
   final _collegeController = TextEditingController();
   final _ageController = TextEditingController();
@@ -40,6 +132,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   String _selectedGender = '';
   String _selectedEducationLevel = '';
   DateTime? _selectedDateOfBirth;
+  String _selectedCountryCode = '+91'; // Default to India
 
   // New fields for student model
   final List<String> _selectedSkills = [];
@@ -49,9 +142,341 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   File? _resumeFile;
   String? _resumeFileName;
   String? _resumePreviewUrl;
+  String? _resumeUrl; // Store the main PDF URL
   File? _profileImage;
   bool _isUploadingResume = false;
   final bool _isUploadingImage = false;
+
+  // Visual enhancement fields
+  final Map<int, bool> _pageCompletionStatus = {};
+  String? _highlightedFieldError;
+
+  // Address dropdown data
+  static final Map<String, List<DropdownItem>> _statesByCountry = {
+    'US': [
+      DropdownItem(value: 'AL', label: 'Alabama'),
+      DropdownItem(value: 'AK', label: 'Alaska'),
+      DropdownItem(value: 'AZ', label: 'Arizona'),
+      DropdownItem(value: 'AR', label: 'Arkansas'),
+      DropdownItem(value: 'CA', label: 'California'),
+      DropdownItem(value: 'CO', label: 'Colorado'),
+      DropdownItem(value: 'CT', label: 'Connecticut'),
+      DropdownItem(value: 'DE', label: 'Delaware'),
+      DropdownItem(value: 'FL', label: 'Florida'),
+      DropdownItem(value: 'GA', label: 'Georgia'),
+      DropdownItem(value: 'HI', label: 'Hawaii'),
+      DropdownItem(value: 'ID', label: 'Idaho'),
+      DropdownItem(value: 'IL', label: 'Illinois'),
+      DropdownItem(value: 'IN', label: 'Indiana'),
+      DropdownItem(value: 'IA', label: 'Iowa'),
+      DropdownItem(value: 'KS', label: 'Kansas'),
+      DropdownItem(value: 'KY', label: 'Kentucky'),
+      DropdownItem(value: 'LA', label: 'Louisiana'),
+      DropdownItem(value: 'ME', label: 'Maine'),
+      DropdownItem(value: 'MD', label: 'Maryland'),
+      DropdownItem(value: 'MA', label: 'Massachusetts'),
+      DropdownItem(value: 'MI', label: 'Michigan'),
+      DropdownItem(value: 'MN', label: 'Minnesota'),
+      DropdownItem(value: 'MS', label: 'Mississippi'),
+      DropdownItem(value: 'MO', label: 'Missouri'),
+      DropdownItem(value: 'MT', label: 'Montana'),
+      DropdownItem(value: 'NE', label: 'Nebraska'),
+      DropdownItem(value: 'NV', label: 'Nevada'),
+      DropdownItem(value: 'NH', label: 'New Hampshire'),
+      DropdownItem(value: 'NJ', label: 'New Jersey'),
+      DropdownItem(value: 'NM', label: 'New Mexico'),
+      DropdownItem(value: 'NY', label: 'New York'),
+      DropdownItem(value: 'NC', label: 'North Carolina'),
+      DropdownItem(value: 'ND', label: 'North Dakota'),
+      DropdownItem(value: 'OH', label: 'Ohio'),
+      DropdownItem(value: 'OK', label: 'Oklahoma'),
+      DropdownItem(value: 'OR', label: 'Oregon'),
+      DropdownItem(value: 'PA', label: 'Pennsylvania'),
+      DropdownItem(value: 'RI', label: 'Rhode Island'),
+      DropdownItem(value: 'SC', label: 'South Carolina'),
+      DropdownItem(value: 'SD', label: 'South Dakota'),
+      DropdownItem(value: 'TN', label: 'Tennessee'),
+      DropdownItem(value: 'TX', label: 'Texas'),
+      DropdownItem(value: 'UT', label: 'Utah'),
+      DropdownItem(value: 'VT', label: 'Vermont'),
+      DropdownItem(value: 'VA', label: 'Virginia'),
+      DropdownItem(value: 'WA', label: 'Washington'),
+      DropdownItem(value: 'WV', label: 'West Virginia'),
+      DropdownItem(value: 'WI', label: 'Wisconsin'),
+      DropdownItem(value: 'WY', label: 'Wyoming'),
+      DropdownItem(value: 'DC', label: 'District of Columbia'),
+    ],
+    'CA': [
+      DropdownItem(value: 'AB', label: 'Alberta'),
+      DropdownItem(value: 'BC', label: 'British Columbia'),
+      DropdownItem(value: 'MB', label: 'Manitoba'),
+      DropdownItem(value: 'NB', label: 'New Brunswick'),
+      DropdownItem(value: 'NL', label: 'Newfoundland and Labrador'),
+      DropdownItem(value: 'NS', label: 'Nova Scotia'),
+      DropdownItem(value: 'ON', label: 'Ontario'),
+      DropdownItem(value: 'PE', label: 'Prince Edward Island'),
+      DropdownItem(value: 'QC', label: 'Quebec'),
+      DropdownItem(value: 'SK', label: 'Saskatchewan'),
+      DropdownItem(value: 'NT', label: 'Northwest Territories'),
+      DropdownItem(value: 'NU', label: 'Nunavut'),
+      DropdownItem(value: 'YT', label: 'Yukon'),
+    ],
+    'GB': [
+      DropdownItem(value: 'ENG', label: 'England'),
+      DropdownItem(value: 'SCT', label: 'Scotland'),
+      DropdownItem(value: 'WLS', label: 'Wales'),
+      DropdownItem(value: 'NIR', label: 'Northern Ireland'),
+    ],
+    'AU': [
+      DropdownItem(value: 'NSW', label: 'New South Wales'),
+      DropdownItem(value: 'VIC', label: 'Victoria'),
+      DropdownItem(value: 'QLD', label: 'Queensland'),
+      DropdownItem(value: 'WA', label: 'Western Australia'),
+      DropdownItem(value: 'SA', label: 'South Australia'),
+      DropdownItem(value: 'TAS', label: 'Tasmania'),
+      DropdownItem(value: 'ACT', label: 'Australian Capital Territory'),
+      DropdownItem(value: 'NT', label: 'Northern Territory'),
+    ],
+    'IN': [
+      DropdownItem(value: 'AP', label: 'Andhra Pradesh'),
+      DropdownItem(value: 'AR', label: 'Arunachal Pradesh'),
+      DropdownItem(value: 'AS', label: 'Assam'),
+      DropdownItem(value: 'BR', label: 'Bihar'),
+      DropdownItem(value: 'CT', label: 'Chhattisgarh'),
+      DropdownItem(value: 'DL', label: 'Delhi'),
+      DropdownItem(value: 'GA', label: 'Goa'),
+      DropdownItem(value: 'GJ', label: 'Gujarat'),
+      DropdownItem(value: 'HR', label: 'Haryana'),
+      DropdownItem(value: 'HP', label: 'Himachal Pradesh'),
+      DropdownItem(value: 'JH', label: 'Jharkhand'),
+      DropdownItem(value: 'KA', label: 'Karnataka'),
+      DropdownItem(value: 'KL', label: 'Kerala'),
+      DropdownItem(value: 'MP', label: 'Madhya Pradesh'),
+      DropdownItem(value: 'MH', label: 'Maharashtra'),
+      DropdownItem(value: 'MN', label: 'Manipur'),
+      DropdownItem(value: 'ML', label: 'Meghalaya'),
+      DropdownItem(value: 'MZ', label: 'Mizoram'),
+      DropdownItem(value: 'NL', label: 'Nagaland'),
+      DropdownItem(value: 'OR', label: 'Odisha'),
+      DropdownItem(value: 'PB', label: 'Punjab'),
+      DropdownItem(value: 'RJ', label: 'Rajasthan'),
+      DropdownItem(value: 'SK', label: 'Sikkim'),
+      DropdownItem(value: 'TN', label: 'Tamil Nadu'),
+      DropdownItem(value: 'TG', label: 'Telangana'),
+      DropdownItem(value: 'TR', label: 'Tripura'),
+      DropdownItem(value: 'UP', label: 'Uttar Pradesh'),
+      DropdownItem(value: 'UT', label: 'Uttarakhand'),
+      DropdownItem(value: 'WB', label: 'West Bengal'),
+      DropdownItem(value: 'AN', label: 'Andaman and Nicobar Islands'),
+      DropdownItem(value: 'CH', label: 'Chandigarh'),
+      DropdownItem(value: 'DN', label: 'Dadra and Nagar Haveli and Daman and Diu'),
+      DropdownItem(value: 'JK', label: 'Jammu and Kashmir'),
+      DropdownItem(value: 'LA', label: 'Ladakh'),
+      DropdownItem(value: 'LD', label: 'Lakshadweep'),
+      DropdownItem(value: 'PY', label: 'Puducherry'),
+    ],
+  };
+
+  static final Map<String, List<DropdownItem>> _citiesByCountry = {
+    'US': [
+      DropdownItem(value: 'New York', label: 'New York'),
+      DropdownItem(value: 'Los Angeles', label: 'Los Angeles'),
+      DropdownItem(value: 'Chicago', label: 'Chicago'),
+      DropdownItem(value: 'Houston', label: 'Houston'),
+      DropdownItem(value: 'Phoenix', label: 'Phoenix'),
+      DropdownItem(value: 'Philadelphia', label: 'Philadelphia'),
+      DropdownItem(value: 'San Antonio', label: 'San Antonio'),
+      DropdownItem(value: 'San Diego', label: 'San Diego'),
+      DropdownItem(value: 'Dallas', label: 'Dallas'),
+      DropdownItem(value: 'San Jose', label: 'San Jose'),
+      DropdownItem(value: 'Austin', label: 'Austin'),
+      DropdownItem(value: 'Jacksonville', label: 'Jacksonville'),
+      DropdownItem(value: 'Fort Worth', label: 'Fort Worth'),
+      DropdownItem(value: 'Columbus', label: 'Columbus'),
+      DropdownItem(value: 'Charlotte', label: 'Charlotte'),
+      DropdownItem(value: 'San Francisco', label: 'San Francisco'),
+      DropdownItem(value: 'Indianapolis', label: 'Indianapolis'),
+      DropdownItem(value: 'Seattle', label: 'Seattle'),
+      DropdownItem(value: 'Denver', label: 'Denver'),
+      DropdownItem(value: 'Washington', label: 'Washington'),
+      DropdownItem(value: 'Boston', label: 'Boston'),
+      DropdownItem(value: 'El Paso', label: 'El Paso'),
+      DropdownItem(value: 'Nashville', label: 'Nashville'),
+      DropdownItem(value: 'Detroit', label: 'Detroit'),
+      DropdownItem(value: 'Oklahoma City', label: 'Oklahoma City'),
+      DropdownItem(value: 'Portland', label: 'Portland'),
+      DropdownItem(value: 'Las Vegas', label: 'Las Vegas'),
+      DropdownItem(value: 'Memphis', label: 'Memphis'),
+      DropdownItem(value: 'Louisville', label: 'Louisville'),
+      DropdownItem(value: 'Baltimore', label: 'Baltimore'),
+      DropdownItem(value: 'Milwaukee', label: 'Milwaukee'),
+      DropdownItem(value: 'Albuquerque', label: 'Albuquerque'),
+      DropdownItem(value: 'Tucson', label: 'Tucson'),
+      DropdownItem(value: 'Fresno', label: 'Fresno'),
+      DropdownItem(value: 'Sacramento', label: 'Sacramento'),
+      DropdownItem(value: 'Kansas City', label: 'Kansas City'),
+      DropdownItem(value: 'Mesa', label: 'Mesa'),
+      DropdownItem(value: 'Atlanta', label: 'Atlanta'),
+      DropdownItem(value: 'Colorado Springs', label: 'Colorado Springs'),
+      DropdownItem(value: 'Raleigh', label: 'Raleigh'),
+      DropdownItem(value: 'Omaha', label: 'Omaha'),
+      DropdownItem(value: 'Miami', label: 'Miami'),
+      DropdownItem(value: 'Long Beach', label: 'Long Beach'),
+      DropdownItem(value: 'Virginia Beach', label: 'Virginia Beach'),
+      DropdownItem(value: 'Oakland', label: 'Oakland'),
+      DropdownItem(value: 'Minneapolis', label: 'Minneapolis'),
+      DropdownItem(value: 'Tulsa', label: 'Tulsa'),
+      DropdownItem(value: 'Tampa', label: 'Tampa'),
+      DropdownItem(value: 'Arlington', label: 'Arlington'),
+      DropdownItem(value: 'New Orleans', label: 'New Orleans'),
+    ],
+    'CA': [
+      DropdownItem(value: 'Toronto', label: 'Toronto'),
+      DropdownItem(value: 'Montreal', label: 'Montreal'),
+      DropdownItem(value: 'Vancouver', label: 'Vancouver'),
+      DropdownItem(value: 'Calgary', label: 'Calgary'),
+      DropdownItem(value: 'Edmonton', label: 'Edmonton'),
+      DropdownItem(value: 'Ottawa', label: 'Ottawa'),
+      DropdownItem(value: 'Winnipeg', label: 'Winnipeg'),
+      DropdownItem(value: 'Quebec City', label: 'Quebec City'),
+      DropdownItem(value: 'Hamilton', label: 'Hamilton'),
+      DropdownItem(value: 'Kitchener', label: 'Kitchener'),
+      DropdownItem(value: 'London', label: 'London'),
+      DropdownItem(value: 'Victoria', label: 'Victoria'),
+      DropdownItem(value: 'Halifax', label: 'Halifax'),
+      DropdownItem(value: 'Oshawa', label: 'Oshawa'),
+      DropdownItem(value: 'Windsor', label: 'Windsor'),
+    ],
+    'GB': [
+      DropdownItem(value: 'London', label: 'London'),
+      DropdownItem(value: 'Birmingham', label: 'Birmingham'),
+      DropdownItem(value: 'Manchester', label: 'Manchester'),
+      DropdownItem(value: 'Glasgow', label: 'Glasgow'),
+      DropdownItem(value: 'Liverpool', label: 'Liverpool'),
+      DropdownItem(value: 'Edinburgh', label: 'Edinburgh'),
+      DropdownItem(value: 'Leeds', label: 'Leeds'),
+      DropdownItem(value: 'Sheffield', label: 'Sheffield'),
+      DropdownItem(value: 'Bristol', label: 'Bristol'),
+      DropdownItem(value: 'Cardiff', label: 'Cardiff'),
+      DropdownItem(value: 'Belfast', label: 'Belfast'),
+      DropdownItem(value: 'Newcastle', label: 'Newcastle'),
+      DropdownItem(value: 'Nottingham', label: 'Nottingham'),
+      DropdownItem(value: 'Leicester', label: 'Leicester'),
+    ],
+    'AU': [
+      DropdownItem(value: 'Sydney', label: 'Sydney'),
+      DropdownItem(value: 'Melbourne', label: 'Melbourne'),
+      DropdownItem(value: 'Brisbane', label: 'Brisbane'),
+      DropdownItem(value: 'Perth', label: 'Perth'),
+      DropdownItem(value: 'Adelaide', label: 'Adelaide'),
+      DropdownItem(value: 'Gold Coast', label: 'Gold Coast'),
+      DropdownItem(value: 'Newcastle', label: 'Newcastle'),
+      DropdownItem(value: 'Canberra', label: 'Canberra'),
+      DropdownItem(value: 'Sunshine Coast', label: 'Sunshine Coast'),
+      DropdownItem(value: 'Wollongong', label: 'Wollongong'),
+      DropdownItem(value: 'Hobart', label: 'Hobart'),
+      DropdownItem(value: 'Geelong', label: 'Geelong'),
+      DropdownItem(value: 'Townsville', label: 'Townsville'),
+      DropdownItem(value: 'Cairns', label: 'Cairns'),
+    ],
+    'IN': [
+      DropdownItem(value: 'Mumbai', label: 'Mumbai'),
+      DropdownItem(value: 'Delhi', label: 'Delhi'),
+      DropdownItem(value: 'Bangalore', label: 'Bangalore'),
+      DropdownItem(value: 'Hyderabad', label: 'Hyderabad'),
+      DropdownItem(value: 'Chennai', label: 'Chennai'),
+      DropdownItem(value: 'Kolkata', label: 'Kolkata'),
+      DropdownItem(value: 'Pune', label: 'Pune'),
+      DropdownItem(value: 'Ahmedabad', label: 'Ahmedabad'),
+      DropdownItem(value: 'Jaipur', label: 'Jaipur'),
+      DropdownItem(value: 'Surat', label: 'Surat'),
+      DropdownItem(value: 'Lucknow', label: 'Lucknow'),
+      DropdownItem(value: 'Kanpur', label: 'Kanpur'),
+      DropdownItem(value: 'Nagpur', label: 'Nagpur'),
+      DropdownItem(value: 'Indore', label: 'Indore'),
+      DropdownItem(value: 'Thane', label: 'Thane'),
+      DropdownItem(value: 'Bhopal', label: 'Bhopal'),
+      DropdownItem(value: 'Visakhapatnam', label: 'Visakhapatnam'),
+      DropdownItem(value: 'Pimpri-Chinchwad', label: 'Pimpri-Chinchwad'),
+      DropdownItem(value: 'Patna', label: 'Patna'),
+      DropdownItem(value: 'Vadodara', label: 'Vadodara'),
+      DropdownItem(value: 'Ghaziabad', label: 'Ghaziabad'),
+      DropdownItem(value: 'Ludhiana', label: 'Ludhiana'),
+      DropdownItem(value: 'Agra', label: 'Agra'),
+      DropdownItem(value: 'Nashik', label: 'Nashik'),
+      DropdownItem(value: 'Faridabad', label: 'Faridabad'),
+      DropdownItem(value: 'Meerut', label: 'Meerut'),
+      DropdownItem(value: 'Rajkot', label: 'Rajkot'),
+      DropdownItem(value: 'Kalyan-Dombivali', label: 'Kalyan-Dombivali'),
+      DropdownItem(value: 'Vasai-Virar', label: 'Vasai-Virar'),
+      DropdownItem(value: 'Varanasi', label: 'Varanasi'),
+      DropdownItem(value: 'Srinagar', label: 'Srinagar'),
+      DropdownItem(value: 'Aurangabad', label: 'Aurangabad'),
+      DropdownItem(value: 'Dhanbad', label: 'Dhanbad'),
+      DropdownItem(value: 'Amritsar', label: 'Amritsar'),
+      DropdownItem(value: 'Navi Mumbai', label: 'Navi Mumbai'),
+      DropdownItem(value: 'Allahabad', label: 'Allahabad'),
+      DropdownItem(value: 'Ranchi', label: 'Ranchi'),
+      DropdownItem(value: 'Howrah', label: 'Howrah'),
+      DropdownItem(value: 'Coimbatore', label: 'Coimbatore'),
+      DropdownItem(value: 'Jabalpur', label: 'Jabalpur'),
+      DropdownItem(value: 'Gwalior', label: 'Gwalior'),
+      DropdownItem(value: 'Vijayawada', label: 'Vijayawada'),
+      DropdownItem(value: 'Jodhpur', label: 'Jodhpur'),
+      DropdownItem(value: 'Madurai', label: 'Madurai'),
+      DropdownItem(value: 'Raipur', label: 'Raipur'),
+      DropdownItem(value: 'Kota', label: 'Kota'),
+      DropdownItem(value: 'Chandigarh', label: 'Chandigarh'),
+      DropdownItem(value: 'Guwahati', label: 'Guwahati'),
+      DropdownItem(value: 'Solapur', label: 'Solapur'),
+      DropdownItem(value: 'Hubli-Dharwad', label: 'Hubli-Dharwad'),
+      DropdownItem(value: 'Tiruchirappalli', label: 'Tiruchirappalli'),
+      DropdownItem(value: 'Bareilly', label: 'Bareilly'),
+    ],
+  };
+
+  final List<DropdownItem> _countries = [
+    DropdownItem(value: 'US', label: 'United States', icon: '🇺🇸'),
+    DropdownItem(value: 'CA', label: 'Canada', icon: '🇨🇦'),
+    DropdownItem(value: 'GB', label: 'United Kingdom', icon: '🇬🇧'),
+    DropdownItem(value: 'AU', label: 'Australia', icon: '🇦🇺'),
+    DropdownItem(value: 'DE', label: 'Germany', icon: '🇩🇪'),
+    DropdownItem(value: 'FR', label: 'France', icon: '🇫🇷'),
+    DropdownItem(value: 'IN', label: 'India', icon: '🇮🇳'),
+    DropdownItem(value: 'JP', label: 'Japan', icon: '🇯🇵'),
+    DropdownItem(value: 'BR', label: 'Brazil', icon: '🇧🇷'),
+    DropdownItem(value: 'MX', label: 'Mexico', icon: '🇲🇽'),
+    DropdownItem(value: 'IT', label: 'Italy', icon: '🇮🇹'),
+    DropdownItem(value: 'ES', label: 'Spain', icon: '🇪🇸'),
+    DropdownItem(value: 'NL', label: 'Netherlands', icon: '🇳🇱'),
+    DropdownItem(value: 'SE', label: 'Sweden', icon: '🇸🇪'),
+    DropdownItem(value: 'NO', label: 'Norway', icon: '🇳🇴'),
+  ];
+
+  // Dynamic lists that change based on selected country
+  List<DropdownItem> get _availableStates {
+    print('🔍 DEBUG: Getting states for country: $_selectedCountry');
+    print('🔍 DEBUG: Available countries in states map: ${_statesByCountry.keys.toList()}');
+    final states = _statesByCountry[_selectedCountry];
+    print('🔍 DEBUG: Found states: ${states?.length ?? 0}');
+    if (states != null && states.isNotEmpty) {
+      return states;
+    }
+    return [DropdownItem(value: 'Other', label: 'Other (Enter manually)')];
+  }
+
+  List<DropdownItem> get _availableCities {
+    print('🔍 DEBUG: Getting cities for country: $_selectedCountry');
+    print('🔍 DEBUG: Available countries in cities map: ${_citiesByCountry.keys.toList()}');
+    final cities = _citiesByCountry[_selectedCountry];
+    print('🔍 DEBUG: Found cities: ${cities?.length ?? 0}');
+    if (cities != null && cities.isNotEmpty) {
+      return cities;
+    }
+    return [DropdownItem(value: 'Other', label: 'Other (Enter manually)')];
+  }
+  final Map<String, String> _fieldHints = {};
+  final Map<String, bool> _fieldValidationStatus = {};
 
   // Enhanced education level options
   final List<String> _educationLevels = [
@@ -90,6 +515,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   void initState() {
     super.initState();
     _filteredSkills = [];
+    _updatePageCompletionStatus();
   }
 
   @override
@@ -229,67 +655,162 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error selecting image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ErrorHandler.showErrorSnackBar(context, e);
     }
   }
 
   Future<void> _pickResume() async {
+    print('🚀 [RESUME UPLOAD] Starting resume upload process...');
+    
     try {
-      final typeGroup = XTypeGroup(label: 'PDFs', extensions: ['pdf']);
+      print('📁 [RESUME UPLOAD] Opening file picker...');
+      
+      // Use file_picker for mobile compatibility
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
 
-      final XFile? file = await openFile(acceptedTypeGroups: [typeGroup]);
-
-      if (file != null) {
+      if (result != null && result.files.single.path != null) {
+        print('✅ [RESUME UPLOAD] File selected successfully');
+        
         setState(() {
           _isUploadingResume = true;
         });
 
-        final fileBytes = await file.readAsBytes();
-        final tempFile = File(file.path);
-        final fileName = file.name;
+        final filePath = result.files.single.path!;
+        final tempFile = File(filePath);
+        final fileName = result.files.single.name;
+        final fileSize = result.files.single.size;
 
+        print('📄 [RESUME UPLOAD] File details:');
+        print('   Name: $fileName');
+        print('   Path: $filePath');
+        print('   Size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+
+        // Verify file exists
+        print('🔍 [RESUME UPLOAD] Verifying file exists...');
+        if (!await tempFile.exists()) {
+          print('❌ [RESUME UPLOAD] File not found at path: $filePath');
+          throw Exception('Selected file not found at path: $filePath');
+        }
+        print('✅ [RESUME UPLOAD] File exists and is accessible');
+
+        // Validate file size (max 10MB)
+        if (fileSize > 10 * 1024 * 1024) {
+          print('❌ [RESUME UPLOAD] File too large: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
+          throw Exception('File size too large. Please select a PDF under 10MB.');
+        }
+
+        // Validate file extension
+        if (!fileName.toLowerCase().endsWith('.pdf')) {
+          print('❌ [RESUME UPLOAD] Invalid file type: $fileName');
+          throw Exception('Please select a PDF file only.');
+        }
+
+        print('📤 [RESUME UPLOAD] Starting upload to Cloudinary...');
+        
         // Use PDFService to handle the upload
         final uploadResult = await PDFService.uploadResumePDF(tempFile);
 
+        print('📊 [RESUME UPLOAD] Upload result:');
+        print('   PDF URL: ${uploadResult['pdfUrl'] ?? 'NULL'}');
+        print('   Preview URL: ${uploadResult['previewUrl'] ?? 'NULL'}');
+
         if (uploadResult['pdfUrl'] != null) {
+          print('🎉 [RESUME UPLOAD] Upload successful!');
+          
           setState(() {
             _resumeFile = tempFile;
             _resumeFileName = fileName;
+            _resumeUrl = uploadResult['pdfUrl']; // Store main PDF URL
             _resumePreviewUrl = uploadResult['previewUrl'];
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Resume uploaded successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Resume uploaded successfully!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
         } else {
-          throw Exception('Failed to upload resume');
+          print('❌ [RESUME UPLOAD] Upload failed - no PDF URL returned');
+          throw Exception('Failed to upload resume to server. Please check your internet connection and try again.');
         }
+      } else {
+        print('ℹ️ [RESUME UPLOAD] User cancelled file selection');
+        // User cancelled the picker - this is not an error
+        return;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error uploading resume: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    } catch (e, stackTrace) {
+      print('❌ [RESUME UPLOAD] Error occurred: $e');
+      print('📍 [RESUME UPLOAD] Stack trace: $stackTrace');
+      
+      if (mounted) {
+        String userMessage = 'Something went wrong. Please try again.';
+        
+        // Provide specific error messages based on error type
+        final errorString = e.toString().toLowerCase();
+        
+        if (errorString.contains('file not found') || errorString.contains('not found')) {
+          userMessage = 'Selected file could not be found. Please try selecting the file again.';
+        } else if (errorString.contains('file size') || errorString.contains('too large')) {
+          userMessage = 'File is too large. Please select a PDF under 10MB.';
+        } else if (errorString.contains('pdf') && errorString.contains('only')) {
+          userMessage = 'Please select a PDF file only.';
+        } else if (errorString.contains('network') || errorString.contains('connection')) {
+          userMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (errorString.contains('cloudinary') || errorString.contains('upload')) {
+          userMessage = 'Upload service temporarily unavailable. Please try again in a few moments.';
+        } else if (errorString.contains('permission') || errorString.contains('access')) {
+          userMessage = 'Cannot access the selected file. Please try selecting a different file.';
+        } else if (errorString.contains('timeout')) {
+          userMessage = 'Upload timed out. Please check your internet connection and try again.';
+        }
+        
+        print('👤 [RESUME UPLOAD] Showing user message: $userMessage');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(userMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: () {
+                // Retry the upload
+                _pickResume();
+              },
+            ),
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isUploadingResume = false;
-      });
+      print('🏁 [RESUME UPLOAD] Cleaning up...');
+      if (mounted) {
+        setState(() {
+          _isUploadingResume = false;
+        });
+      }
+      print('✅ [RESUME UPLOAD] Process completed');
     }
   }
 
   void _nextPage() {
     if (_currentPage < 4) {
-      // Updated to 5 pages (0-4)
+      // Validate before moving to next page
+      if (!_validateCurrentPage()) {
+        return;
+      }
+      
+      // Update completion status
+      _updatePageCompletionStatus();
+      
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -306,43 +827,650 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     }
   }
 
+  // Enhanced validation for current page (backward compatibility)
   bool _validateCurrentPage() {
-    switch (_currentPage) {
-      case 0:
-        return _phoneController.text.trim().isNotEmpty &&
-            _selectedGender.isNotEmpty &&
-            _selectedDateOfBirth != null &&
-            _ageController.text.trim().isNotEmpty;
-      case 1:
-        return _addressController.text.trim().isNotEmpty &&
-            _cityController.text.trim().isNotEmpty &&
-            _stateController.text.trim().isNotEmpty &&
-            _zipController.text.trim().isNotEmpty;
-      case 2:
-        bool educationValid = _selectedEducationLevel.isNotEmpty;
-        if (_selectedEducationLevel == 'Other') {
-          educationValid =
-              educationValid &&
-              _customEducationController.text.trim().isNotEmpty;
-        }
-        return educationValid && _collegeController.text.trim().isNotEmpty;
-      case 3:
-        return _selectedSkills.isNotEmpty && _selectedTimeSlots.isNotEmpty;
-      case 4:
-        // Make resume required
-        if (_resumeFile == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please upload your resume'),
-              backgroundColor: Colors.red,
-            ),
-          );
-          return false;
-        }
-        return true;
-      default:
-        return false;
+    final result = _validateSpecificPage(_currentPage);
+    if (!result.isValid) {
+      _showValidationError(result);
+      return false;
     }
+    return true;
+  }
+
+  // Comprehensive validation for ALL pages
+  ValidationResult _validateAllPages() {
+    print('🔍 [VALIDATION] Starting comprehensive validation of all pages...');
+    
+    for (int page = 0; page <= 4; page++) {
+      final result = _validateSpecificPage(page);
+      if (!result.isValid) {
+        print('❌ [VALIDATION] Found issue on page $page: ${result.errorMessage}');
+        return result;
+      }
+    }
+    
+    print('✅ [VALIDATION] All pages validated successfully');
+    return ValidationResult.valid();
+  }
+
+  // Validate a specific page and return detailed result
+  ValidationResult _validateSpecificPage(int pageIndex) {
+    switch (pageIndex) {
+      case 0: // Personal Info
+        if (_phoneController.text.trim().isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Phone Number',
+            errorMessage: 'Phone number is required on Personal Info page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_selectedGender.isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Gender',
+            errorMessage: 'Please select your gender on Personal Info page',
+          );
+        }
+        if (_selectedDateOfBirth == null) {
+          return ValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Date of Birth',
+            errorMessage: 'Date of birth is required on Personal Info page',
+          );
+        }
+        if (_ageController.text.trim().isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 0,
+            fieldName: 'Age',
+            errorMessage: 'Age is required on Personal Info page',
+            focusNode: FocusNode(),
+          );
+        }
+        break;
+        
+      case 1: // Address
+        if (_addressController.text.trim().isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Address',
+            errorMessage: 'Address is required on Address page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_selectedCity == null || _selectedCity!.isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'City',
+            errorMessage: 'City is required on Address page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_selectedState == null || _selectedState!.isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'State',
+            errorMessage: 'State is required on Address page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_zipController.text.trim().isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'ZIP Code',
+            errorMessage: 'ZIP code is required on Address page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_selectedCountry == null || _selectedCountry!.isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 1,
+            fieldName: 'Country',
+            errorMessage: 'Country is required on Address page',
+            focusNode: FocusNode(),
+          );
+        }
+        break;
+        
+      case 2: // Education
+        if (_selectedEducationLevel.isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 2,
+            fieldName: 'Education Level',
+            errorMessage: 'Please select your education level on Education page',
+          );
+        }
+        if (_selectedEducationLevel == 'Other' && 
+            _customEducationController.text.trim().isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 2,
+            fieldName: 'Custom Education',
+            errorMessage: 'Please specify your education level on Education page',
+            focusNode: FocusNode(),
+          );
+        }
+        if (_collegeController.text.trim().isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 2,
+            fieldName: 'College/Institution',
+            errorMessage: 'College or institution name is required on Education page',
+            focusNode: FocusNode(),
+          );
+        }
+        break;
+        
+      case 3: // Skills & Availability
+        if (_selectedSkills.isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 3,
+            fieldName: 'Skills',
+            errorMessage: 'Please select at least one skill on Skills & Availability page',
+          );
+        }
+        if (_selectedTimeSlots.isEmpty) {
+          return ValidationResult.invalid(
+            pageWithError: 3,
+            fieldName: 'Time Slots',
+            errorMessage: 'Please select your preferred time slots on Skills & Availability page',
+          );
+        }
+        break;
+        
+      case 4: // Resume
+        if (_resumeFile == null) {
+          return ValidationResult.invalid(
+            pageWithError: 4,
+            fieldName: 'Resume',
+            errorMessage: 'Please upload your resume on Profile & Documents page',
+          );
+        }
+        break;
+    }
+    
+    return ValidationResult.valid();
+  }
+
+  // Show validation error with enhanced messaging
+  void _showValidationError(ValidationResult result) {
+    if (result.isValid) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.errorMessage ?? 'Please complete all required fields'),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Go to Page',
+          textColor: Colors.white,
+          onPressed: () => _navigateToPageWithError(result),
+        ),
+      ),
+    );
+    
+    // Focus on field if it's a text field
+    if (result.focusNode != null) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        FocusScope.of(context).requestFocus(result.focusNode!);
+      });
+    }
+  }
+
+  // Navigate to page with validation error
+  void _navigateToPageWithError(ValidationResult result) {
+    if (result.pageWithError == null) return;
+    
+    print('🧭 [NAVIGATION] Auto-navigating to page ${result.pageWithError} for field: ${result.fieldName}');
+    
+    // Set highlighted field for visual feedback
+    setState(() {
+      _highlightedFieldError = result.fieldName;
+    });
+    
+    _pageController.animateToPage(
+      result.pageWithError!,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+    
+    // Focus on the field after navigation
+    if (result.focusNode != null) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        FocusScope.of(context).requestFocus(result.focusNode!);
+      });
+    }
+    
+    // Clear highlight after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _highlightedFieldError = null;
+        });
+      }
+    });
+  }
+
+  // Update page completion status
+  void _updatePageCompletionStatus() {
+    for (int page = 0; page <= 4; page++) {
+      final result = _validateSpecificPage(page);
+      _pageCompletionStatus[page] = result.isValid;
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  // Get completion percentage
+  double _getCompletionPercentage() {
+    int completedPages = _pageCompletionStatus.values.where((completed) => completed).length;
+    return completedPages / 5.0;
+  }
+
+  // Get page completion icon
+  Widget _getPageCompletionIcon(int pageIndex) {
+    final isCompleted = _pageCompletionStatus[pageIndex] ?? false;
+    final isCurrentPage = pageIndex == _currentPage;
+    
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isCompleted 
+            ? Colors.green 
+            : isCurrentPage 
+                ? AppColors.lookGigPurple 
+                : Colors.grey.withOpacity(0.3),
+        border: Border.all(
+          color: isCurrentPage ? AppColors.lookGigPurple : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: Icon(
+        isCompleted ? Icons.check : Icons.circle,
+        size: 12,
+        color: isCompleted || isCurrentPage ? Colors.white : Colors.grey,
+      ),
+    );
+  }
+
+  // Get field decoration with error highlighting
+  InputDecoration _getFieldDecoration(String label, String fieldName, {String? hintText}) {
+    final isHighlighted = _highlightedFieldError == fieldName;
+    
+    return InputDecoration(
+      labelText: label,
+      hintText: hintText,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(
+          color: isHighlighted ? Colors.red : AppColors.grey.withOpacity(0.3),
+          width: isHighlighted ? 2 : 1,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(
+          color: isHighlighted ? Colors.red : AppColors.lookGigPurple,
+          width: 2,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(
+          color: isHighlighted ? Colors.red : AppColors.grey.withOpacity(0.3),
+          width: isHighlighted ? 2 : 1,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      filled: isHighlighted,
+      fillColor: isHighlighted ? Colors.red.withOpacity(0.1) : null,
+    );
+  }
+
+  // Get page title for progress indicators
+  String _getPageTitle(int pageIndex) {
+    switch (pageIndex) {
+      case 0: return 'Personal';
+      case 1: return 'Address';
+      case 2: return 'Education';
+      case 3: return 'Skills';
+      case 4: return 'Resume';
+      default: return 'Step ${pageIndex + 1}';
+    }
+  }
+
+  // Smart field validators with helpful feedback
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required';
+    }
+    // Remove spaces and special characters for validation
+    final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.length < 10) {
+      return 'Phone number must be at least 10 digits';
+    }
+    return null; // Valid
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email is required';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Please enter a valid email address';
+    }
+    return null; // Valid
+  }
+
+  String? _validateZipCode(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'ZIP code is required';
+    }
+    final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.length < 5) {
+      return 'ZIP code must be at least 5 digits';
+    }
+    return null; // Valid
+  }
+
+  String? _validateAge(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Age is required';
+    }
+    final age = int.tryParse(value);
+    if (age == null) {
+      return 'Please enter a valid age';
+    }
+    if (age < 16) {
+      return 'You must be at least 16 years old';
+    }
+    if (age > 100) {
+      return 'Please enter a valid age';
+    }
+    return null; // Valid
+  }
+
+  // Get helpful hint for field
+  Widget? _getFieldHint(String fieldName) {
+    switch (fieldName) {
+      case 'Phone Number':
+        return const FieldHintWidget(
+          hint: 'Enter your 10-digit mobile number (e.g., 9876543210)',
+          icon: Icons.phone_outlined,
+        );
+      case 'Date of Birth':
+        return const FieldHintWidget(
+          hint: 'Select your date of birth to calculate your age automatically',
+          icon: Icons.cake_outlined,
+        );
+      case 'ZIP Code':
+        return const FieldHintWidget(
+          hint: 'Enter your area PIN code (e.g., 110001)',
+          icon: Icons.location_on_outlined,
+        );
+      case 'College/Institution':
+        return const FieldHintWidget(
+          hint: 'Enter your current college or institution name',
+          icon: Icons.school_outlined,
+        );
+      case 'Skills':
+        return const FieldHintWidget(
+          hint: 'Select at least 3 skills that match your expertise',
+          icon: Icons.star_outline,
+          color: Colors.orange,
+        );
+      case 'Resume':
+        return const FieldHintWidget(
+          hint: 'Upload your resume in PDF format (max 10MB)',
+          icon: Icons.upload_file_outlined,
+          color: Colors.blue,
+        );
+      default:
+        return null;
+    }
+  }
+
+  // Show success feedback for completed fields
+  Widget _getSuccessFeedback(String message) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.green.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle_outline,
+            size: 16,
+            color: Colors.green,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.green,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Get field hint text for specific fields
+  String? _getFieldHintText(String fieldName) {
+    final hints = {
+      'Phone Number': 'Enter your 10-digit mobile number',
+      'Age': 'Must be 18 or older to register',
+      'Address': 'Enter your complete residential address',
+      'City': 'Enter the city where you currently live',
+      'State': 'Enter your state or province',
+      'ZIP Code': 'Enter your postal/ZIP code',
+      'College/Institution': 'Enter your current or most recent educational institution',
+      'Custom Education': 'Please specify your education level',
+    };
+    return hints[fieldName];
+  }
+
+  // Validate field in real-time
+  bool _validateFieldRealTime(String fieldName, String value) {
+    switch (fieldName) {
+      case 'Phone Number':
+        final isValid = value.trim().length >= 10 && RegExp(r'^\d+$').hasMatch(value.trim());
+        _fieldValidationStatus[fieldName] = isValid;
+        return isValid;
+      case 'Age':
+        final age = int.tryParse(value.trim());
+        final isValid = age != null && age >= 18 && age <= 100;
+        _fieldValidationStatus[fieldName] = isValid;
+        return isValid;
+      case 'ZIP Code':
+        final isValid = value.trim().length >= 5 && RegExp(r'^\d+$').hasMatch(value.trim());
+        _fieldValidationStatus[fieldName] = isValid;
+        return isValid;
+      default:
+        final isValid = value.trim().isNotEmpty;
+        _fieldValidationStatus[fieldName] = isValid;
+        return isValid;
+    }
+  }
+
+  // Get enhanced field decoration with hints and validation
+  InputDecoration _getEnhancedFieldDecoration(String label, String fieldName, {String? hintText}) {
+    final isHighlighted = _highlightedFieldError == fieldName;
+    final fieldHint = _getFieldHintText(fieldName);
+    final isValid = _fieldValidationStatus[fieldName];
+    
+    Color borderColor = AppColors.grey.withOpacity(0.3);
+    Color? fillColor;
+    Widget? suffixIcon;
+    
+    if (isHighlighted) {
+      borderColor = Colors.red;
+      fillColor = Colors.red.withOpacity(0.1);
+    } else if (isValid == true) {
+      borderColor = Colors.green;
+      suffixIcon = const Icon(Icons.check_circle, color: Colors.green, size: 20);
+    } else if (isValid == false) {
+      borderColor = Colors.orange;
+      suffixIcon = const Icon(Icons.warning, color: Colors.orange, size: 20);
+    }
+    
+    return InputDecoration(
+      labelText: label,
+      hintText: hintText ?? fieldHint,
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(
+          color: isHighlighted ? Colors.red : AppColors.lookGigPurple,
+          width: 2,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: borderColor, width: 1),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      filled: fillColor != null,
+      fillColor: fillColor,
+      helperText: isValid == false ? _getValidationMessage(fieldName) : null,
+      helperStyle: const TextStyle(color: Colors.orange, fontSize: 12),
+    );
+  }
+
+  // Get validation message for fields
+  String? _getValidationMessage(String fieldName) {
+    switch (fieldName) {
+      case 'Phone Number':
+        return 'Please enter a valid 10-digit phone number';
+      case 'Age':
+        return 'Age must be between 18 and 100';
+      case 'ZIP Code':
+        return 'Please enter a valid ZIP code';
+      default:
+        return 'This field is required';
+    }
+  }
+
+  // Create tooltip widget for complex fields
+  Widget _buildTooltipField({
+    required Widget child,
+    required String tooltip,
+    String? fieldName,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      decoration: BoxDecoration(
+        color: AppColors.lookGigPurple,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+      child: child,
+    );
+  }
+
+  // Create field with real-time validation
+  Widget _buildValidatedTextField({
+    required TextEditingController controller,
+    required String label,
+    required String fieldName,
+    String? hintText,
+    TextInputType? keyboardType,
+    int? maxLines,
+    String? tooltip,
+  }) {
+    Widget textField = TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines ?? 1,
+      decoration: _getEnhancedFieldDecoration(label, fieldName, hintText: hintText),
+      onChanged: (value) {
+        _validateFieldRealTime(fieldName, value);
+        _updatePageCompletionStatus();
+      },
+    );
+
+    if (tooltip != null) {
+      textField = _buildTooltipField(
+        child: textField,
+        tooltip: tooltip,
+        fieldName: fieldName,
+      );
+    }
+
+    return textField;
+  }
+
+  // Build smart completion indicator for current page
+  Widget _buildPageCompletionIndicator() {
+    final currentPageValid = _pageCompletionStatus[_currentPage] ?? false;
+    final completionPercentage = _getCompletionPercentage();
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: currentPageValid ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: currentPageValid ? Colors.green : Colors.orange,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            currentPageValid ? Icons.check_circle : Icons.info,
+            color: currentPageValid ? Colors.green : Colors.orange,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              currentPageValid 
+                  ? 'This page is complete! ${completionPercentage == 1.0 ? "Ready to finish!" : "Continue to next page."}'
+                  : 'Please complete all required fields on this page',
+              style: TextStyle(
+                color: currentPageValid ? Colors.green : Colors.orange,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          if (completionPercentage > 0)
+            Text(
+              '${(completionPercentage * 100).toInt()}%',
+              style: TextStyle(
+                color: currentPageValid ? Colors.green : Colors.orange,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   // Skip onboarding confirmation dialog
@@ -418,47 +1546,130 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           _isLoading = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ErrorHandler.showErrorSnackBar(context, e);
       }
     }
   }
 
   Future<void> _completeOnboarding() async {
-    if (!_validateCurrentPage()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please complete all required fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    print('🎯 [ONBOARDING] Starting completion process...');
+    
+    // Comprehensive validation of ALL pages
+    final validationResult = _validateAllPages();
+    if (!validationResult.isValid) {
+      print('❌ [ONBOARDING] Validation failed, navigating to problematic page');
+      _showValidationError(validationResult);
+      _navigateToPageWithError(validationResult);
       return;
     }
+    
+    // Additional validation for critical fields
+    if (_phoneController.text.trim().isEmpty) {
+      ErrorHandler.showErrorSnackBar(context, Exception('Phone number is required'));
+      return;
+    }
+    
+    if (_selectedGender.isEmpty) {
+      ErrorHandler.showErrorSnackBar(context, Exception('Gender selection is required'));
+      return;
+    }
+    
+    if (_selectedDateOfBirth == null) {
+      ErrorHandler.showErrorSnackBar(context, Exception('Date of birth is required'));
+      return;
+    }
+    
+    print('✅ [ONBOARDING] All validations passed, proceeding with completion');
 
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Show progress indicator with steps
+      _showProgressDialog();
+      
+      // Add timeout to prevent infinite loading
+      await Future.any([
+        _performOnboardingCompletion(),
+        Future.delayed(const Duration(seconds: 30), () {
+          throw Exception('Onboarding completion timed out. Please check your internet connection and try again.');
+        }),
+      ]);
+      
+      // Hide progress dialog on success
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      print('❌ [ONBOARDING] Error during completion: $e');
+      
+      // Hide progress dialog on error
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ErrorHandler.showErrorSnackBar(context, e);
+      }
+    }
+  }
+
+  Future<void> _performOnboardingCompletion() async {
+    try {
+      print('📤 [ONBOARDING] Starting upload processes...');
+      
+      // Validate that we have all required data
+      if (_selectedSkills.isEmpty) {
+        throw Exception('Please select at least one skill before completing your profile');
+      }
+      
       // Upload profile image if selected
       String? profileImageUrl;
       if (_profileImage != null) {
-        profileImageUrl = await CloudinaryService.uploadImage(_profileImage!);
+        print('🖼️ [ONBOARDING] Uploading profile image...');
+        profileImageUrl = await CloudinaryService.uploadImage(_profileImage!).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            throw Exception('Profile image upload timed out');
+          },
+        );
         if (profileImageUrl == null) {
           throw Exception('Failed to upload profile image');
         }
+        print('✅ [ONBOARDING] Profile image uploaded successfully');
       }
 
-      // Upload resume and get URLs if selected
+      // Use already uploaded resume URLs or upload if not done yet
       Map<String, String?> resumeUrls = {};
       if (_resumeFile != null) {
-        resumeUrls = await PDFService.uploadResumePDF(_resumeFile!);
-        if (resumeUrls['pdfUrl'] == null) {
-          throw Exception('Failed to upload resume');
+        if (_resumeUrl != null && _resumePreviewUrl != null) {
+          // Resume already uploaded, use existing URLs
+          print('✅ [ONBOARDING] Using already uploaded resume URLs');
+          print('   PDF URL: $_resumeUrl');
+          print('   Preview URL: $_resumePreviewUrl');
+          resumeUrls = {
+            'pdfUrl': _resumeUrl,
+            'previewUrl': _resumePreviewUrl,
+          };
+        } else {
+          // Resume not uploaded yet, upload now
+          print('📤 [ONBOARDING] Resume not uploaded yet, uploading now...');
+          resumeUrls = await PDFService.uploadResumePDF(_resumeFile!).timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              throw Exception('Resume upload timed out');
+            },
+          );
+          if (resumeUrls['pdfUrl'] == null) {
+            throw Exception('Failed to upload resume');
+          }
+          print('✅ [ONBOARDING] Resume uploaded successfully');
         }
       }
 
@@ -471,13 +1682,16 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
 
       // Prepare onboarding data with student model structure
       Map<String, dynamic> onboardingData = {
-        'phone': _phoneController.text.trim(),
+        'phone': '$_selectedCountryCode ${_phoneController.text.trim()}',
+        'phoneCountryCode': _selectedCountryCode,
+        'phoneNumber': _phoneController.text.trim(),
         'gender': _selectedGender,
         'dateOfBirth': _selectedDateOfBirth?.toIso8601String(),
         'address': _addressController.text.trim(),
-        'city': _cityController.text.trim(),
-        'state': _stateController.text.trim(),
+        'city': _selectedCity ?? '',
+        'state': _selectedState ?? '',
         'zipCode': _zipController.text.trim(),
+        'country': _selectedCountry ?? 'US',
         'educationLevel': finalEducationLevel,
         'bio': _bioController.text.trim(),
         'onboardingCompleted': true,
@@ -503,7 +1717,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       };
 
       // Save onboarding data to user profile
-      await AuthService.completeUserOnboarding(onboardingData);
+      print('💾 [ONBOARDING] Saving onboarding data to Firestore...');
+      await AuthService.completeUserOnboarding(onboardingData).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Firestore save operation timed out');
+        },
+      );
+      print('✅ [ONBOARDING] Onboarding data saved successfully');
 
       if (mounted) {
         setState(() {
@@ -525,19 +1746,44 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      print('❌ [ONBOARDING] Error in completion: $e');
+      rethrow; // Re-throw to be caught by the main completion method
     }
+  }
+
+  void _showProgressDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.lookGigPurple),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Completing your profile...',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'DM Sans',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This may take a few moments',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                fontFamily: 'DM Sans',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -635,6 +1881,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     setState(() {
                       _currentPage = index;
                     });
+                    // Update completion status when page changes
+                    _updatePageCompletionStatus();
                   },
                   children: [
                     _buildPersonalInfoPage(),
@@ -692,9 +1940,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                                   ? null
                                   : _currentPage == 4
                                   ? _completeOnboarding
-                                  : _validateCurrentPage()
-                                  ? _nextPage
-                                  : null,
+                                  : _nextPage,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.lookGigPurple,
                             foregroundColor: AppColors.white,
@@ -754,20 +2000,16 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Phone Number
-          const Text(
-            'Phone Number *',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              hintText: 'Enter your phone number',
-              prefixIcon: Icon(Icons.phone, color: AppColors.lookGigOrange),
-            ),
-            onChanged: (value) => setState(() {}),
+          // Phone Number with Country Code
+          PhoneInputField(
+            phoneController: _phoneController,
+            labelText: 'Phone Number *',
+            hintText: 'Enter your phone number',
+            onCountryCodeChanged: (countryCode) {
+              setState(() {
+                _selectedCountryCode = countryCode;
+              });
+            },
           ),
           const SizedBox(height: 20),
 
@@ -908,7 +2150,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Address
+          // Street Address
           const Text(
             'Street Address *',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -918,28 +2160,62 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             controller: _addressController,
             decoration: const InputDecoration(
               hintText: 'Enter your street address',
+              hintStyle: TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+              ),
               prefixIcon: Icon(Icons.home, color: AppColors.lookGigOrange),
             ),
             onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 20),
 
-          // City
+          // Country Dropdown
+          const Text(
+            'Country *',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          CustomDropdownField(
+            labelText: '',
+            hintText: 'Select your country',
+            value: _selectedCountry,
+            items: _countries,
+            onChanged: (value) {
+              print('🔍 DEBUG: Country changed to: $value');
+              setState(() {
+                _selectedCountry = value;
+                // Clear city and state when country changes
+                _selectedCity = null;
+                _selectedState = null;
+              });
+              print('🔍 DEBUG: After setState, _selectedCountry = $_selectedCountry');
+            },
+            enableSearch: true,
+            prefixIcon: Icons.public_rounded,
+            modalTitle: 'Select Country',
+          ),
+          const SizedBox(height: 20),
+
+          // City Dropdown
           const Text(
             'City *',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
-          TextFormField(
-            controller: _cityController,
-            decoration: const InputDecoration(
-              hintText: 'Enter your city',
-              prefixIcon: Icon(
-                Icons.location_city,
-                color: AppColors.lookGigOrange,
-              ),
-            ),
-            onChanged: (value) => setState(() {}),
+          CustomDropdownField(
+            labelText: '',
+            hintText: 'Select your city',
+            value: _availableCities.any((city) => city.value == _selectedCity) ? _selectedCity : null,
+            items: _availableCities,
+            onChanged: (value) {
+              setState(() {
+                _selectedCity = value;
+              });
+            },
+            enableSearch: true,
+            prefixIcon: Icons.location_city_rounded,
+            modalTitle: 'Select City',
           ),
           const SizedBox(height: 20),
 
@@ -950,24 +2226,27 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'State *',
-                      style: TextStyle(
+                    Text(
+                      '${_selectedCountry == 'CA' ? 'Province' : _selectedCountry == 'GB' ? 'Region' : _selectedCountry == 'AU' ? 'State/Territory' : 'State'} *',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _stateController,
-                      decoration: const InputDecoration(
-                        hintText: 'State',
-                        prefixIcon: Icon(
-                          Icons.map,
-                          color: AppColors.lookGigOrange,
-                        ),
-                      ),
-                      onChanged: (value) => setState(() {}),
+                    CustomDropdownField(
+                      labelText: '',
+                      hintText: _selectedCountry == 'CA' ? 'Select province' : _selectedCountry == 'GB' ? 'Select region' : _selectedCountry == 'AU' ? 'Select state/territory' : 'Select state',
+                      value: _availableStates.any((state) => state.value == _selectedState) ? _selectedState : null,
+                      items: _availableStates,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedState = value;
+                        });
+                      },
+                      enableSearch: true,
+                      prefixIcon: Icons.map_rounded,
+                      modalTitle: _selectedCountry == 'CA' ? 'Select Province' : _selectedCountry == 'GB' ? 'Select Region' : _selectedCountry == 'AU' ? 'Select State/Territory' : 'Select State',
                     ),
                   ],
                 ),
@@ -977,9 +2256,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'ZIP Code *',
-                      style: TextStyle(
+                    Text(
+                      '${_selectedCountry == 'US' ? 'ZIP Code' : _selectedCountry == 'CA' ? 'Postal Code' : _selectedCountry == 'GB' ? 'Postcode' : _selectedCountry == 'AU' ? 'Postcode' : _selectedCountry == 'IN' ? 'PIN Code' : 'Postal Code'} *',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -987,10 +2266,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _zipController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: 'ZIP',
-                        prefixIcon: Icon(
+                      keyboardType: _selectedCountry == 'CA' || _selectedCountry == 'GB' ? TextInputType.text : TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: _selectedCountry == 'US' ? 'ZIP' : _selectedCountry == 'CA' ? 'K1A 0A6' : _selectedCountry == 'GB' ? 'SW1A 1AA' : _selectedCountry == 'AU' ? '2000' : _selectedCountry == 'IN' ? '110001' : 'Postal Code',
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
+                        prefixIcon: const Icon(
                           Icons.local_post_office,
                           color: AppColors.lookGigOrange,
                         ),
@@ -1409,26 +2692,26 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.05),
+              color: AppColors.lookGigPurple.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              border: Border.all(color: AppColors.lookGigPurple.withOpacity(0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.lightbulb_outline,
-                      color: Colors.blue.shade600,
+                      color: AppColors.lookGigPurple,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'Tips for Success',
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        color: Colors.blue.shade600,
+                        color: AppColors.lookGigPurple,
                       ),
                     ),
                   ],
@@ -1508,13 +2791,17 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.lookGigPurple,
+                      ),
                     )
                     : const Icon(Icons.upload_file),
             label: Text(
               _resumeFile == null ? 'Upload Resume' : 'Change Resume',
             ),
             style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.lookGigPurple,
               padding: const EdgeInsets.symmetric(vertical: 16),
               side: BorderSide(color: AppColors.lookGigPurple.withOpacity(0.5)),
             ),

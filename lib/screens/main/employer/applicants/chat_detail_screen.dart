@@ -4,6 +4,7 @@ import 'package:get_work_app/models/chat_message.dart';
 import 'package:get_work_app/services/chat_service.dart';
 import 'package:get_work_app/services/media_upload_service.dart';
 import 'package:get_work_app/widgets/read_receipt_icon.dart';
+import 'package:get_work_app/widgets/image_viewer_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
@@ -767,108 +768,141 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                       children: [
                         // Display image if message type is image
                         if (message.messageType == 'image' && message.fileUrl != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(15),
-                              topRight: const Radius.circular(15),
-                              bottomLeft: Radius.circular(message.message.isEmpty ? (isMe ? 15 : 0) : 0),
-                              bottomRight: Radius.circular(message.message.isEmpty ? (isMe ? 0 : 15) : 0),
-                            ),
-                            child: Image.network(
-                              message.fileUrl!,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  height: 200,
-                                  color: Colors.grey[300],
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
+                          GestureDetector(
+                            onTap: () {
+                              // Open image in full-screen viewer
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ImageViewerScreen(
+                                    imageUrl: message.fileUrl!,
+                                    senderName: isMe ? 'You' : widget.otherUserName,
+                                    timestamp: message.timestamp.toDate(),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.only(
+                                topLeft: const Radius.circular(15),
+                                topRight: const Radius.circular(15),
+                                bottomLeft: Radius.circular(message.message.isEmpty ? (isMe ? 15 : 0) : 0),
+                                bottomRight: Radius.circular(message.message.isEmpty ? (isMe ? 0 : 15) : 0),
+                              ),
+                              child: Image.network(
+                                message.fileUrl!,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    height: 200,
+                                    color: Colors.grey[300],
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 200,
-                                  color: Colors.grey[300],
-                                  child: const Center(
-                                    child: Icon(Icons.broken_image, size: 50),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 200,
+                                    color: Colors.grey[300],
+                                    child: const Center(
+                                      child: Icon(Icons.broken_image, size: 50),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         // Display document if message type is document
                         if (message.messageType == 'document' && message.fileUrl != null)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                Image.asset(
-                                  'assets/images/pdf_icon.png',
-                                  width: 44,
-                                  height: 44,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE5252A),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.picture_as_pdf, color: Colors.white, size: 24),
-                                      ),
+                          GestureDetector(
+                            onTap: () async {
+                              try {
+                                final uri = Uri.parse(message.fileUrl!);
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                } else {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Cannot open document')),
                                     );
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        message.fileName ?? 'Document',
-                                        style: TextStyle(
-                                          color: isMe ? Colors.white : const Color(0xFF524B6B),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                          fontFamily: 'DM Sans',
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (message.fileSize != null)
+                                  }
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error opening document: $e')),
+                                  );
+                                }
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isMe 
+                                    ? Colors.white.withOpacity(0.1)
+                                    : Colors.white.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  // Document icon - use asset image for PDF, programmatic for others
+                                  _buildDocumentIcon(message.fileName),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
                                         Text(
-                                          '${(message.fileSize! / 1024).toStringAsFixed(1)} KB',
+                                          message.fileName ?? 'Document',
                                           style: TextStyle(
-                                            color: isMe ? Colors.white70 : const Color(0xFF898989),
-                                            fontSize: 11,
+                                            color: isMe ? Colors.white : const Color(0xFF524B6B),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
                                             fontFamily: 'DM Sans',
                                           ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                    ],
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              MediaUploadService.formatFileSize(message.fileSize),
+                                              style: TextStyle(
+                                                color: isMe ? Colors.white70 : const Color(0xFF898989),
+                                                fontSize: 11,
+                                                fontFamily: 'DM Sans',
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '• Tap to open',
+                                              style: TextStyle(
+                                                color: isMe ? Colors.white60 : const Color(0xFF898989),
+                                                fontSize: 10,
+                                                fontFamily: 'DM Sans',
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.download,
-                                    color: isMe ? Colors.white : const Color(0xFF130160),
-                                    size: 20,
+                                  Icon(
+                                    Icons.open_in_new,
+                                    color: isMe ? Colors.white70 : const Color(0xFF130160),
+                                    size: 18,
                                   ),
-                                  onPressed: () async {
-                                    final uri = Uri.parse(message.fileUrl!);
-                                    if (await canLaunchUrl(uri)) {
-                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                    }
-                                  },
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         // Display text message
@@ -1104,6 +1138,112 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
       return '${weekdays[date.weekday - 1]} ${_formatTime(timestamp)}';
     } else {
       return '${date.day}/${date.month}/${date.year} ${_formatTime(timestamp)}';
+    }
+  }
+
+  // Build document icon widget - use asset for PDF, programmatic for others
+  Widget _buildDocumentIcon(String? fileName) {
+    if (fileName == null) {
+      return Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: const Color(0xFF6B7280),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: const Center(
+          child: Icon(Icons.insert_drive_file, color: Colors.white, size: 24),
+        ),
+      );
+    }
+    
+    final extension = fileName.toLowerCase().split('.').last;
+    
+    // Use asset image for PDF
+    if (extension == 'pdf') {
+      return Image.asset(
+        'assets/images/pdf_icon.png',
+        width: 44,
+        height: 44,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5252A),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Center(
+              child: Icon(Icons.picture_as_pdf, color: Colors.white, size: 24),
+            ),
+          );
+        },
+      );
+    }
+    
+    // Use programmatic icons for other file types
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: _getDocumentColor(fileName),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Center(
+        child: Icon(
+          _getDocumentIcon(fileName),
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+    );
+  }
+
+  // Get document icon based on file extension
+  IconData _getDocumentIcon(String? fileName) {
+    if (fileName == null) return Icons.insert_drive_file;
+    
+    final extension = fileName.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      case 'ppt':
+      case 'pptx':
+        return Icons.slideshow;
+      case 'txt':
+        return Icons.text_snippet;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  // Get document color based on file extension
+  Color _getDocumentColor(String? fileName) {
+    if (fileName == null) return const Color(0xFF6B7280);
+    
+    final extension = fileName.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'pdf':
+        return const Color(0xFFE5252A); // Red for PDF
+      case 'doc':
+      case 'docx':
+        return const Color(0xFF2B579A); // Blue for Word
+      case 'xls':
+      case 'xlsx':
+        return const Color(0xFF217346); // Green for Excel
+      case 'ppt':
+      case 'pptx':
+        return const Color(0xFFD24726); // Orange for PowerPoint
+      case 'txt':
+        return const Color(0xFF6B7280); // Gray for text
+      default:
+        return const Color(0xFF130160); // Purple for others
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/widgets/custom_date_picker.dart';
 
 class AppreciationScreen extends StatefulWidget {
   final Map<String, dynamic>? appreciationToEdit;
@@ -17,8 +18,9 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
   final TextEditingController _awardNameController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _yearController = TextEditingController();
 
+  DateTime? _startDate;
+  DateTime? _endDate;
   bool _isSaving = false;
   bool _hasUnsavedChanges = false;
 
@@ -39,7 +41,6 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
     _awardNameController.dispose();
     _categoryController.dispose();
     _descriptionController.dispose();
-    _yearController.dispose();
     super.dispose();
   }
 
@@ -48,23 +49,43 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
     _awardNameController.text = appreciation['title'] ?? '';
     _categoryController.text = appreciation['organization'] ?? '';
     _descriptionController.text = appreciation['description'] ?? '';
-    _yearController.text = appreciation['year'] ?? '';
+    
+    // Parse dates
+    if (appreciation['startDate'] != null) {
+      _startDate = _parseDate(appreciation['startDate']);
+    }
+    if (appreciation['endDate'] != null) {
+      _endDate = _parseDate(appreciation['endDate']);
+    }
 
     _originalData = Map<String, dynamic>.from(appreciation);
+  }
+
+  DateTime? _parseDate(dynamic dateValue) {
+    try {
+      if (dateValue is String && dateValue.isNotEmpty) {
+        return DateTime.tryParse(dateValue);
+      } else if (dateValue is Timestamp) {
+        return dateValue.toDate();
+      } else if (dateValue is DateTime) {
+        return dateValue;
+      }
+    } catch (e) {
+      debugPrint('Error parsing date: $e');
+    }
+    return null;
   }
 
   void _addListeners() {
     _awardNameController.addListener(_checkForChanges);
     _categoryController.addListener(_checkForChanges);
     _descriptionController.addListener(_checkForChanges);
-    _yearController.addListener(_checkForChanges);
   }
 
   void _removeListeners() {
     _awardNameController.removeListener(_checkForChanges);
     _categoryController.removeListener(_checkForChanges);
     _descriptionController.removeListener(_checkForChanges);
-    _yearController.removeListener(_checkForChanges);
   }
 
   void _checkForChanges() {
@@ -72,11 +93,13 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
         ? (_awardNameController.text != (_originalData['title'] ?? '') ||
            _categoryController.text != (_originalData['organization'] ?? '') ||
            _descriptionController.text != (_originalData['description'] ?? '') ||
-           _yearController.text != (_originalData['year'] ?? ''))
+           _startDate != _parseDate(_originalData['startDate']) ||
+           _endDate != _parseDate(_originalData['endDate']))
         : (_awardNameController.text.isNotEmpty ||
            _categoryController.text.isNotEmpty ||
            _descriptionController.text.isNotEmpty ||
-           _yearController.text.isNotEmpty);
+           _startDate != null ||
+           _endDate != null);
 
     if (hasChanges != _hasUnsavedChanges) {
       setState(() {
@@ -100,7 +123,8 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
           'title': _awardNameController.text.trim(),
           'organization': _categoryController.text.trim(),
           'description': _descriptionController.text.trim(),
-          'year': _yearController.text.trim(),
+          'startDate': _startDate?.toIso8601String() ?? '',
+          'endDate': _endDate?.toIso8601String() ?? '',
         };
 
         // Get current user document
@@ -120,7 +144,7 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
           final index = appreciations.indexWhere((app) => 
             app['title'] == _originalData['title'] &&
             app['organization'] == _originalData['organization'] &&
-            app['year'] == _originalData['year']
+            app['startDate'] == _originalData['startDate']
           );
           if (index != -1) {
             appreciations[index] = appreciationData;
@@ -159,8 +183,16 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
       _showErrorSnackBar('Category/Achievement is required');
       return false;
     }
-    if (_yearController.text.trim().isEmpty) {
-      _showErrorSnackBar('Year is required');
+    if (_startDate == null) {
+      _showErrorSnackBar('Start date is required');
+      return false;
+    }
+    if (_endDate == null) {
+      _showErrorSnackBar('End date is required');
+      return false;
+    }
+    if (_startDate!.isAfter(_endDate!)) {
+      _showErrorSnackBar('Start date must be before end date');
       return false;
     }
     return true;
@@ -329,7 +361,7 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
           appreciations.removeWhere((app) => 
             app['title'] == _originalData['title'] &&
             app['organization'] == _originalData['organization'] &&
-            app['year'] == _originalData['year']
+            app['startDate'] == _originalData['startDate']
           );
 
           await docRef.update({
@@ -384,6 +416,62 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
+  }
+
+  Future<void> _selectStartDate() async {
+    final DateTime? picked = await showCustomDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+      title: 'Start Date',
+    );
+
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
+        if (_endDate != null && picked.isAfter(_endDate!)) {
+          _endDate = null;
+        }
+      });
+      _checkForChanges();
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    final DateTime? picked = await showCustomDatePicker(
+      context: context,
+      initialDate: _endDate ?? _startDate ?? DateTime.now(),
+      firstDate: _startDate ?? DateTime(1950),
+      lastDate: DateTime.now(),
+      title: 'End Date',
+    );
+
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
+      });
+      _checkForChanges();
+    }
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -465,12 +553,25 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
 
                             const SizedBox(height: 20),
 
-                            // Year field (positioned at x: 0, y: 224 from Figma)
-                            _buildInputField(
-                              label: 'End date',
-                              controller: _yearController,
-                              width: 160,
-                              height: 66,
+                            // Date fields row
+                            Row(
+                              children: [
+                                // Start date field
+                                _buildDateField(
+                                  label: 'Start date',
+                                  date: _startDate,
+                                  onTap: _selectStartDate,
+                                  width: 160,
+                                ),
+                                const SizedBox(width: 15),
+                                // End date field
+                                _buildDateField(
+                                  label: 'End date',
+                                  date: _endDate,
+                                  onTap: _selectEndDate,
+                                  width: 160,
+                                ),
+                              ],
                             ),
 
                             const SizedBox(height: 20),
@@ -577,6 +678,80 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
                   fontSize: 12,
                   height: 1.302,
                   color: Color(0xFF524B6B),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    double? width,
+  }) {
+    return SizedBox(
+      width: width ?? 160,
+      height: 66,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Label
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'DM Sans',
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              height: 1.302,
+              color: Color(0xFF150A33),
+            ),
+          ),
+          
+          const SizedBox(height: 10),
+          
+          // Date field
+          Expanded(
+            child: GestureDetector(
+              onTap: onTap,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF99ABC6).withOpacity(0.18),
+                      blurRadius: 62,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        date != null ? _formatDate(date) : 'Select date',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                          height: 1.302,
+                          color: date != null 
+                              ? const Color(0xFF524B6B)
+                              : const Color(0xFFAAA6B9),
+                        ),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: Color(0xFF524B6B),
+                    ),
+                  ],
                 ),
               ),
             ),

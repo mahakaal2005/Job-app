@@ -31,19 +31,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadProfileCompletionStatus() async {
     try {
-      final status = await AuthService.getProfileCompletionStatus();
+      // Profile completion status removed
       if (mounted) {
         setState(() {
-          _skippedOnboarding = status['skippedOnboarding'] ?? false;
-          _profileCompletionPercentage = status['completionPercentage'] ?? 100;
-          _profileCompleted = status['profileCompleted'] ?? true;
-          
-          // If user has onboardingCompleted=true, they completed it before this feature
-          bool hasCompletedOnboarding = status['onboardingCompleted'] ?? false;
-          if (hasCompletedOnboarding && !_skippedOnboarding) {
-            _profileCompleted = true;
-            _profileCompletionPercentage = 100;
-          }
+          _skippedOnboarding = false;
+          _profileCompletionPercentage = 100; // Always complete
+          _profileCompleted = true; // Always complete
         });
       }
     } catch (e) {

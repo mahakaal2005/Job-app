@@ -3,6 +3,9 @@ import 'package:get_work_app/screens/main/employer/new post/job_new_model.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_job_detail.dart';
 import 'package:get_work_app/screens/main/user/jobs/user_all_jobs_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/error_handler.dart';
+import 'package:get_work_app/utils/number_formatter.dart';
+import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:provider/provider.dart';
 import 'package:get_work_app/screens/main/user/jobs/bookmark_provider.dart';
 
@@ -41,9 +44,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
         _isLoading = false;
         _isRefreshing = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading saved jobs: $e')),
-      );
+      ErrorHandler.showErrorSnackBar(context, e);
     }
   }
 
@@ -54,14 +55,7 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
 
   String _formatSalary(String salary) {
     final num = int.tryParse(salary) ?? 0;
-    if (num >= 10000000) {
-      return '₹${(num / 10000000).toStringAsFixed(1)}Cr';
-    } else if (num >= 100000) {
-      return '₹${(num / 100000).toStringAsFixed(1)}L';
-    } else if (num >= 1000) {
-      return '₹${(num / 1000).toStringAsFixed(0)}K';
-    }
-    return '₹$num';
+    return '₹${NumberFormatter.formatSalaryAmount(num)}';
   }
 
   String _getTimeAgo(String dateString) {
@@ -100,7 +94,15 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                   builder: (context) => JobDetailScreen(
                     job: job,
                     isBookmarked: isBookmarked,
-                    onBookmarkToggled: (jobId) => bookmarkProvider.toggleBookmark(jobId),
+                    onBookmarkToggled: (jobId) async {
+                      final canBookmark = await ProfileGatingService.canPerformAction(
+                        context,
+                        actionName: 'bookmark this job',
+                      );
+                      if (canBookmark) {
+                        bookmarkProvider.toggleBookmark(jobId);
+                      }
+                    },
                   ),
                 ),
               );
@@ -160,12 +162,18 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () {
-                          bookmarkProvider.toggleBookmark(job.id);
-                          if (isBookmarked) {
-                            setState(() {
-                              _savedJobs.removeWhere((j) => j.id == job.id);
-                            });
+                        onPressed: () async {
+                          final canBookmark = await ProfileGatingService.canPerformAction(
+                            context,
+                            actionName: 'bookmark this job',
+                          );
+                          if (canBookmark) {
+                            bookmarkProvider.toggleBookmark(job.id);
+                            if (isBookmarked) {
+                              setState(() {
+                                _savedJobs.removeWhere((j) => j.id == job.id);
+                              });
+                            }
                           }
                         },
                         icon: Icon(
@@ -254,7 +262,15 @@ class _SavedJobsScreenState extends State<SavedJobsScreen> {
                               builder: (context) => JobDetailScreen(
                                 job: job,
                                 isBookmarked: isBookmarked,
-                                onBookmarkToggled: (jobId) => bookmarkProvider.toggleBookmark(jobId),
+                                onBookmarkToggled: (jobId) async {
+                                  final canBookmark = await ProfileGatingService.canPerformAction(
+                                    context,
+                                    actionName: 'bookmark this job',
+                                  );
+                                  if (canBookmark) {
+                                    bookmarkProvider.toggleBookmark(jobId);
+                                  }
+                                },
                               ),
                             ),
                           );
