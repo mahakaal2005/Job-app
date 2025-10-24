@@ -1951,30 +1951,47 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                             shadowColor: const Color(0x2E99ABC6),
                             disabledBackgroundColor: AppColors.grey.withOpacity(0.3),
                           ),
-                          child:
-                              _isLoading
-                                  ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                  : Text(
-                                    _currentPage == 4 ? 'COMPLETE' : 'NEXT',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.84,
-                                      fontFamily: 'DM Sans',
-                                    ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
                                   ),
+                                )
+                              : Text(
+                                  _currentPage == 4 ? 'COMPLETE' : 'NEXT',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.84,
+                                    fontFamily: 'DM Sans',
+                                  ),
+                                ),
                         ),
                       ),
                     ),
                   ],
+                ),
+              ),
+              
+              // Skip for now link
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: GestureDetector(
+                  onTap: _isLoading ? null : _handleSkipOnboarding,
+                  child: Text(
+                    'Skip for now',
+                    style: TextStyle(
+                      color: _isLoading ? AppColors.grey : AppColors.lookGigPurple,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                      fontFamily: 'DM Sans',
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1982,6 +1999,149 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         ),
       ),
     );
+  }
+
+  // Handle skip onboarding
+  Future<void> _handleSkipOnboarding() async {
+    try {
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          title: const Text(
+            'Skip Profile Setup?',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.lookGigPurple,
+              fontFamily: 'DM Sans',
+            ),
+          ),
+          content: const Text(
+            'You can complete your company profile anytime from the Settings section. A complete profile helps you attract better candidates!',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.lookGigDescriptionText,
+              fontFamily: 'DM Sans',
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            Row(
+              children: [
+                // Go Back button with light purple background
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.lookGigLightPurple,
+                        foregroundColor: AppColors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Go Back',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'DM Sans',
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Skip button with dark purple background
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.lookGigPurple,
+                        foregroundColor: AppColors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Skip',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'DM Sans',
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        ),
+      );
+
+      if (confirmed == true && mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+
+        print('⏭️ [ONBOARDING] User chose to skip onboarding');
+        
+        // Call skipOnboarding method
+        await AuthService.skipOnboarding();
+        
+        print('✅ [ONBOARDING] Skip onboarding completed');
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You can complete your profile later from Settings'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+
+          // Navigate to home
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.home,
+            (route) => false,
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ [ONBOARDING] Error skipping onboarding: $e');
+      
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildPersonalInfoPage() {

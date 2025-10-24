@@ -18,7 +18,7 @@ import 'package:get_work_app/screens/main/user/profile/work_experience_screen.da
 import 'package:get_work_app/screens/main/user/applications/my_applications_screen.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
-// import 'package:get_work_app/widgets/profile_completion_widget.dart';
+import 'package:get_work_app/widgets/profile_completion_widget.dart';
 
 import 'package:provider/provider.dart';
 import 'package:get_work_app/routes/routes.dart';
@@ -852,8 +852,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProfileSections() {
     return Column(
       children: [
-        // Profile completion widget temporarily disabled
-        const SizedBox.shrink(),
+        // Profile completion card
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: ProfileCompletionWidget(),
+        ),
         
         _buildProfileSection(
           title: 'About me',

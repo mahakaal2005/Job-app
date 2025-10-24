@@ -6223,3 +6223,684 @@ Since: 2015
 3. **Terminology**: Verify "employees" not "EMPLOYERs"
 4. **Fallbacks**: Verify "Not specified" when data unavailable
 5. **Loading**: Verify data loads asynchronously without breaking UI
+
+-
+--
+
+## October 24, 2025 - Profile Gating Implementation (Action-Based)
+
+### Feature Overview
+Implemented action-based profile gating where users can skip onboarding and explore the app freely, but must complete their profile to perform critical actions like applying for jobs or posting jobs.
+
+### User Experience
+- **Profile Screen Only**: Shows profile completion card with percentage and "Complete" button
+- **When Trying Restricted Actions**: Dialog appears with "Later" (dismiss) or "Complete Now" (navigate to onboarding)
+- **Everywhere Else**: No reminders, no banners, no nagging - free to browse and explore
+
+### Restricted Actions
+**For Users (if profile incomplete):**
+- ❌ Apply for jobs → Show dialog
+- ✅ Browse/view jobs → Allowed
+- ✅ Bookmark jobs → Allowed
+
+**For Employers (if profile incomplete):**
+- ❌ Create/post jobs → Show dialog
+- ❌ View analytics → Show dialog (also requires ≥1 job)
+- ✅ View existing jobs → Allowed
+- ✅ Browse applicants → Allowed
+
+### Changes Made
+
+#### File: `lib/services/profile_gating_service.dart`
+
+**Complete Rewrite - Added Real Logic:**
+
+**Before:**
+```dart
+class ProfileGatingService {
+  static Future<bool> checkProfileCompletion(...) async {
+    return true; // Always allowed
+  }
+  // All methods returned true
+}
+```
+
+**After:**
+```dart
+class ProfileGatingService {
+  // Core methods
+  static Future<bool> isProfileComplete() async { }
+  static Future<int> getCompletionPercentage() async { }
+  static Future<bool> showProfileIncompleteDialog(...) async { }
+  static Future<bool> canPerformAction(...) async { }
+  
+  // Specific action methods
+  static Future<bool> checkProfileCompletionForJobApplication(...) async { }
+  static Future<bool> checkProfileCompletionForJobPosting(...) async { }
+  static Future<bool> checkProfileCompletionForBookmark(...) async { }
+}
+```
+
+**New Methods:**
+
+1. **`isProfileComplete()`**
+   - Checks `onboardingCompleted` flag in Firestore
+   - Returns true if profile is complete, false otherwise
+
+2. **`getCompletionPercentage()`**
+   - Returns 0-100 based on filled fields
+   - Returns 100 if `onboardingCompleted` is true
+   - Calculates based on role (user vs employer)
+
+3. **`_calculateUserCompletion()`**
+   - 5 sections = 20% each:
+     - Personal Info (name, phone, age, gender, DOB)
+     - Address (address, city, state, zip)
+     - Education (level, college)
+     - Skills & Availability
+     - Resume upload
+
+4. **`_calculateEmployerCompletion()`**
+   - 3 sections:
+     - Company Info (name, email, phone, address) - 33%
+     - Employer Info (job title, department, ID) - 33%
+     - Documents (logo, license, ID card) - 34%
+
+5. **`showProfileIncompleteDialog()`**
+   - Shows dialog with current completion percentage
+   - Two buttons: "Later" (dismiss) or "Complete Now" (navigate to onboarding)
+   - Navigates to correct onboarding based on role
+
+6. **`canPerformAction()`**
+   - Main gating method
+   - Checks if profile is complete
+   - Shows dialog if incomplete and showDialog=true
+   - Returns true if allowed, false if blocked
+
+7. **`checkProfileCompletionForBookmark()`**
+   - Always returns true (bookmarking is allowed even if profile incomplete)
+
+#### File: `lib/widgets/profile_completion_widget.dart`
+
+**Complete Rewrite - Added Real Implementation:**
+
+**Before:**
+```dart
+class ProfileCompletionWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink(); // Completely disabled
+  }
+}
+```
+
+**After:**
+```dart
+class ProfileCompletionWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _getCompletionData(),
+      builder: (context, snapshot) {
+        // Don't show if profile is complete
+        if (isComplete || percentage >= 100) {
+          return const SizedBox.shrink();
+        }
+        
+        // Show gradient card with:
+        // - Info icon
+        // - "Complete Your Profile" text
+        // - Percentage complete
+        // - Progress bar
+        // - "Complete" button
+      },
+    );
+  }
+}
+```
+
+**Design:**
+- Purple/blue gradient background
+- White text and icons
+- Linear progress bar showing completion
+- "Complete" button navigates to onboarding
+- Only shows if `onboardingCompleted` is false
+- Hides if percentage is 100%
+
+#### File: `lib/screens/main/user/user_profile.dart`
+
+**Added Profile Completion Card:**
+
+**Before:**
+```dart
+Widget _buildProfileSections() {
+  return Column(
+    children: [
+      // Profile completion widget temporarily disabled
+      const SizedBox.shrink(),
+      
+      _buildProfileSection(
+```
+
+**After:**
+```dart
+Widget _buildProfileSections() {
+  return Column(
+    children: [
+      // Profile completion card
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        child: ProfileCompletionWidget(),
+      ),
+      
+      _buildProfileSection(
+```
+
+**Also:**
+- Uncommented import: `import 'package:get_work_app/widgets/profile_completion_widget.dart';`
+
+#### File: `lib/screens/main/employer/emp_profile.dart`
+
+**Added Profile Completion Card:**
+
+**Before:**
+```dart
+child: Column(
+  children: [
+    const SizedBox(height: 20),
+    
+    // Profile completion widget temporarily disabled
+    const SizedBox.shrink(),
+    
+    Padding(
+```
+
+**After:**
+```dart
+child: Column(
+  children: [
+    const SizedBox(height: 20),
+    
+    // Profile completion card
+    const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: ProfileCompletionWidget(),
+    ),
+    const SizedBox(height: 16),
+    
+    Padding(
+```
+
+**Also:**
+- Uncommented import: `import 'package:get_work_app/widgets/profile_completion_widget.dart';`
+
+#### File: `lib/services/auth_services.dart`
+
+**Added New Methods:**
+
+1. **`calculateProfileCompletionPercentage()`**
+   - Purpose: Calculate profile completion percentage for current user
+   - Returns: 0-100 based on filled fields
+   - Returns 100 if `onboardingCompleted` is true
+   - Calls role-specific calculation methods
+
+2. **`_calculateUserCompletionPercentage()`**
+   - Private helper method
+   - Calculates completion for regular users (5 sections = 20% each)
+   - Checks: Personal Info, Address, Education, Skills & Availability, Resume
+
+3. **`_calculateEmployerCompletionPercentage()`**
+   - Private helper method
+   - Calculates completion for employers (3 sections)
+   - Returns: 0%, 33%, 66%, or 100%
+   - Checks: Company Info, Employer Info, Documents
+
+4. **`_isFieldNotEmpty()`**
+   - Private helper method
+   - Checks if a field value is not empty
+   - Handles null, empty strings, and other types
+
+5. **`getEmployerJobCount()`**
+   - Purpose: Get count of jobs posted by current employer
+   - Used for analytics access check
+   - Queries: `jobs/{companyName}/jobPostings` collection
+   - Returns: Number of jobs posted
+
+**Code Added:**
+```dart
+/// Calculate profile completion percentage for current user
+static Future<int> calculateProfileCompletionPercentage() async {
+  // Implementation...
+}
+
+/// Calculate completion percentage for regular users (5 sections = 20% each)
+static int _calculateUserCompletionPercentage(Map<String, dynamic> data) {
+  // Implementation...
+}
+
+/// Calculate completion percentage for employers (3 sections)
+static int _calculateEmployerCompletionPercentage(Map<String, dynamic> data) {
+  // Implementation...
+}
+
+/// Helper to check if a field value is not empty
+static bool _isFieldNotEmpty(dynamic value) {
+  // Implementation...
+}
+
+/// Get count of jobs posted by current employer
+static Future<int> getEmployerJobCount() async {
+  // Implementation...
+}
+```
+
+#### File: `lib/screens/main/employer/emp_analytics.dart`
+
+**Added Job Count Check:**
+
+**Modified Method:**
+```dart
+Future<void> _checkProfileAndLoadData() async {
+  // ... existing profile check ...
+  
+  // NEW: Check if employer has posted any jobs
+  final jobCount = await AuthService.getEmployerJobCount();
+  if (jobCount == 0 && mounted) {
+    setState(() {
+      _isLoading = false;
+      _error = 'no_jobs';
+    });
+    return;
+  }
+  
+  // Profile is complete and has jobs, load data
+  if (mounted) {
+    _loadData();
+  }
+}
+```
+
+**Added Empty State UI:**
+```dart
+if (_error == 'no_jobs') {
+  return Scaffold(
+    backgroundColor: AppColors.lookGigLightGray,
+    body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Icon with gradient background
+          Icon(Icons.work_outline, size: 64),
+          Text('No Jobs Posted Yet'),
+          Text('Post your first job to see analytics...'),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pushNamed(context, Routes.postJob),
+            icon: Icon(Icons.add),
+            label: Text('Post Your First Job'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+```
+
+### Impact
+
+**Affected Files:**
+- `lib/services/profile_gating_service.dart` - Complete rewrite with real logic
+- `lib/widgets/profile_completion_widget.dart` - Complete rewrite with real UI
+- `lib/screens/main/user/user_profile.dart` - Added profile completion card
+- `lib/screens/main/employer/emp_profile.dart` - Added profile completion card
+- `lib/services/auth_services.dart` - Added 5 new methods for completion calculation
+- `lib/screens/main/employer/emp_analytics.dart` - Added job count check and empty state
+
+**Breaking Changes:** None - All changes are additive
+
+**Testing Required:**
+- [ ] User skips onboarding → sees card on profile screen
+- [ ] User tries to apply → sees dialog with "Later" and "Complete Now"
+- [ ] User clicks "Later" → dialog closes, action blocked
+- [ ] User clicks "Complete Now" → navigates to onboarding
+- [ ] User completes profile → card disappears
+- [ ] User can now apply for jobs
+- [ ] Employer skips onboarding → sees card on profile
+- [ ] Employer tries to post job → sees dialog
+- [ ] Employer completes profile → can post jobs
+- [ ] Employer with no jobs → analytics shows "Post first job" message
+- [ ] Employer posts job → analytics becomes accessible
+- [ ] Completion percentage is accurate
+- [ ] Dialog doesn't show repeatedly in same session
+
+### Completion Percentage Calculation
+
+**For Users (5 sections = 20% each):**
+1. Personal Info (name, phone, age, gender, DOB) → 20%
+2. Address (address, city, state, zip) → 20%
+3. Education (level, college) → 20%
+4. Skills & Availability → 20%
+5. Resume upload → 20%
+
+**For Employers (3 sections):**
+1. Company Info (name, email, phone, address) → 33%
+2. Employer Info (job title, department, ID) → 33%
+3. Documents (logo, license, ID card) → 34%
+
+### User Flow Examples
+
+**Example 1: User Applies for Job**
+1. User skips onboarding
+2. Browses jobs freely
+3. Finds interesting job
+4. Clicks "Apply" button
+5. ❌ Dialog appears: "Complete Your Profile Required (40% complete)"
+6. User clicks "Later" → Dialog closes, still on job page
+7. User clicks "Apply" again → Same dialog
+8. User clicks "Complete Now" → Navigate to onboarding
+9. User completes profile
+10. Returns to job page
+11. Clicks "Apply" → ✅ Works!
+
+**Example 2: Employer Views Analytics**
+1. Employer skips onboarding
+2. Clicks "Analytics" tab
+3. ❌ Check: Profile complete? NO
+4. Dialog appears → User clicks "Complete Now"
+5. Completes profile
+6. Returns to Analytics
+7. ❌ Check: Jobs posted? NO
+8. Shows: "Post your first job to see analytics"
+9. Employer posts a job
+10. Returns to Analytics
+11. ✅ Analytics loads and displays
+
+**Example 3: User Visits Profile**
+1. User opens profile screen
+2. Sees card at top: "Complete Your Profile - 40% complete"
+3. Can click "Complete" button anytime
+4. Or scroll down and view other sections
+5. User completes profile from settings
+6. Returns to profile
+7. Card is gone (100% complete)
+
+### Success Criteria
+
+✅ Users can skip onboarding and explore app
+✅ Profile completion card shows only on profile screen
+✅ Dialog appears only when trying restricted actions
+✅ "Later" option works - users can dismiss and continue browsing
+✅ "Complete Now" navigates to onboarding
+✅ After completion, all features are accessible
+✅ No intrusive reminders or constant nagging
+✅ Clean, professional UX
+✅ Analytics requires both profile completion AND at least 1 job posted
+
+### Backend Services Preserved
+
+**No changes made to:**
+- Existing authentication logic
+- Existing navigation logic
+- Existing job application logic
+- Existing job posting logic
+- Existing analytics data fetching logic
+
+All existing functionality remains intact. Only added gating checks before critical actions.
+
+
+---
+
+## October 24, 2025 - Profile Gating Dialog UI Enhancement
+
+### Changes Made
+
+#### File: `lib/services/profile_gating_service.dart`
+
+**Enhanced Dialog UI:**
+
+**Improvements:**
+1. **Progress Bar Added**: Visual progress indicator below the percentage text
+   - Shows completion visually with a purple progress bar
+   - Background: Light purple with 30% opacity
+   - Foreground: Dark purple (lookGigPurple)
+   - Height: 8px with rounded corners
+
+2. **"Later" Button Styling**: Changed from plain TextButton to styled ElevatedButton
+   - Background: Light purple (lookGigLightPurple) - matches "REMOVE" button style from reference
+   - Text: White, bold, with letter spacing
+   - Height: 50px
+   - Rounded corners: 8px radius
+
+3. **Button Layout**: Both buttons now have equal width (Expanded)
+   - "Later" button on left with light purple background
+   - "Complete Now" button on right with dark purple background
+   - Consistent spacing and padding
+
+4. **Content Padding**: Adjusted for better visual balance
+   - Content padding: 24px horizontal, 20px top
+   - Actions padding: 16px all around
+   - Added spacing between percentage text and progress bar (12px)
+
+**Visual Hierarchy:**
+- Title: Dark purple, bold
+- Description: Gray text
+- Percentage: Dark purple, semi-bold
+- Progress bar: Visual representation of completion
+- Buttons: Equal prominence with color differentiation
+
+**Before:**
+- Plain "Later" text button (gray)
+- No visual progress indicator
+- Unbalanced button layout
+
+**After:**
+- Styled "Later" button with light purple background
+- Visual progress bar showing completion
+- Balanced button layout matching reference design
+
+### Impact
+- **Improved UX**: Users can see their progress visually
+- **Better Visual Hierarchy**: Buttons have equal visual weight
+- **Consistent Design**: Matches the app's design system (reference image)
+- **No Breaking Changes**: Only UI improvements
+
+### Testing Required
+- [ ] Dialog displays correctly with progress bar
+- [ ] "Later" button has light purple background
+- [ ] "Complete Now" button has dark purple background
+- [ ] Progress bar shows correct percentage
+- [ ] Both buttons are equal width
+- [ ] Dialog is responsive on different screen sizes
+
+
+---
+
+## October 24, 2025 - CRITICAL SECURITY FIX: Role Detection in Profile Completion
+
+### Problem - CRITICAL SECURITY BREACH
+When an employer clicked "Complete Profile" from the employer profile screen, they were navigated to the USER onboarding screen. After completing/skipping, their role was changed from 'employer' to 'user', causing a complete role switch and security breach.
+
+### Root Cause
+**Multiple critical bugs in role detection:**
+
+1. **ProfileCompletionWidget** (lib/widgets/profile_completion_widget.dart):
+   - Was checking `collection('users')` for ALL users including employers
+   - Should check role-specific collections: `employers` or `users_specific`
+
+2. **ProfileGatingService** (lib/services/profile_gating_service.dart):
+   - `isProfileComplete()` was checking `collection('users')` 
+   - `getCompletionPercentage()` was checking `collection('users')`
+   - Dialog navigation was checking `collection('users')`
+   - All should use role-specific collections
+
+### Why This Happened
+The code was directly querying Firestore collections without using the centralized `AuthService.getUserRole()` method, which properly checks both `employers` and `users_specific` collections and handles role detection correctly.
+
+### Changes Made
+
+#### File: `lib/widgets/profile_completion_widget.dart`
+
+**Before (BROKEN):**
+```dart
+Future<Map<String, dynamic>> _getCompletionData() async {
+  final userDoc = await FirebaseFirestore.instance
+      .collection('users')  // ❌ WRONG - checks wrong collection
+      .doc(user.uid)
+      .get();
+  
+  final role = userDoc.data()?['role'] ?? 'user';  // ❌ Gets wrong role
+}
+```
+
+**After (FIXED):**
+```dart
+Future<Map<String, dynamic>> _getCompletionData() async {
+  // ✅ Use AuthService to get role from correct collection
+  final role = await AuthService.getUserRole();
+  
+  // ✅ Query role-specific collection
+  final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+  final userDoc = await FirebaseFirestore.instance
+      .collection(collectionName)
+      .doc(user.uid)
+      .get();
+}
+```
+
+#### File: `lib/services/profile_gating_service.dart`
+
+**Fixed 3 Methods:**
+
+1. **`isProfileComplete()`**
+```dart
+// Before: collection('users')
+// After: Use AuthService.getUserRole() + role-specific collection
+final role = await AuthService.getUserRole();
+final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+```
+
+2. **`getCompletionPercentage()`**
+```dart
+// Before: collection('users')
+// After: Use AuthService.getUserRole() + role-specific collection
+final role = await AuthService.getUserRole();
+final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+```
+
+3. **`showProfileIncompleteDialog()` navigation**
+```dart
+// Before: Checked collection('users') for role
+// After: Use AuthService.getUserRole() for navigation
+final role = await AuthService.getUserRole();
+if (role == 'employer') {
+  Navigator.pushNamed(context, '/employer-onboarding');
+} else {
+  Navigator.pushNamed(context, '/student-onboarding');
+}
+```
+
+### Impact
+
+**Before Fix (CRITICAL SECURITY BREACH):**
+- Employer clicks "Complete Profile" → Goes to USER onboarding ❌
+- Employer completes/skips → Role changes to 'user' ❌
+- Employer loses access to employer features ❌
+- Data corruption in Firestore ❌
+
+**After Fix:**
+- Employer clicks "Complete Profile" → Goes to EMPLOYER onboarding ✅
+- Employer completes/skips → Role remains 'employer' ✅
+- User clicks "Complete Profile" → Goes to USER onboarding ✅
+- User completes/skips → Role remains 'user' ✅
+- No role switching or data corruption ✅
+
+### Lesson Learned
+
+**ALWAYS use centralized AuthService methods for role detection:**
+- ✅ Use `AuthService.getUserRole()` - checks correct collections
+- ✅ Use `AuthService.getUserData()` - gets from role-specific collection
+- ❌ NEVER directly query `collection('users')` for role
+- ❌ NEVER assume collection names without checking role first
+
+**Why AuthService.getUserRole() is critical:**
+- Checks `employers` collection first
+- Falls back to `users_specific` collection
+- Handles migration from old collections
+- Returns correct role or null
+- Single source of truth for role detection
+
+### Testing Required
+- [ ] Employer clicks "Complete Profile" → Goes to employer onboarding
+- [ ] Employer completes onboarding → Remains employer
+- [ ] Employer skips onboarding → Remains employer
+- [ ] User clicks "Complete Profile" → Goes to user onboarding
+- [ ] User completes onboarding → Remains user
+- [ ] User skips onboarding → Remains user
+- [ ] No role switching occurs in any scenario
+- [ ] Profile completion percentage shows correctly for both roles
+- [ ] Dialog navigation works correctly for both roles
+
+### Files Modified
+- `lib/widgets/profile_completion_widget.dart` - Fixed role detection
+- `lib/services/profile_gating_service.dart` - Fixed 3 methods with role detection bugs
+
+### Breaking Changes
+None - This is a critical bug fix that restores correct behavior.
+
+
+---
+
+## October 24, 2025 - Skip Onboarding Dialog UI Consistency
+
+### Changes Made
+
+Updated the "Skip Profile Setup?" confirmation dialogs in both user and employer onboarding screens to match the profile completion dialog design.
+
+#### Files Modified:
+
+1. **lib/screens/main/user/student_ob_screen/student_ob.dart**
+2. **lib/screens/main/employer/emp_ob/employer_onboarding.dart**
+
+### UI Improvements:
+
+**Before:**
+- "Cancel" as plain TextButton
+- "Skip" as ElevatedButton with dark purple
+- Unequal button widths
+- Basic styling
+
+**After:**
+- "Go Back" button with light purple background (AppColors.lookGigLightPurple)
+- "Skip" button with dark purple background (AppColors.lookGigPurple)
+- Both buttons equal width (Expanded in Row)
+- Both buttons same height (50px)
+- Consistent styling with profile completion dialog
+- Rounded corners (8px radius)
+- Proper spacing (12px between buttons)
+- Better typography (DM Sans font, letter spacing)
+- Non-dismissible (barrierDismissible: false)
+
+### Design Consistency:
+
+All confirmation dialogs now follow the same pattern:
+1. **Profile Completion Dialog**: "Later" (light purple) + "Complete Now" (dark purple)
+2. **Skip Onboarding Dialog**: "Go Back" (light purple) + "Skip" (dark purple)
+
+This creates a consistent user experience across the app where:
+- Light purple = Secondary/Cancel action
+- Dark purple = Primary/Confirm action
+- Both buttons always equal width and height
+
+### Impact:
+- Better visual consistency across the app
+- Improved UX with equal-sized buttons
+- Matches reference design from Figma
+- No breaking changes - only UI improvements
+
+### Testing Required:
+- [ ] User onboarding skip dialog displays correctly
+- [ ] Employer onboarding skip dialog displays correctly
+- [ ] Both buttons are equal width
+- [ ] "Go Back" has light purple background
+- [ ] "Skip" has dark purple background
+- [ ] Dialog cannot be dismissed by tapping outside
+- [ ] Buttons work correctly (Go Back closes, Skip proceeds)

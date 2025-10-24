@@ -1139,7 +1139,155 @@ class AuthService {
     }
   }
 
+  /// Calculate profile completion percentage for current user
+  /// Returns 0-100 based on filled fields
+  /// Returns 100 if onboardingCompleted is true
+  static Future<int> calculateProfileCompletionPercentage() async {
+    try {
+      if (currentUser == null) return 0;
 
+      String? role = await getUserRole();
+      if (role == null) return 0;
+
+      String collectionName =
+          role == 'employer' ? 'employers' : 'users_specific';
+
+      final userDoc = await _firestore
+          .collection(collectionName)
+          .doc(currentUser!.uid)
+          .get();
+
+      if (!userDoc.exists) return 0;
+
+      final data = userDoc.data() as Map<String, dynamic>?;
+      if (data == null) return 0;
+
+      // If onboarding is completed, return 100%
+      if (data['onboardingCompleted'] == true) {
+        return 100;
+      }
+
+      // Calculate based on role
+      if (role == 'employer') {
+        return _calculateEmployerCompletionPercentage(data);
+      } else {
+        return _calculateUserCompletionPercentage(data);
+      }
+    } catch (e) {
+      debugPrint('Error calculating profile completion: $e');
+      return 0;
+    }
+  }
+
+  /// Calculate completion percentage for regular users (5 sections = 20% each)
+  static int _calculateUserCompletionPercentage(Map<String, dynamic> data) {
+    int completedSections = 0;
+
+    // Section 1: Personal Info (name, phone, age, gender, DOB) - 20%
+    if (_isFieldNotEmpty(data['fullName']) &&
+        _isFieldNotEmpty(data['phone']) &&
+        _isFieldNotEmpty(data['age']) &&
+        _isFieldNotEmpty(data['gender']) &&
+        data['dateOfBirth'] != null) {
+      completedSections++;
+    }
+
+    // Section 2: Address (address, city, state, zip) - 20%
+    if (_isFieldNotEmpty(data['address']) &&
+        _isFieldNotEmpty(data['city']) &&
+        _isFieldNotEmpty(data['state']) &&
+        _isFieldNotEmpty(data['zipCode'])) {
+      completedSections++;
+    }
+
+    // Section 3: Education (level, college) - 20%
+    if (_isFieldNotEmpty(data['educationLevel']) &&
+        _isFieldNotEmpty(data['college'])) {
+      completedSections++;
+    }
+
+    // Section 4: Skills & Availability - 20%
+    final skills = data['skills'];
+    if (skills is List && skills.isNotEmpty &&
+        _isFieldNotEmpty(data['availability'])) {
+      completedSections++;
+    }
+
+    // Section 5: Resume upload - 20%
+    if (_isFieldNotEmpty(data['resumeUrl'])) {
+      completedSections++;
+    }
+
+    return (completedSections * 20);
+  }
+
+  /// Calculate completion percentage for employers (3 sections)
+  static int _calculateEmployerCompletionPercentage(Map<String, dynamic> data) {
+    int completedSections = 0;
+
+    // Section 1: Company Info (name, email, phone, address) - 33%
+    if (_isFieldNotEmpty(data['companyName']) &&
+        _isFieldNotEmpty(data['companyEmail']) &&
+        _isFieldNotEmpty(data['companyPhone']) &&
+        _isFieldNotEmpty(data['address'])) {
+      completedSections++;
+    }
+
+    // Section 2: Employer Info (job title, department, ID) - 33%
+    if (_isFieldNotEmpty(data['jobTitle']) &&
+        _isFieldNotEmpty(data['department']) &&
+        _isFieldNotEmpty(data['employerId'])) {
+      completedSections++;
+    }
+
+    // Section 3: Documents (logo, license, ID card) - 34%
+    if (_isFieldNotEmpty(data['companyLogo']) &&
+        _isFieldNotEmpty(data['businessLicense']) &&
+        _isFieldNotEmpty(data['employerIdCard'])) {
+      completedSections++;
+    }
+
+    // Calculate percentage (33%, 66%, or 100%)
+    if (completedSections == 0) return 0;
+    if (completedSections == 1) return 33;
+    if (completedSections == 2) return 66;
+    return 100;
+  }
+
+  /// Helper to check if a field value is not empty
+  static bool _isFieldNotEmpty(dynamic value) {
+    if (value == null) return false;
+    if (value is String) return value.trim().isNotEmpty;
+    return true;
+  }
+
+  /// Get count of jobs posted by current employer
+  /// Used for analytics access check
+  static Future<int> getEmployerJobCount() async {
+    try {
+      if (currentUser == null) return 0;
+
+      // Get employer's company name
+      final employerData = await getEMPLOYERCompanyInfo();
+      if (employerData == null || employerData['companyName'] == null) {
+        return 0;
+      }
+
+      final companyName = employerData['companyName'];
+
+      // Query jobs collection for this company
+      final jobsSnapshot = await _firestore
+          .collection('jobs')
+          .doc(companyName)
+          .collection('jobPostings')
+          .get();
+
+      return jobsSnapshot.docs.length;
+    } catch (e) {
+      debugPrint('Error getting employer job count: $e');
+      return 0;
+    }
+  }
 
   // Debug method to check user existence in all collections
   static Future<void> debugCheckUserInAllCollections() async {

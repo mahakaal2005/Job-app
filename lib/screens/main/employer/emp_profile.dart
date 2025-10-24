@@ -14,7 +14,7 @@ import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/error_handler.dart';
-// import 'package:get_work_app/widgets/profile_completion_widget.dart';
+import 'package:get_work_app/widgets/profile_completion_widget.dart';
 
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -718,8 +718,12 @@ class _EmpProfileState extends State<EmpProfile> {
                 children: [
                   const SizedBox(height: 20),
                   
-                  // Profile completion widget temporarily disabled
-                  const SizedBox.shrink(),
+                  // Profile completion card
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: ProfileCompletionWidget(),
+                  ),
+                  const SizedBox(height: 16),
                   
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -63,7 +63,17 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
         }
       }
 
-      // Profile is complete or user chose to complete it, load data
+      // Check if employer has posted any jobs
+      final jobCount = await AuthService.getEmployerJobCount();
+      if (jobCount == 0 && mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'no_jobs';
+        });
+        return;
+      }
+
+      // Profile is complete and has jobs, load data
       if (mounted) {
         _loadData();
       }
@@ -282,6 +292,86 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
 
     if (_error != null) {
       // Show different UI based on error type
+      if (_error == 'no_jobs') {
+        return Scaffold(
+          backgroundColor: AppColors.lookGigLightGray,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.lookGigPurple.withOpacity(0.15),
+                          const Color(0xFF6C5CE7).withOpacity(0.15),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.work_outline,
+                      size: 64,
+                      color: AppColors.lookGigPurple,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'No Jobs Posted Yet',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.lookGigProfileText,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Post your first job to see analytics about applications, applicant insights, and hiring trends.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.lookGigDescriptionText,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Navigate to post job screen
+                      Navigator.pushNamed(context, '/create-job-opening');
+                    },
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text(
+                      'Post Your First Job',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'DM Sans',
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lookGigPurple,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+      
       if (_error == 'profile_incomplete') {
         return Scaffold(
           backgroundColor: AppColors.lookGigLightGray,
