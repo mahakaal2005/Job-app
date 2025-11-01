@@ -479,21 +479,21 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   final Map<String, bool> _fieldValidationStatus = {};
 
   // Enhanced education level options
-  final List<String> _educationLevels = [
-    'High School Diploma',
-    'High School (In Progress)',
-    'Associate Degree',
-    'Bachelor\'s Degree',
-    'Bachelor\'s Degree (In Progress)',
-    'Master\'s Degree',
-    'Master\'s Degree (In Progress)',
-    'PhD',
-    'PhD (In Progress)',
-    'Professional Certificate',
-    'Trade School',
-    'Bootcamp Graduate',
-    'Self-Taught',
-    'Other',
+  final List<DropdownItem> _educationLevels = [
+    DropdownItem(value: 'High School Diploma', label: 'High School Diploma'),
+    DropdownItem(value: 'High School (In Progress)', label: 'High School (In Progress)'),
+    DropdownItem(value: 'Associate Degree', label: 'Associate Degree'),
+    DropdownItem(value: 'Bachelor\'s Degree', label: 'Bachelor\'s Degree'),
+    DropdownItem(value: 'Bachelor\'s Degree (In Progress)', label: 'Bachelor\'s Degree (In Progress)'),
+    DropdownItem(value: 'Master\'s Degree', label: 'Master\'s Degree'),
+    DropdownItem(value: 'Master\'s Degree (In Progress)', label: 'Master\'s Degree (In Progress)'),
+    DropdownItem(value: 'PhD', label: 'PhD'),
+    DropdownItem(value: 'PhD (In Progress)', label: 'PhD (In Progress)'),
+    DropdownItem(value: 'Professional Certificate', label: 'Professional Certificate'),
+    DropdownItem(value: 'Trade School', label: 'Trade School'),
+    DropdownItem(value: 'Bootcamp Graduate', label: 'Bootcamp Graduate'),
+    DropdownItem(value: 'Self-Taught', label: 'Self-Taught'),
+    DropdownItem(value: 'Other', label: 'Other'),
   ];
 
   // All skills flattened for search
@@ -555,6 +555,36 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                 .toList();
       }
     });
+  }
+
+  /// Add custom skill when not found in predefined list
+  void _addCustomSkill(String skillName) {
+    final trimmed = skillName.trim();
+    
+    // Validate: min 2 characters, max 50 characters, not already selected
+    if (trimmed.length >= 2 && 
+        trimmed.length <= 50 && 
+        !_selectedSkills.any((s) => s.toLowerCase() == trimmed.toLowerCase())) {
+      setState(() {
+        // Capitalize first letter of each word for consistency
+        final capitalized = trimmed.split(' ')
+            .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase())
+            .join(' ');
+        
+        _selectedSkills.add(capitalized);
+        _skillsSearchController.clear();
+        _filterSkills('');
+      });
+      
+      // Show feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added "$trimmed" as custom skill'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _selectDateOfBirth() async {
@@ -734,6 +764,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                 content: Text('Resume uploaded successfully!'),
                 backgroundColor: Colors.green,
                 duration: Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+                margin: EdgeInsets.only(bottom: 100, left: 16, right: 16),
               ),
             );
           }
@@ -779,6 +811,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             content: Text(userMessage),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 100, left: 16, right: 16),
             action: SnackBarAction(
               label: 'Retry',
               textColor: Colors.white,
@@ -976,7 +1010,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         }
         break;
         
-      case 4: // Resume
+      case 4: // Profile & Resume
+        if (_profileImage == null) {
+          return ValidationResult.invalid(
+            pageWithError: 4,
+            fieldName: 'Profile Photo',
+            errorMessage: 'Please upload your profile photo on Profile & Documents page',
+          );
+        }
         if (_resumeFile == null) {
           return ValidationResult.invalid(
             pageWithError: 4,
@@ -1150,10 +1191,78 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     }
     // Remove spaces and special characters for validation
     final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
-    if (cleaned.length < 10) {
-      return 'Phone number must be at least 10 digits';
+    
+    // Get country-specific length requirements
+    final countryLengths = _getCountryPhoneLengths(_selectedCountryCode);
+    final minLength = countryLengths['min'] ?? 10;
+    final maxLength = countryLengths['max'] ?? 10;
+    
+    // Check length based on country
+    if (cleaned.length < minLength) {
+      return 'Phone number must be at least $minLength digits';
     }
+    if (cleaned.length > maxLength) {
+      return 'Phone number must not exceed $maxLength digits';
+    }
+    
+    // Country-specific format validation
+    if (_selectedCountryCode == '+91' && cleaned.isNotEmpty) {
+      // Indian mobile numbers must start with 6, 7, 8, or 9
+      final firstDigit = cleaned[0];
+      if (!['6', '7', '8', '9'].contains(firstDigit)) {
+        return 'Indian mobile numbers must start with 6, 7, 8, or 9';
+      }
+    }
+    
     return null; // Valid
+  }
+  
+  // Helper method to get country-specific phone length requirements
+  Map<String, int> _getCountryPhoneLengths(String countryCode) {
+    // Country code to length mapping
+    final Map<String, Map<String, int>> countryLengths = {
+      '+91': {'min': 10, 'max': 10},  // India
+      '+1': {'min': 10, 'max': 10},   // US/Canada
+      '+44': {'min': 10, 'max': 10},  // UK
+      '+61': {'min': 9, 'max': 9},    // Australia
+      '+49': {'min': 10, 'max': 11},  // Germany
+      '+33': {'min': 9, 'max': 9},    // France
+      '+81': {'min': 10, 'max': 10},  // Japan
+      '+86': {'min': 11, 'max': 11},  // China
+      '+55': {'min': 10, 'max': 11},  // Brazil
+      '+7': {'min': 10, 'max': 10},   // Russia
+      '+82': {'min': 9, 'max': 10},   // South Korea
+      '+52': {'min': 10, 'max': 10},  // Mexico
+      '+39': {'min': 9, 'max': 10},   // Italy
+      '+34': {'min': 9, 'max': 9},    // Spain
+      '+31': {'min': 9, 'max': 9},    // Netherlands
+      '+41': {'min': 9, 'max': 9},    // Switzerland
+      '+46': {'min': 9, 'max': 10},   // Sweden
+      '+65': {'min': 8, 'max': 8},    // Singapore
+      '+971': {'min': 9, 'max': 9},   // UAE
+      '+966': {'min': 9, 'max': 9},   // Saudi Arabia
+      '+27': {'min': 9, 'max': 9},    // South Africa
+      '+92': {'min': 10, 'max': 10},  // Pakistan
+      '+880': {'min': 10, 'max': 10}, // Bangladesh
+      '+94': {'min': 9, 'max': 9},    // Sri Lanka
+      '+977': {'min': 10, 'max': 10}, // Nepal
+      '+60': {'min': 9, 'max': 10},   // Malaysia
+      '+62': {'min': 10, 'max': 12},  // Indonesia
+      '+66': {'min': 9, 'max': 9},    // Thailand
+      '+63': {'min': 10, 'max': 10},  // Philippines
+      '+84': {'min': 9, 'max': 10},   // Vietnam
+      '+90': {'min': 10, 'max': 10},  // Turkey
+      '+48': {'min': 9, 'max': 9},    // Poland
+      '+54': {'min': 10, 'max': 10},  // Argentina
+      '+56': {'min': 9, 'max': 9},    // Chile
+      '+57': {'min': 10, 'max': 10},  // Colombia
+      '+20': {'min': 10, 'max': 10},  // Egypt
+      '+234': {'min': 10, 'max': 10}, // Nigeria
+      '+254': {'min': 9, 'max': 9},   // Kenya
+      '+64': {'min': 9, 'max': 10},   // New Zealand
+    };
+    
+    return countryLengths[countryCode] ?? {'min': 10, 'max': 10}; // Default to 10 if country not found
   }
 
   String? _validateEmail(String? value) {
@@ -1290,7 +1399,24 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   bool _validateFieldRealTime(String fieldName, String value) {
     switch (fieldName) {
       case 'Phone Number':
-        final isValid = value.trim().length >= 10 && RegExp(r'^\d+$').hasMatch(value.trim());
+        final cleaned = value.trim();
+        // Get country-specific length requirements
+        final countryLengths = _getCountryPhoneLengths(_selectedCountryCode);
+        final minLength = countryLengths['min'] ?? 10;
+        final maxLength = countryLengths['max'] ?? 10;
+        
+        // Check if length is within valid range and all digits
+        bool isValid = cleaned.length >= minLength && 
+                       cleaned.length <= maxLength && 
+                       RegExp(r'^\d+$').hasMatch(cleaned);
+        
+        // Country-specific format validation
+        if (isValid && _selectedCountryCode == '+91' && cleaned.isNotEmpty) {
+          // Indian mobile numbers must start with 6, 7, 8, or 9
+          final firstDigit = cleaned[0];
+          isValid = ['6', '7', '8', '9'].contains(firstDigit);
+        }
+        
         _fieldValidationStatus[fieldName] = isValid;
         return isValid;
       case 'Age':
@@ -1364,7 +1490,21 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   String? _getValidationMessage(String fieldName) {
     switch (fieldName) {
       case 'Phone Number':
-        return 'Please enter a valid 10-digit phone number';
+        // Get country-specific length requirements
+        final countryLengths = _getCountryPhoneLengths(_selectedCountryCode);
+        final minLength = countryLengths['min'] ?? 10;
+        final maxLength = countryLengths['max'] ?? 10;
+        
+        if (minLength == maxLength) {
+          // Exact length required
+          if (_selectedCountryCode == '+91') {
+            return 'Must be exactly $minLength digits and start with 6, 7, 8, or 9';
+          }
+          return 'Must be exactly $minLength digits';
+        } else {
+          // Range of lengths allowed
+          return 'Must be between $minLength and $maxLength digits';
+        }
       case 'Age':
         return 'Age must be between 18 and 100';
       case 'ZIP Code':
@@ -1477,34 +1617,91 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   Future<bool?> _showSkipConfirmation() async {
     return showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            title: const Text(
-              'Skip Profile Setup?',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            content: const Text(
-              'You can complete your profile anytime from the Settings section. '
-              'A complete profile helps you get better job matches!',
-              style: TextStyle(fontSize: 14),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Go Back'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.lookGigPurple,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        title: const Text(
+          'Skip Profile Setup?',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.lookGigPurple,
+            fontFamily: 'DM Sans',
+          ),
+        ),
+        content: const Text(
+          'You can complete your profile anytime from the Settings section. A complete profile helps you get better job matches!',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.lookGigDescriptionText,
+            fontFamily: 'DM Sans',
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          Row(
+            children: [
+              // Go Back button with light purple background
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lookGigLightPurple,
+                      foregroundColor: AppColors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Go Back',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'DM Sans',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
                 ),
-                child: const Text('Skip'),
+              ),
+              const SizedBox(width: 12),
+              // Skip button with dark purple background
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lookGigPurple,
+                      foregroundColor: AppColors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Skip',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'DM Sans',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
+        ],
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      ),
     );
   }
 
@@ -1935,11 +2132,12 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       child: SizedBox(
                         height: 50,
                         child: ElevatedButton(
-                          onPressed:
-                              _isLoading
-                                  ? null
-                                  : _currentPage == 4
-                                  ? _completeOnboarding
+                          onPressed: _isLoading
+                              ? null
+                              : _currentPage == 4
+                                  ? (_profileImage != null && _resumeFile != null)
+                                      ? _completeOnboarding
+                                      : null // Disable if profile image or resume not uploaded
                                   : _nextPage,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.lookGigPurple,
@@ -1976,24 +2174,36 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   ],
                 ),
               ),
-              
-              // Skip for now link
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: GestureDetector(
-                  onTap: _isLoading ? null : _handleSkipOnboarding,
-                  child: Text(
-                    'Skip for now',
-                    style: TextStyle(
-                      color: _isLoading ? AppColors.grey : AppColors.lookGigPurple,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      decoration: TextDecoration.underline,
-                      fontFamily: 'DM Sans',
-                    ),
+
+              // Helper message for page 4 when uploads are incomplete
+              if (_currentPage == 4 && (_profileImage == null || _resumeFile == null))
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: Colors.orange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _profileImage == null && _resumeFile == null
+                              ? 'Please upload both profile photo and resume to complete'
+                              : _profileImage == null
+                                  ? 'Please upload your profile photo to complete'
+                                  : 'Please upload your resume to complete',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -2023,7 +2233,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             ),
           ),
           content: const Text(
-            'You can complete your company profile anytime from the Settings section. A complete profile helps you attract better candidates!',
+            'You can complete your profile anytime from the Settings section. A complete profile helps you get better job matches!',
             style: TextStyle(
               fontSize: 14,
               color: AppColors.lookGigDescriptionText,
@@ -2472,27 +2682,19 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue:
-                _selectedEducationLevel.isEmpty
-                    ? null
-                    : _selectedEducationLevel,
-            decoration: const InputDecoration(
-              hintText: 'Select your education level',
-              prefixIcon: Icon(Icons.school, color: AppColors.lookGigOrange),
-            ),
-            items:
-                _educationLevels.map((String level) {
-                  return DropdownMenuItem<String>(
-                    value: level,
-                    child: Text(level),
-                  );
-                }).toList(),
-            onChanged: (String? newValue) {
+          CustomDropdownField(
+            labelText: '',
+            hintText: 'Select your education level',
+            value: _selectedEducationLevel.isEmpty ? null : _selectedEducationLevel,
+            items: _educationLevels,
+            onChanged: (value) {
               setState(() {
-                _selectedEducationLevel = newValue!;
+                _selectedEducationLevel = value ?? '';
               });
             },
+            enableSearch: true,
+            prefixIcon: Icons.school,
+            modalTitle: 'Select Education Level',
           ),
 
           // Custom education field for "Other"
@@ -2636,12 +2838,40 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               ),
               child:
                   _filteredSkills.isEmpty
-                      ? const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          'No skills found',
-                          style: TextStyle(color: AppColors.grey),
-                          textAlign: TextAlign.center,
+                      ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'No matching skills found',
+                              style: TextStyle(
+                                color: AppColors.grey,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () => _addCustomSkill(_skillsSearchController.text),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: Text(
+                                'Add "${_skillsSearchController.text.trim()}" as custom skill',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.lookGigPurple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       )
                       : ListView.builder(
@@ -2775,9 +3005,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           const SizedBox(height: 24),
 
           // Profile Image Section
-          const Text(
-            'Profile Photo (Optional)',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          Row(
+            children: [
+              const Text(
+                'Profile Photo',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              const Text(' *', style: TextStyle(color: Colors.red, fontSize: 16)),
+            ],
           ),
           const SizedBox(height: 12),
 
@@ -2878,9 +3113,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  '• A profile photo increases your chances of getting hired by 40%\n'
-                  '• Upload a well-formatted resume to showcase your experience\n'
-                  '• Complete profiles get 3x more job opportunities',
+                  '• A professional profile photo increases your chances of getting hired by 40%\n'
+                  '• Upload a well-formatted PDF resume to showcase your experience\n'
+                  '• Both are required to complete your profile and apply for jobs',
                   style: TextStyle(fontSize: 14, height: 1.5),
                 ),
               ],

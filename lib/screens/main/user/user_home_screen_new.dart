@@ -16,6 +16,7 @@ import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/number_formatter.dart';
 import 'package:get_work_app/services/profile_gating_service.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/app_spacing.dart';
 import 'package:get_work_app/utils/error_handler.dart';
 import 'package:get_work_app/utils/image_utils.dart';
 import 'package:get_work_app/widgets/custom_bottom_nav_bar.dart';
@@ -36,6 +37,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   String _userName = 'User';
   String _userProfilePic = '';
   bool _isLoading = true;
+  bool _isFirstLogin = false; // Track if this is user's first login
 
   // Navigation
   int _currentIndex = 0;
@@ -103,6 +105,9 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
 
   Future<void> _loadUserData() async {
     try {
+      // Check if this is first login
+      final isFirstLogin = await AuthService.isFirstLogin();
+      
       final userData = await AuthService.getUserData();
       if (userData != null && mounted) {
         // Use 'profileImageUrl' - same field name as user_profile.dart
@@ -111,14 +116,27 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
         debugPrint('User Name: ${userData['fullName']}');
         debugPrint('Profile Image URL: $profilePic');
         debugPrint('Profile Image isEmpty: ${profilePic.isEmpty}');
+        debugPrint('Is First Login: $isFirstLogin');
         debugPrint('=======================');
 
         setState(() {
           _userName = userData['fullName'] ?? 'User';
           _userId = userData['uid'];
           _userProfilePic = profilePic;
+          _isFirstLogin = isFirstLogin;
           _isLoading = false;
         });
+
+        // Update last login date after loading
+        if (isFirstLogin) {
+          // Small delay to ensure user sees the welcome message
+          await Future.delayed(const Duration(milliseconds: 500));
+          await AuthService.updateLastLoginDate();
+          debugPrint('✅ First login date recorded');
+        } else {
+          // Update login date for returning users too
+          await AuthService.updateLastLoginDate();
+        }
       }
     } catch (e) {
       debugPrint('Error loading user data: $e');
@@ -126,6 +144,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
         setState(() {
           _userName = 'User';
           _isLoading = false;
+          _isFirstLogin = false;
         });
       }
     }
@@ -521,7 +540,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
         child: SingleChildScrollView(
           controller: _scrollController,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            // Removed crossAxisAlignment to center content properly
             children: [
               _buildHeader(),
               const SizedBox(height: 16),
@@ -547,7 +566,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(23, 16, 23, 0),
+      padding: AppSpacing.fromLTRB(context, top: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -556,9 +575,9 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Hello',
-                  style: TextStyle(
+                Text(
+                  _isFirstLogin ? 'Welcome' : 'Welcome back',
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF0D0140),
@@ -606,7 +625,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
 
   Widget _buildPromotionalBanner() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 23),
+      padding: AppSpacing.horizontal(context),
       child: SizedBox(
         width: 329,
         height: 181,
@@ -739,9 +758,9 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   }
 
   Widget _buildFindYourJobSection() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 23),
-      child: Text(
+    return Padding(
+      padding: AppSpacing.horizontal(context),
+      child: const Text(
         'Find Your Job',
         style: TextStyle(
           fontSize: 16,
@@ -756,27 +775,29 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
 
   Widget _buildJobStatisticsCards() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 23),
+      padding: AppSpacing.horizontal(context),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Remote Job Card - Left (150x170)
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _showingFilteredJobs = true;
-                _currentFilterType = 'Remote';
-                _currentFilterTitle = 'Remote Jobs';
-              });
-            },
-            child: Container(
-              width: 150,
-              height: 170,
-              decoration: BoxDecoration(
-                color: const Color(0xFFAFECFE),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Column(
+          // Remote Job Card - Left (responsive width, 170px height)
+          Expanded(
+            flex: 48,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _showingFilteredJobs = true;
+                  _currentFilterType = 'Remote';
+                  _currentFilterTitle = 'Remote Jobs';
+                });
+              },
+              child: Container(
+                // Removed fixed width for responsive layout
+                height: 170,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFAFECFE),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -821,116 +842,110 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
               ),
             ),
           ),
+          ),
           const SizedBox(width: 20),
-          // Right Column with Full Time and Part Time
-          Column(
-            children: [
-              // Full Time Card (156x75)
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showingFilteredJobs = true;
-                    _currentFilterType = 'Full-time';
-                    _currentFilterTitle = 'Full Time Jobs';
-                  });
-                },
-                child: Container(
-                  width: 156,
-                  height: 75,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFBEAFFE),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Count at position (51, 17)
-                      Positioned(
-                        left: 51,
-                        top: 17,
-                        child: Text(
-                          _formatCount(_fullTimeJobsCount),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0D0140),
-                            fontFamily: 'DM Sans',
-                            height: 1.302,
-                          ),
+          // Right Column with Full Time and Part Time (responsive width)
+          Expanded(
+            flex: 52,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Full Time Card (responsive width, 75px height)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showingFilteredJobs = true;
+                      _currentFilterType = 'Full-time';
+                      _currentFilterTitle = 'Full Time Jobs';
+                    });
+                  },
+                  child: Container(
+                    // Removed fixed width for responsive layout
+                    height: 75,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFBEAFFE),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                      // Count
+                      Text(
+                        _formatCount(_fullTimeJobsCount),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0D0140),
+                          fontFamily: 'DM Sans',
+                          height: 1.302,
                         ),
                       ),
-                      // Label at position (46, 43)
-                      Positioned(
-                        left: 46,
-                        top: 43,
-                        child: const Text(
-                          'Full Time',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF0D0140),
-                            fontFamily: 'DM Sans',
-                            height: 1.302,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Part Time Card (156x75)
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showingFilteredJobs = true;
-                    _currentFilterType = 'Part-time';
-                    _currentFilterTitle = 'Part Time Jobs';
-                  });
-                },
-                child: Container(
-                  width: 156,
-                  height: 75,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFD6AD),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Count at position (51, 17)
-                      Positioned(
-                        left: 51,
-                        top: 17,
-                        child: Text(
-                          _formatCount(_partTimeJobsCount),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF0D0140),
-                            fontFamily: 'DM Sans',
-                            height: 1.302,
-                          ),
-                        ),
-                      ),
-                      // Label at position (43, 43)
-                      Positioned(
-                        left: 43,
-                        top: 43,
-                        child: const Text(
-                          'Part Time',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF0D0140),
-                            fontFamily: 'DM Sans',
-                            height: 1.302,
-                          ),
+                      const SizedBox(height: 4),
+                      // Label
+                      const Text(
+                        'Full Time',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF0D0140),
+                          fontFamily: 'DM Sans',
+                          height: 1.302,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                ),
+                const SizedBox(height: 20),
+                // Part Time Card (responsive width, 75px height)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showingFilteredJobs = true;
+                      _currentFilterType = 'Part-time';
+                      _currentFilterTitle = 'Part Time Jobs';
+                    });
+                  },
+                  child: Container(
+                    // Removed fixed width for responsive layout
+                    height: 75,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD6AD),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                      // Count
+                      Text(
+                        _formatCount(_partTimeJobsCount),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0D0140),
+                          fontFamily: 'DM Sans',
+                          height: 1.302,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Label
+                      const Text(
+                        'Part Time',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF0D0140),
+                          fontFamily: 'DM Sans',
+                          height: 1.302,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -941,9 +956,9 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
+        Padding(
+          padding: AppSpacing.horizontal(context),
+          child: const Text(
             'Recent Job List',
             style: TextStyle(
               fontSize: 16,
@@ -966,7 +981,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: AppSpacing.horizontal(context),
             itemCount: _filteredJobs.length,
             itemBuilder: (context, index) {
               return _buildJobCard(_filteredJobs[index]);

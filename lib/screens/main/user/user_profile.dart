@@ -20,7 +20,6 @@ import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/services/pdf_service.dart';
 import 'package:get_work_app/widgets/profile_completion_widget.dart';
 
-import 'package:provider/provider.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/image_utils.dart';
@@ -536,7 +535,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _showErrorSnackBar('Full name is required');
       return false;
     }
-    if (_phoneController.text.trim().length < 10) {
+    // Phone validation is handled by PhoneInputField widget
+    if (_phoneController.text.trim().isEmpty) {
       _showErrorSnackBar('Please enter a valid phone number');
       return false;
     }
@@ -2217,7 +2217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Container(
       width: double.infinity,
-      height: 220,
+      height: 250, // Increased from 220 to fix 26px bottom overflow
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),

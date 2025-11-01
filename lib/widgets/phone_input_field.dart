@@ -314,9 +314,23 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                 return 'Phone number is required';
               }
               final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+              
+              // Check minimum length
               if (cleaned.length < selectedCountry.minLength) {
-                return 'Invalid phone number';
+                return 'Phone number must be at least ${selectedCountry.minLength} digits';
               }
+              
+              // Check maximum length
+              if (cleaned.length > selectedCountry.maxLength) {
+                return 'Phone number must be at most ${selectedCountry.maxLength} digits';
+              }
+              
+              // For countries with fixed length (min == max), enforce exact length
+              if (selectedCountry.minLength == selectedCountry.maxLength && 
+                  cleaned.length != selectedCountry.minLength) {
+                return 'Phone number must be exactly ${selectedCountry.minLength} digits';
+              }
+              
               return null;
             },
           ),

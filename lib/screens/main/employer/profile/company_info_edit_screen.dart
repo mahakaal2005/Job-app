@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/widgets/custom_toast.dart';
 import 'package:get_work_app/widgets/custom_dropdown_field.dart';
@@ -71,6 +72,9 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
           'companyInfo.companyDescription': _descriptionController.text.trim(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
+
+        // Update profile completion status
+        AuthService.updateProfileCompletionStatus();
 
         if (mounted) {
           CustomToast.show(

@@ -484,33 +484,41 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
               });
             },
             child: AnimatedScale(
-              scale: _isDescriptionTab ? 1.0 : 0.98,
+              scale: _isDescriptionTab ? 1.02 : 0.98,
               duration: const Duration(milliseconds: 150),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
                 width: 162,
                 height: 40,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.lookGigPurple, // Always dark purple #130160
+                  // Selected: Dark purple, Unselected: Light purple
+                  color: _isDescriptionTab 
+                      ? AppColors.lookGigPurple      // Active: Dark purple #130160
+                      : const Color(0xFFD6CDFE),     // Inactive: Light purple
                   borderRadius: BorderRadius.circular(6),
+                  // Enhanced shadow when active for depth
                   boxShadow: _isDescriptionTab
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF99ABC6).withOpacity(0.18),
-                            blurRadius: 62,
-                            offset: const Offset(0, 4),
+                            color: AppColors.lookGigPurple.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                            spreadRadius: 0,
                           ),
                         ]
-                      : null, // Elevated when active
+                      : null,
                 ),
-                alignment: Alignment.center,
-                child: const Text(
+                child: Text(
                   'Description',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w700,
+                    fontWeight: _isDescriptionTab ? FontWeight.w700 : FontWeight.w600,
                     fontSize: 14,
                     height: 1.302,
-                    color: Colors.white, // Always white text
+                    // White text when active, dark purple when inactive
+                    color: _isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
                   ),
                 ),
               ),
@@ -527,33 +535,41 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
               });
             },
             child: AnimatedScale(
-              scale: !_isDescriptionTab ? 1.0 : 0.98,
+              scale: !_isDescriptionTab ? 1.02 : 0.98,
               duration: const Duration(milliseconds: 150),
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
                 width: 162,
                 height: 40,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD6CDFE), // Always light purple
+                  // Selected: Dark purple, Unselected: Light purple
+                  color: !_isDescriptionTab 
+                      ? AppColors.lookGigPurple      // Active: Dark purple #130160
+                      : const Color(0xFFD6CDFE),     // Inactive: Light purple
                   borderRadius: BorderRadius.circular(6),
+                  // Enhanced shadow when active for depth
                   boxShadow: !_isDescriptionTab
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF99ABC6).withOpacity(0.18),
-                            blurRadius: 62,
-                            offset: const Offset(0, 4),
+                            color: AppColors.lookGigPurple.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                            spreadRadius: 0,
                           ),
                         ]
-                      : null, // Elevated when active
+                      : null,
                 ),
-                alignment: Alignment.center,
                 child: Text(
                   'Company',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w700,
+                    fontWeight: !_isDescriptionTab ? FontWeight.w700 : FontWeight.w600,
                     fontSize: 14,
                     height: 1.302,
-                    color: AppColors.lookGigPurple, // Always dark purple text
+                    // White text when active, dark purple when inactive
+                    color: !_isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
                   ),
                 ),
               ),

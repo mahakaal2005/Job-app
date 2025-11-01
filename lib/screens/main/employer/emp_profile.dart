@@ -16,7 +16,6 @@ import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/error_handler.dart';
 import 'package:get_work_app/widgets/profile_completion_widget.dart';
 
-import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EmpProfile extends StatefulWidget {

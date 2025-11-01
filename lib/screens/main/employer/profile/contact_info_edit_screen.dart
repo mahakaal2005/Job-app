@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/widgets/custom_toast.dart';
+import 'package:get_work_app/widgets/phone_input_field.dart';
 
 class ContactInfoEditScreen extends StatefulWidget {
   final Map<String, dynamic> companyInfo;
@@ -54,6 +56,9 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
           'companyInfo.companyPhone': _phoneController.text.trim(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
+
+        // Update profile completion status
+        AuthService.updateProfileCompletionStatus();
 
         if (mounted) {
           CustomToast.show(
@@ -109,13 +114,7 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 20),
-                    _buildTextField(
-                      controller: _phoneController,
-                      label: 'Company Phone',
-                      hint: 'e.g., +1 234 567 8900',
-                      icon: Icons.phone,
-                      keyboardType: TextInputType.phone,
-                    ),
+                    _buildPhoneField(),
                     const SizedBox(height: 32),
                     _buildSaveButton(),
                   ],
@@ -284,6 +283,34 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
               return null;
             },
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhoneField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Company Phone',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.lookGigProfileText,
+          ),
+        ),
+        const SizedBox(height: 8),
+        PhoneInputField(
+          phoneController: _phoneController,
+          labelText: '',
+          hintText: 'Enter phone number',
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Phone number is required';
+            }
+            return null;
+          },
         ),
       ],
     );

@@ -899,6 +899,52 @@ class AuthService {
     }
   }
 
+  // Check if this is user's first login
+  static Future<bool> isFirstLogin() async {
+    try {
+      if (currentUser == null) return false;
+
+      final role = await getUserRole();
+      final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+
+      final userDoc = await _firestore
+          .collection(collectionName)
+          .doc(currentUser!.uid)
+          .get();
+
+      if (!userDoc.exists) return true; // New user
+
+      final data = userDoc.data();
+      // If lastLoginDate doesn't exist or is null, it's first login
+      return data?['lastLoginDate'] == null;
+    } catch (e) {
+      _errorLog('Error checking first login', e);
+      return false; // Default to returning user on error
+    }
+  }
+
+  // Update last login date
+  static Future<void> updateLastLoginDate() async {
+    try {
+      if (currentUser == null) return;
+
+      final role = await getUserRole();
+      final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+
+      await _firestore
+          .collection(collectionName)
+          .doc(currentUser!.uid)
+          .update({
+        'lastLoginDate': FieldValue.serverTimestamp(),
+      });
+
+      _debugLog('Last login date updated successfully');
+    } catch (e) {
+      _errorLog('Error updating last login date', e);
+      // Don't throw - this is not critical
+    }
+  }
+
   // Check if email exists (enhanced to check both Auth and Firestore)
   static Future<bool> isEmailRegistered(String email) async {
     try {
@@ -1159,7 +1205,7 @@ class AuthService {
 
       if (!userDoc.exists) return 0;
 
-      final data = userDoc.data() as Map<String, dynamic>?;
+      final data = userDoc.data();
       if (data == null) return 0;
 
       // If onboarding is completed, return 100%
@@ -1179,79 +1225,194 @@ class AuthService {
     }
   }
 
-  /// Calculate completion percentage for regular users (5 sections = 20% each)
+  /// Calculate completion percentage for regular users
+  /// Based on ACTUAL Firestore structure from student onboarding
+  /// All 5 pages are REQUIRED for 100% completion (20% each)
   static int _calculateUserCompletionPercentage(Map<String, dynamic> data) {
-    int completedSections = 0;
+    int completion = 0;
 
-    // Section 1: Personal Info (name, phone, age, gender, DOB) - 20%
-    if (_isFieldNotEmpty(data['fullName']) &&
-        _isFieldNotEmpty(data['phone']) &&
-        _isFieldNotEmpty(data['age']) &&
+    debugPrint('🔍 [COMPLETION] User data keys: ${data.keys.toList()}');
+
+    // Page 0: Personal Info (phone, gender, DOB, age) - 20%
+    if (_isFieldNotEmpty(data['phone']) &&
         _isFieldNotEmpty(data['gender']) &&
-        data['dateOfBirth'] != null) {
-      completedSections++;
+        data['dateOfBirth'] != null &&
+        data['age'] != null) {
+      completion += 20;
+      debugPrint('✅ [COMPLETION] Personal Info section complete (+20%)');
+    } else {
+      debugPrint('❌ [COMPLETION] Personal Info incomplete');
+      if (!_isFieldNotEmpty(data['phone'])) debugPrint('   Missing: phone');
+      if (!_isFieldNotEmpty(data['gender'])) debugPrint('   Missing: gender');
+      if (data['dateOfBirth'] == null) debugPrint('   Missing: dateOfBirth');
+      if (data['age'] == null) debugPrint('   Missing: age');
     }
 
-    // Section 2: Address (address, city, state, zip) - 20%
+    // Page 1: Address (address, city, state, zipCode, country) - 20%
     if (_isFieldNotEmpty(data['address']) &&
         _isFieldNotEmpty(data['city']) &&
         _isFieldNotEmpty(data['state']) &&
         _isFieldNotEmpty(data['zipCode'])) {
-      completedSections++;
+      completion += 20;
+      debugPrint('✅ [COMPLETION] Address section complete (+20%)');
+    } else {
+      debugPrint('❌ [COMPLETION] Address incomplete');
+      if (!_isFieldNotEmpty(data['address'])) debugPrint('   Missing: address');
+      if (!_isFieldNotEmpty(data['city'])) debugPrint('   Missing: city');
+      if (!_isFieldNotEmpty(data['state'])) debugPrint('   Missing: state');
+      if (!_isFieldNotEmpty(data['zipCode'])) debugPrint('   Missing: zipCode');
     }
 
-    // Section 3: Education (level, college) - 20%
+    // Page 2: Education (educationLevel, college, bio) - 20%
     if (_isFieldNotEmpty(data['educationLevel']) &&
         _isFieldNotEmpty(data['college'])) {
-      completedSections++;
+      completion += 20;
+      debugPrint('✅ [COMPLETION] Education section complete (+20%)');
+    } else {
+      debugPrint('❌ [COMPLETION] Education incomplete');
+      if (!_isFieldNotEmpty(data['educationLevel'])) debugPrint('   Missing: educationLevel');
+      if (!_isFieldNotEmpty(data['college'])) debugPrint('   Missing: college');
     }
 
-    // Section 4: Skills & Availability - 20%
+    // Page 3: Skills & Availability - 20%
     final skills = data['skills'];
-    if (skills is List && skills.isNotEmpty &&
-        _isFieldNotEmpty(data['availability'])) {
-      completedSections++;
+    final availability = data['availability'];
+    bool hasSkillsAndAvailability = false;
+    
+    if (skills is List && skills.isNotEmpty) {
+      // Check availability - can be object or string
+      if (availability != null) {
+        if (availability is Map) {
+          // Availability stored as object with weeklyHours and preferredSlots
+          hasSkillsAndAvailability = true;
+        } else if (availability is String && availability.isNotEmpty) {
+          // Availability stored as string
+          hasSkillsAndAvailability = true;
+        }
+      }
+    }
+    
+    if (hasSkillsAndAvailability) {
+      completion += 20;
+      debugPrint('✅ [COMPLETION] Skills & Availability section complete (+20%)');
+    } else {
+      debugPrint('❌ [COMPLETION] Skills & Availability incomplete');
+      if (skills == null || (skills is List && skills.isEmpty)) {
+        debugPrint('   Missing: skills');
+      }
+      if (availability == null) debugPrint('   Missing: availability');
     }
 
-    // Section 5: Resume upload - 20%
-    if (_isFieldNotEmpty(data['resumeUrl'])) {
-      completedSections++;
+    // Page 4: Profile Image & Resume - 20% (BOTH REQUIRED)
+    bool hasProfileAndResume = _isFieldNotEmpty(data['profileImageUrl']) && 
+                                _isFieldNotEmpty(data['resumeUrl']);
+    
+    if (hasProfileAndResume) {
+      completion += 20;
+      debugPrint('✅ [COMPLETION] Profile & Resume section complete (+20%)');
+    } else {
+      debugPrint('❌ [COMPLETION] Profile & Resume incomplete');
+      if (!_isFieldNotEmpty(data['profileImageUrl'])) debugPrint('   Missing: profileImageUrl');
+      if (!_isFieldNotEmpty(data['resumeUrl'])) debugPrint('   Missing: resumeUrl');
     }
 
-    return (completedSections * 20);
+    debugPrint('📊 [COMPLETION] User total: $completion%');
+    return completion;
   }
 
-  /// Calculate completion percentage for employers (3 sections)
+  /// Calculate completion percentage for employers (5 sections = 20% each)
+  /// Based on ACTUAL Firestore structure
   static int _calculateEmployerCompletionPercentage(Map<String, dynamic> data) {
     int completedSections = 0;
 
-    // Section 1: Company Info (name, email, phone, address) - 33%
-    if (_isFieldNotEmpty(data['companyName']) &&
-        _isFieldNotEmpty(data['companyEmail']) &&
-        _isFieldNotEmpty(data['companyPhone']) &&
-        _isFieldNotEmpty(data['address'])) {
+    debugPrint('🔍 [COMPLETION] Full employer data keys: ${data.keys.toList()}');
+
+    // Get nested objects safely
+    final companyInfo = data['companyInfo'] as Map<String, dynamic>?;
+    final employerInfo = data['employerInfo'] as Map<String, dynamic>?;
+
+    debugPrint('🔍 [COMPLETION] companyInfo exists: ${companyInfo != null}');
+    if (companyInfo != null) {
+      debugPrint('🔍 [COMPLETION] companyInfo keys: ${companyInfo.keys.toList()}');
+    }
+
+    debugPrint('🔍 [COMPLETION] employerInfo exists: ${employerInfo != null}');
+    if (employerInfo != null) {
+      debugPrint('🔍 [COMPLETION] employerInfo keys: ${employerInfo.keys.toList()}');
+    }
+
+    // Section 1: Company Basic Info (name, address, industry) - 20%
+    if (companyInfo != null &&
+        _isFieldNotEmpty(companyInfo['companyName']) &&
+        _isFieldNotEmpty(companyInfo['companyAddress']) &&
+        _isFieldNotEmpty(companyInfo['industry'])) {
+      completedSections++;
+      debugPrint('✅ [COMPLETION] Company Basic Info section complete');
+    } else {
+      debugPrint('❌ [COMPLETION] Company Basic Info incomplete');
+    }
+
+    // Section 2: Company Details (size, year, description) - 20%
+    if (companyInfo != null &&
+        _isFieldNotEmpty(companyInfo['companySize']) &&
+        _isFieldNotEmpty(companyInfo['establishedYear']) &&
+        _isFieldNotEmpty(companyInfo['companyDescription'])) {
+      completedSections++;
+      debugPrint('✅ [COMPLETION] Company Details section complete');
+    } else {
+      debugPrint('❌ [COMPLETION] Company Details incomplete');
+    }
+
+    // Section 3: Contact Information (email, phone, website) - 20%
+    if (companyInfo != null &&
+        _isFieldNotEmpty(companyInfo['companyEmail']) &&
+        _isFieldNotEmpty(companyInfo['companyPhone'])) {
+      completedSections++;
+      debugPrint('✅ [COMPLETION] Contact Info section complete');
+    } else {
+      debugPrint('❌ [COMPLETION] Contact Info incomplete');
+      if (companyInfo != null) {
+        if (!_isFieldNotEmpty(companyInfo['companyEmail'])) debugPrint('   Missing: companyEmail');
+        if (!_isFieldNotEmpty(companyInfo['companyPhone'])) debugPrint('   Missing: companyPhone');
+      }
+    }
+
+    // Section 4: Company Logo - 20%
+    if (companyInfo != null &&
+        _isFieldNotEmpty(companyInfo['companyLogo'])) {
+      completedSections++;
+      debugPrint('✅ [COMPLETION] Company Logo section complete');
+    } else {
+      debugPrint('❌ [COMPLETION] Company Logo incomplete');
+    }
+
+    // Section 5: Personal Information (fullName and employerInfo if exists) - 20%
+    bool hasPersonalInfo = false;
+    
+    if (employerInfo != null &&
+        _isFieldNotEmpty(employerInfo['jobTitle']) &&
+        _isFieldNotEmpty(employerInfo['department'])) {
+      // Has detailed employer info
+      hasPersonalInfo = true;
+      debugPrint('✅ [COMPLETION] Personal Info section complete (employerInfo)');
+    } else if (_isFieldNotEmpty(data['fullName']) &&
+               _isFieldNotEmpty(data['email'])) {
+      // Has basic personal info at root level
+      hasPersonalInfo = true;
+      debugPrint('✅ [COMPLETION] Personal Info section complete (basic)');
+    } else {
+      debugPrint('❌ [COMPLETION] Personal Info incomplete');
+    }
+    
+    if (hasPersonalInfo) {
       completedSections++;
     }
 
-    // Section 2: Employer Info (job title, department, ID) - 33%
-    if (_isFieldNotEmpty(data['jobTitle']) &&
-        _isFieldNotEmpty(data['department']) &&
-        _isFieldNotEmpty(data['employerId'])) {
-      completedSections++;
-    }
-
-    // Section 3: Documents (logo, license, ID card) - 34%
-    if (_isFieldNotEmpty(data['companyLogo']) &&
-        _isFieldNotEmpty(data['businessLicense']) &&
-        _isFieldNotEmpty(data['employerIdCard'])) {
-      completedSections++;
-    }
-
-    // Calculate percentage (33%, 66%, or 100%)
-    if (completedSections == 0) return 0;
-    if (completedSections == 1) return 33;
-    if (completedSections == 2) return 66;
-    return 100;
+    // Calculate percentage (20%, 40%, 60%, 80%, or 100%)
+    final percentage = completedSections * 20;
+    
+    debugPrint('📊 [COMPLETION] Employer: $completedSections/5 sections = $percentage%');
+    return percentage;
   }
 
   /// Helper to check if a field value is not empty
@@ -1289,6 +1450,70 @@ class AuthService {
     }
   }
 
+  /// Update profile completion status in Firestore
+  /// Call this after user saves any profile data
+  /// Waits 1 second before updating to avoid rapid successive calls
+  static Future<void> updateProfileCompletionStatus() async {
+    try {
+      // Wait 1 second as per requirement
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (currentUser == null) {
+        debugPrint('⚠️ [PROFILE_COMPLETION] No user logged in');
+        return;
+      }
+
+      final role = await getUserRole();
+      if (role == null) {
+        debugPrint('⚠️ [PROFILE_COMPLETION] No role found');
+        return;
+      }
+
+      final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+      
+      // Get current data
+      final userDoc = await _firestore
+          .collection(collectionName)
+          .doc(currentUser!.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        debugPrint('⚠️ [PROFILE_COMPLETION] User document not found');
+        return;
+      }
+
+      final data = userDoc.data();
+      if (data == null) return;
+
+      // Check if already marked as complete - if so, don't recalculate
+      if (data['onboardingCompleted'] == true) {
+        debugPrint('✅ [PROFILE_COMPLETION] Already 100% complete, skipping update');
+        return;
+      }
+
+      // Calculate new percentage
+      final percentage = role == 'employer'
+          ? _calculateEmployerCompletionPercentage(data)
+          : _calculateUserCompletionPercentage(data);
+
+      debugPrint('📊 [PROFILE_COMPLETION] Calculated: $percentage%');
+
+      // Determine if profile is now complete
+      final isComplete = percentage >= 100;
+
+      // Update Firestore
+      await _firestore.collection(collectionName).doc(currentUser!.uid).update({
+        'profileCompletionPercentage': percentage,
+        'onboardingCompleted': isComplete,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      debugPrint('✅ [PROFILE_COMPLETION] Updated: $percentage% (Complete: $isComplete)');
+    } catch (e) {
+      debugPrint('❌ [PROFILE_COMPLETION] Error: $e');
+    }
+  }
+
   // Debug method to check user existence in all collections
   static Future<void> debugCheckUserInAllCollections() async {
     if (currentUser == null) {
@@ -1320,7 +1545,7 @@ class AuthService {
       
       if (employerDoc.exists) {
         print('✅ FOUND in employers collection');
-        final data = employerDoc.data() as Map<String, dynamic>?;
+        final data = employerDoc.data();
         print('   📋 Full Data:');
         data?.forEach((key, value) {
           print('      $key: $value');
@@ -1343,7 +1568,7 @@ class AuthService {
       
       if (userDoc.exists) {
         print('✅ FOUND in users_specific collection');
-        final data = userDoc.data() as Map<String, dynamic>?;
+        final data = userDoc.data();
         print('   📋 Full Data:');
         data?.forEach((key, value) {
           print('      $key: $value');
@@ -1366,7 +1591,7 @@ class AuthService {
       
       if (employeeDoc.exists) {
         print('✅ FOUND in employees collection');
-        final data = employeeDoc.data() as Map<String, dynamic>?;
+        final data = employeeDoc.data();
         print('   📋 Full Data:');
         data?.forEach((key, value) {
           print('      $key: $value');
@@ -1389,7 +1614,7 @@ class AuthService {
       
       if (oldUserDoc.exists) {
         print('✅ FOUND in users collection');
-        final data = oldUserDoc.data() as Map<String, dynamic>?;
+        final data = oldUserDoc.data();
         print('   📋 Full Data:');
         data?.forEach((key, value) {
           print('      $key: $value');

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/error_handler.dart';
 import 'package:get_work_app/screens/main/employer/emp_ob/cd_servi.dart';
@@ -237,6 +238,9 @@ class _CompanyLogoEditScreenState extends State<CompanyLogoEditScreen> {
           });
 
           print('✅ [LOGO_UPLOAD] Firestore updated successfully');
+
+          // Update profile completion status
+          AuthService.updateProfileCompletionStatus();
 
           if (mounted) {
             CustomToast.show(

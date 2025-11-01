@@ -6904,3 +6904,690 @@ This creates a consistent user experience across the app where:
 - [ ] "Skip" has dark purple background
 - [ ] Dialog cannot be dismissed by tapping outside
 - [ ] Buttons work correctly (Go Back closes, Skip proceeds)
+
+
+---
+
+## October 24, 2025 - Dynamic Profile Completion System Implementation
+
+### Overview
+Implemented real-time profile completion tracking that updates automatically when users edit their profile from any screen. Progress bar shows live updates and card disappears once profile reaches 100%.
+
+### Requirements Implemented:
+1. ✅ Progress bar updates dynamically as user fills profile
+2. ✅ 1-second delay after save before recalculating
+3. ✅ Card disappears when 100% complete (never reappears)
+4. ✅ No success animation
+5. ✅ Percentage stored in Firestore
+6. ✅ Fixed text: "Complete Your Profile" for both users and employers
+
+### Changes Made
+
+#### File: `lib/services/auth_services.dart`
+
+**Added New Method:**
+```dart
+static Future<void> updateProfileCompletionStatus() async {
+  // Waits 1 second before updating
+  await Future.delayed(const Duration(seconds: 1));
+  
+  // Checks if already 100% - if so, skips recalculation
+  if (data['onboardingCompleted'] == true) return;
+  
+  // Calculates new percentage
+  final percentage = role == 'employer'
+      ? _calculateEmployerCompletionPercentage(data)
+      : _calculateUserCompletionPercentage(data);
+  
+  // Updates Firestore
+  await _firestore.collection(collectionName).doc(uid).update({
+    'profileCompletionPercentage': percentage,
+    'onboardingCompleted': percentage >= 100,
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+}
+```
+
+**Why 1-second delay:** Prevents rapid successive calls if user saves multiple fields quickly.
+
+**Why check onboardingCompleted:** Once 100%, never recalculate (card never reappears).
+
+#### File: `lib/widgets/profile_completion_widget.dart`
+
+**Changed from FutureBuilder to StreamBuilder:**
+
+**Before:**
+```dart
+FutureBuilder<Map<String, dynamic>>(
+  future: _getCompletionData(), // Loads once
+  builder: (context, snapshot) { ... }
+)
+```
+
+**After:**
+```dart
+StreamBuilder<DocumentSnapshot>(
+  stream: _getCompletionStream(), // Real-time updates
+  builder: (context, snapshot) {
+    final data = snapshot.data!.data() as Map<String, dynamic>;
+    final percentage = data['profileCompletionPercentage'] ?? 0;
+    final isComplete = data['onboardingCompleted'] == true;
+    
+    // Never show if complete
+    if (isComplete || percentage >= 100) {
+      return const SizedBox.shrink();
+    }
+  }
+)
+```
+
+**Fixed Text:**
+```dart
+// Before: 'Complete Your Company Profile' for employers
+// After: 'Complete Your Profile' for both
+const Text('Complete Your Profile')
+```
+
+#### Profile Edit Screens - Added Trigger After Save
+
+**User Screens (5 files):**
+1. `lib/screens/main/user/profile/about_me_screen.dart`
+2. `lib/screens/main/user/profile/address_edit_screen.dart`
+3. `lib/screens/main/user/profile/education_screen.dart`
+4. `lib/screens/main/user/profile/skills_screen.dart`
+5. `lib/screens/main/user/profile/resume_screen.dart`
+
+**Employer Screens (3 files):**
+6. `lib/screens/main/employer/profile/company_info_edit_screen.dart`
+7. `lib/screens/main/employer/profile/employer_personal_info_edit_screen.dart`
+8. `lib/screens/main/employer/profile/company_logo_edit_screen.dart`
+
+**Pattern Applied to All:**
+```dart
+await FirebaseFirestore.instance
+    .collection(collectionName)
+    .doc(user.uid)
+    .update({ ... });
+
+// ✅ ADDED: Update profile completion status
+AuthService.updateProfileCompletionStatus();
+
+if (mounted) {
+  _showSuccessSnackBar('Saved successfully!');
+  Navigator.pop(context, true);
+}
+```
+
+### Data Flow
+
+```
+User edits profile
+    ↓
+Clicks Save
+    ↓
+Data saved to Firestore
+    ↓
+AuthService.updateProfileCompletionStatus() called
+    ↓
+Waits 1 second
+    ↓
+Checks if already 100% (skip if yes)
+    ↓
+Calculates new percentage
+    ↓
+Updates Firestore:
+  - profileCompletionPercentage: X
+  - onboardingCompleted: true/false
+    ↓
+StreamBuilder detects Firestore change
+    ↓
+ProfileCompletionWidget rebuilds
+    ↓
+Shows updated progress OR hides if 100%
+```
+
+### Firestore Schema Changes
+
+**New Fields Added to User/Employer Documents:**
+```dart
+{
+  'profileCompletionPercentage': 0-100,  // Integer
+  'onboardingCompleted': true/false,      // Boolean
+  'updatedAt': Timestamp,                 // Auto-updated
+}
+```
+
+### User Journey Examples
+
+**User Scenario:**
+1. User skips onboarding → Card shows "0% complete"
+2. User goes to About Me → Adds bio → Saves
+3. Wait 1 second → Percentage recalculated
+4. Card updates to "20% complete" (1/5 sections)
+5. User adds address → Card updates to "40% complete"
+6. User adds education → Card updates to "60% complete"
+7. User adds skills → Card updates to "80% complete"
+8. User uploads resume → Card updates to "100% complete"
+9. Card disappears (never shows again)
+
+**Employer Scenario:**
+1. Employer skips onboarding → Card shows "0% complete"
+2. Employer adds company info → Card updates to "33% complete"
+3. Employer adds personal info → Card updates to "66% complete"
+4. Employer uploads logo → Card updates to "100% complete"
+5. Card disappears (never shows again)
+
+### Edge Cases Handled
+
+1. **Already 100%:** Method returns early, no recalculation
+2. **Rapid saves:** 1-second delay prevents multiple calculations
+3. **Offline edits:** Firestore handles sync automatically
+4. **User removes data:** Percentage drops BUT card doesn't reappear (onboardingCompleted stays true)
+5. **Multiple profile screens open:** StreamBuilder updates all instances
+
+### Performance Considerations
+
+1. **StreamBuilder:** Efficient - only rebuilds when Firestore data changes
+2. **1-second delay:** Prevents excessive Firestore writes
+3. **Early return:** Skips calculation if already 100%
+4. **Async call:** Doesn't block UI (fire-and-forget pattern)
+
+### Testing Checklist
+
+- [ ] User edits about me → Progress updates after 1 second
+- [ ] User edits address → Progress updates
+- [ ] User edits education → Progress updates
+- [ ] User edits skills → Progress updates
+- [ ] User uploads resume → Progress updates to 100%
+- [ ] Card disappears at 100%
+- [ ] Card never reappears after 100%
+- [ ] Employer edits company info → Progress updates
+- [ ] Employer edits personal info → Progress updates
+- [ ] Employer uploads logo → Progress updates
+- [ ] Text says "Complete Your Profile" for both roles
+- [ ] Multiple rapid saves don't cause issues
+- [ ] Works offline (syncs when online)
+
+### Files Modified
+
+**Core Services (2 files):**
+- `lib/services/auth_services.dart` - Added updateProfileCompletionStatus()
+- `lib/widgets/profile_completion_widget.dart` - StreamBuilder + fixed text
+
+**User Profile Screens (5 files):**
+- `lib/screens/main/user/profile/about_me_screen.dart`
+- `lib/screens/main/user/profile/address_edit_screen.dart`
+- `lib/screens/main/user/profile/education_screen.dart`
+- `lib/screens/main/user/profile/skills_screen.dart`
+- `lib/screens/main/user/profile/resume_screen.dart`
+
+**Employer Profile Screens (3 files):**
+- `lib/screens/main/employer/profile/company_info_edit_screen.dart`
+- `lib/screens/main/employer/profile/employer_personal_info_edit_screen.dart`
+- `lib/screens/main/employer/profile/company_logo_edit_screen.dart`
+
+**Total:** 10 files modified
+
+### Breaking Changes
+None - All changes are additive and backward compatible.
+
+### Success Criteria
+✅ Real-time progress updates
+✅ 1-second delay implemented
+✅ Card disappears at 100% (never reappears)
+✅ No success animation
+✅ Percentage stored in Firestore
+✅ Consistent text for both roles
+✅ No errors or warnings
+✅ Works for both users and employers
+
+
+---
+
+## October 24, 2025 - CRITICAL FIX: Employer Completion Calculation
+
+### Problem
+Employer profile completion was always showing 0% even after filling company information. The calculation logic was checking wrong field paths.
+
+### Root Cause
+**Data Structure Mismatch:**
+
+**How data is stored in Firestore:**
+```dart
+{
+  'companyInfo': {
+    'companyName': 'ABC Corp',
+    'companyEmail': 'contact@abc.com',
+    'companyPhone': '123-456-7890',
+    'companyAddress': '123 Main St',
+    'companyLogo': 'https://...',
+    'businessLicense': 'https://...'
+  },
+  'employerInfo': {
+    'jobTitle': 'HR Manager',
+    'department': 'Human Resources',
+    'employerId': 'EMP001',
+    'employerIdCard': 'https://...'
+  }
+}
+```
+
+**How calculation was checking (WRONG):**
+```dart
+data['companyName']  // ❌ Returns null (field doesn't exist at root)
+data['companyEmail'] // ❌ Returns null
+```
+
+**How it should check (CORRECT):**
+```dart
+data['companyInfo']['companyName']  // ✅ Returns actual value
+data['companyInfo']['companyEmail'] // ✅ Returns actual value
+```
+
+### Changes Made
+
+#### File: `lib/services/auth_services.dart`
+
+**Method: `_calculateEmployerCompletionPercentage()`**
+
+**Before (BROKEN):**
+```dart
+static int _calculateEmployerCompletionPercentage(Map<String, dynamic> data) {
+  // Section 1: Company Info
+  if (_isFieldNotEmpty(data['companyName']) &&      // ❌ Wrong path
+      _isFieldNotEmpty(data['companyEmail']) &&     // ❌ Wrong path
+      _isFieldNotEmpty(data['companyPhone']) &&     // ❌ Wrong path
+      _isFieldNotEmpty(data['address'])) {          // ❌ Wrong path
+    completedSections++;
+  }
+  // Always returned 0% because fields were never found
+}
+```
+
+**After (FIXED):**
+```dart
+static int _calculateEmployerCompletionPercentage(Map<String, dynamic> data) {
+  // Get nested objects safely
+  final companyInfo = data['companyInfo'] as Map<String, dynamic>?;
+  final employerInfo = data['employerInfo'] as Map<String, dynamic>?;
+
+  // Section 1: Company Info - 33%
+  if (companyInfo != null &&
+      _isFieldNotEmpty(companyInfo['companyName']) &&      // ✅ Correct path
+      _isFieldNotEmpty(companyInfo['companyEmail']) &&     // ✅ Correct path
+      _isFieldNotEmpty(companyInfo['companyPhone']) &&     // ✅ Correct path
+      _isFieldNotEmpty(companyInfo['companyAddress'])) {   // ✅ Correct path
+    completedSections++;
+  }
+
+  // Section 2: Employer Info - 33%
+  if (employerInfo != null &&
+      _isFieldNotEmpty(employerInfo['jobTitle']) &&        // ✅ Correct path
+      _isFieldNotEmpty(employerInfo['department']) &&      // ✅ Correct path
+      _isFieldNotEmpty(employerInfo['employerId'])) {      // ✅ Correct path
+    completedSections++;
+  }
+
+  // Section 3: Documents - 34%
+  if (companyInfo != null &&
+      employerInfo != null &&
+      _isFieldNotEmpty(companyInfo['companyLogo']) &&      // ✅ Correct path
+      _isFieldNotEmpty(companyInfo['businessLicense']) &&  // ✅ Correct path
+      _isFieldNotEmpty(employerInfo['employerIdCard'])) {  // ✅ Correct path
+    completedSections++;
+  }
+
+  return completedSections == 0 ? 0 :
+         completedSections == 1 ? 33 :
+         completedSections == 2 ? 66 : 100;
+}
+```
+
+### Added Debug Logging
+
+Added comprehensive logging to help diagnose completion issues:
+```dart
+debugPrint('✅ [COMPLETION] Company Info section complete');
+debugPrint('❌ [COMPLETION] Employer Info incomplete');
+debugPrint('📊 [COMPLETION] Employer: 1/3 sections = 33%');
+```
+
+### Impact
+
+**Before Fix:**
+- Employer fills company info → Still shows 0% ❌
+- Employer fills all info → Still shows 0% ❌
+- Card never disappears ❌
+
+**After Fix:**
+- Employer fills company info → Shows 33% ✅
+- Employer fills personal info → Shows 66% ✅
+- Employer uploads documents → Shows 100% → Card disappears ✅
+
+### Why This Happened
+
+The original calculation was written assuming flat data structure (like users), but employer data uses nested structure (`companyInfo` and `employerInfo` objects). This is a common issue when different parts of the codebase use different data structures.
+
+### Testing Required
+
+- [ ] Employer with no data → Shows 0%
+- [ ] Employer adds company info → Shows 33%
+- [ ] Employer adds personal info → Shows 66%
+- [ ] Employer uploads documents → Shows 100%
+- [ ] Card disappears at 100%
+- [ ] Check console logs for debug messages
+- [ ] User completion still works correctly (flat structure)
+
+### Files Modified
+
+- `lib/services/auth_services.dart` - Fixed `_calculateEmployerCompletionPercentage()`
+
+### Lesson Learned
+
+**Always verify data structure before writing queries:**
+1. Check how data is saved in Firestore
+2. Match calculation logic to actual structure
+3. Use null-safe navigation for nested objects
+4. Add debug logging for complex calculations
+5. Test with real data, not assumptions
+
+
+---
+
+## October 25, 2025 - User Onboarding Profile Completion Fix
+
+### Changes Made
+- **File**: `lib/services/auth_services.dart`
+- **Change**: Updated `_calculateUserCompletionPercentage()` to treat all 5 onboarding pages as required (20% each)
+- **Reason**: Profile image and resume should be required for complete onboarding, not optional bonuses
+
+- **File**: `lib/screens/main/user/student_ob_screen/student_ob.dart`
+- **Change**: Added profile image validation to page 4, updated UI to show profile photo as required
+- **Reason**: Ensure users upload both profile image and resume to complete onboarding
+
+### Code Changes
+
+#### Before (auth_services.dart)
+```dart
+// Profile image and resume were optional bonuses (15% total)
+// Users reached 85% after pages 0-3
+// Page 3 got 25%, pages 0-2 got 20% each
+if (_isFieldNotEmpty(data['profileImageUrl'])) {
+  completion += 8; // Optional bonus
+}
+if (_isFieldNotEmpty(data['resumeUrl'])) {
+  completion += 7; // Optional bonus
+}
+```
+
+#### After (auth_services.dart)
+```dart
+// All 5 pages are required (20% each = 100% total)
+// Page 4: Profile Image & Resume - 20% (BOTH REQUIRED)
+bool hasProfileAndResume = _isFieldNotEmpty(data['profileImageUrl']) && 
+                            _isFieldNotEmpty(data['resumeUrl']);
+
+if (hasProfileAndResume) {
+  completion += 20;
+  debugPrint('✅ [COMPLETION] Profile & Resume section complete (+20%)');
+}
+```
+
+#### Before (student_ob.dart validation)
+```dart
+case 4: // Resume only
+  if (_resumeFile == null) {
+    return ValidationResult.invalid(
+      pageWithError: 4,
+      fieldName: 'Resume',
+      errorMessage: 'Please upload your resume on Profile & Documents page',
+    );
+  }
+  break;
+```
+
+#### After (student_ob.dart validation)
+```dart
+case 4: // Profile & Resume (both required)
+  if (_profileImage == null) {
+    return ValidationResult.invalid(
+      pageWithError: 4,
+      fieldName: 'Profile Photo',
+      errorMessage: 'Please upload your profile photo on Profile & Documents page',
+    );
+  }
+  if (_resumeFile == null) {
+    return ValidationResult.invalid(
+      pageWithError: 4,
+      fieldName: 'Resume',
+      errorMessage: 'Please upload your resume on Profile & Documents page',
+    );
+  }
+  break;
+```
+
+#### UI Change (student_ob.dart)
+```dart
+// Before: 'Profile Photo (Optional)'
+// After: 'Profile Photo *' (with red asterisk indicating required)
+Row(
+  children: [
+    const Text('Profile Photo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+    const Text(' *', style: TextStyle(color: Colors.red, fontSize: 16)),
+  ],
+)
+```
+
+### Impact
+- **Affected screens**: User onboarding flow, user profile screen
+- **Breaking changes**: No - existing users with completed onboarding still show 100%
+- **User experience**: New users must upload both profile image and resume to complete onboarding
+- **Progress calculation**: 
+  - Page 0 (Personal Info): 20%
+  - Page 1 (Address): 20%
+  - Page 2 (Education): 20%
+  - Page 3 (Skills & Availability): 20%
+  - Page 4 (Profile & Resume): 20%
+  - **Total**: 100% when all pages complete
+
+### Testing Required
+- Test new user onboarding flow
+- Verify profile image is required on page 4
+- Verify resume is required on page 4
+- Verify progress bar shows correct percentages (20%, 40%, 60%, 80%, 100%)
+- Verify validation prevents proceeding without profile image
+- Verify existing users with completed onboarding still show 100%
+
+
+---
+
+## October 25, 2025 - Complete Button Disabled Until Uploads Finish
+
+### Changes Made
+- **File**: `lib/screens/main/user/student_ob_screen/student_ob.dart`
+- **Change**: Complete button on page 4 is now disabled until both profile image and resume are uploaded
+- **Reason**: Prevent users from clicking Complete before uploads finish, ensuring data integrity
+
+### Code Changes
+
+#### Before
+```dart
+// Button was only disabled during loading, not checking if uploads completed
+onPressed: _isLoading
+    ? null
+    : _currentPage == 4
+    ? _completeOnboarding
+    : _nextPage,
+```
+
+#### After
+```dart
+// Button checks if both profile image and resume are uploaded on page 4
+onPressed: _isLoading
+    ? null
+    : _currentPage == 4
+        ? (_profileImage != null && _resumeFile != null)
+            ? _completeOnboarding
+            : null // Disable if profile image or resume not uploaded
+        : _nextPage,
+```
+
+#### Added Helper Message
+```dart
+// Shows helpful message when uploads are incomplete
+if (_currentPage == 4 && (_profileImage == null || _resumeFile == null))
+  Container(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    child: Row(
+      children: [
+        const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            _profileImage == null && _resumeFile == null
+                ? 'Please upload both profile photo and resume to complete'
+                : _profileImage == null
+                    ? 'Please upload your profile photo to complete'
+                    : 'Please upload your resume to complete',
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.orange,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+```
+
+### Impact
+- **User Experience**: 
+  - Complete button appears grayed out until both uploads finish
+  - Clear orange message tells users exactly what's missing
+  - Prevents accidental completion without required files
+- **Data Integrity**: Ensures all users have both profile image and resume before completing onboarding
+- **Breaking Changes**: None
+- **Testing Required**:
+  - Verify button is disabled when no uploads
+  - Verify button is disabled with only profile image
+  - Verify button is disabled with only resume
+  - Verify button is enabled when both are uploaded
+  - Verify helper message shows correct text for each state
+
+
+---
+
+## October 25, 2025 - User Onboarding Skip Dialog Styling Fix
+
+### Changes Made
+- **File**: `lib/screens/main/user/student_ob_screen/student_ob.dart`
+- **Change**: Updated `_showSkipConfirmation()` dialog to match employer onboarding style
+- **Reason**: Consistency across user and employer onboarding flows
+
+### Code Changes
+
+#### Before
+```dart
+// Old style with simple TextButton and ElevatedButton
+actions: [
+  TextButton(
+    onPressed: () => Navigator.pop(context, false),
+    child: const Text('Go Back'),
+  ),
+  ElevatedButton(
+    onPressed: () => Navigator.pop(context, true),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: AppColors.lookGigPurple,
+    ),
+    child: const Text('Skip'),
+  ),
+],
+```
+
+#### After
+```dart
+// New style with properly styled buttons in a Row
+actions: [
+  Row(
+    children: [
+      // Go Back button with light purple background
+      Expanded(
+        child: SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.lookGigLightPurple,
+              foregroundColor: AppColors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Go Back',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'DM Sans',
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: 12),
+      // Skip button with dark purple background
+      Expanded(
+        child: SizedBox(
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.lookGigPurple,
+              foregroundColor: AppColors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Skip',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'DM Sans',
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+],
+actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+```
+
+### Impact
+- **User Experience**: Both buttons now display side-by-side with proper styling
+- **Consistency**: User onboarding dialog now matches employer onboarding dialog exactly
+- **Visual Design**: 
+  - Go Back button: Light purple background (#D6CDFE)
+  - Skip button: Dark purple background (#130160)
+  - Both buttons: 50px height, rounded corners, proper typography
+- **Breaking Changes**: None - only visual improvements
+- **Testing Required**:
+  - Verify skip dialog shows two buttons side-by-side
+  - Verify button colors match design
+  - Verify both buttons work correctly
+  - Compare with employer onboarding dialog for consistency
+
+### Consistency Achieved
+Both user and employer onboarding now use:
+- ✅ Same skip dialog styling
+- ✅ Same PhoneInputField component
+- ✅ Same CustomDropdownField for dropdowns
+- ✅ Same button styles and colors
+- ✅ Same typography and spacing

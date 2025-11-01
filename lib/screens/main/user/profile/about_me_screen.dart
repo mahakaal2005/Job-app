@@ -97,6 +97,9 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
               'updatedAt': FieldValue.serverTimestamp(),
             });
 
+        // Update profile completion status
+        AuthService.updateProfileCompletionStatus();
+
         if (mounted) {
           setState(() {
             _originalText = _aboutController.text.trim();
@@ -165,9 +168,12 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   }
 
   Future<bool?> _showUndoModal() async {
-    return showDialog<bool>(
+    return showModalBottomSheet<bool>(
       context: context,
-      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) => _buildUndoModal(),
     );
   }
@@ -190,199 +196,166 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   }
 
   Widget _buildUndoModal() {
-    return Stack(
-      children: [
-        // Background overlay - tap to dismiss
-        GestureDetector(
-          onTap: () => Navigator.pop(context, false),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: const Color(0xFF2C373B).withValues(alpha: 0.6),
-          ),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-
-        // Modal content with drag-to-dismiss
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: GestureDetector(
-            onVerticalDragUpdate: (details) {
-              // If dragging down, dismiss the modal
-              if (details.delta.dy > 0) {
-                Navigator.pop(context, false);
-              }
-            },
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Draggable area with divider line
-                      GestureDetector(
-                        onVerticalDragUpdate: (details) {
-                          // Enhanced drag sensitivity for the handle area
-                          if (details.delta.dy > 2) {
-                            Navigator.pop(context, false);
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: Container(
-                              width: 30,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: AppColors.lookGigProfileText,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 35),
-
-                      // Title
-                      const Text(
-                        'Undo Changes ?',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                          height: 1.302,
-                          color: AppColors.lookGigProfileText,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Subtitle
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 44),
-                        child: Text(
-                          'Are you sure you want to change what you entered?',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
-                            height: 1.302,
-                            color: Color(0xFF524B6B),
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 56),
-
-                      // Buttons
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 81),
-                        child: Column(
-                          children: [
-                            // Continue Filling button
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context, false),
-                              child: Container(
-                                width: 213,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: AppColors.lookGigPurple,
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF99ABC6,
-                                      ).withValues(alpha: 0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'CONTINUE FILLING',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing: 0.84,
-                                      color: AppColors.white,
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Undo Changes button
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _aboutController.text = _originalText;
-                                  _hasUnsavedChanges = false;
-                                });
-                                Navigator.pop(context, true);
-                              },
-                              child: Container(
-                                width: 213,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD6CDFE),
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF99ABC6,
-                                      ).withValues(alpha: 0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'UNDO CHANGES',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                      height: 1.302,
-                                      letterSpacing: 0.84,
-                                      color: AppColors.white,
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Draggable area with divider line
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Container(
+                  width: 30,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.lookGigProfileText,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
             ),
-          ),
+
+            const SizedBox(height: 35),
+
+            // Title
+            const Text(
+              'Undo Changes ?',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                height: 1.302,
+                color: AppColors.lookGigProfileText,
+                decoration: TextDecoration.none,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Subtitle
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 44),
+              child: Text(
+                'Are you sure you want to change what you entered?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  height: 1.302,
+                  color: Color(0xFF524B6B),
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 56),
+
+            // Buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 81),
+              child: Column(
+                children: [
+                  // Continue Filling button
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context, false),
+                    child: Container(
+                      width: 213,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppColors.lookGigPurple,
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF99ABC6,
+                            ).withValues(alpha: 0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'CONTINUE FILLING',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: AppColors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Undo Changes button
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _aboutController.text = _originalText;
+                        _hasUnsavedChanges = false;
+                      });
+                      Navigator.pop(context, true);
+                    },
+                    child: Container(
+                      width: 213,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD6CDFE),
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF99ABC6,
+                            ).withValues(alpha: 0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'UNDO CHANGES',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: AppColors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 72 + bottomPadding,
+            ), // Custom nav bar + system padding
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -623,203 +596,171 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   }
 
   Widget _buildSaveUndoModal() {
-    return Stack(
-      children: [
-        // Background overlay - tap to dismiss
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: const Color(0xFF2C373B).withValues(alpha: 0.6),
-          ),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-
-        // Modal content with drag-to-dismiss
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: GestureDetector(
-            onVerticalDragUpdate: (details) {
-              // If dragging down, dismiss the modal
-              if (details.delta.dy > 0) {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Draggable area with divider line
-                      GestureDetector(
-                        onVerticalDragUpdate: (details) {
-                          // Enhanced drag sensitivity for the handle area
-                          if (details.delta.dy > 2) {
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: Container(
-                              width: 30,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: AppColors.lookGigProfileText,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 35),
-
-                      // Title
-                      const Text(
-                        'Undo Changes ?',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                          height: 1.302,
-                          color: AppColors.lookGigProfileText,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Subtitle
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 44),
-                        child: Text(
-                          'Are you sure you want to change what you entered?',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
-                            height: 1.302,
-                            color: Color(0xFF524B6B),
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 56),
-
-                      // Buttons
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 81),
-                        child: Column(
-                          children: [
-                            // Continue Filling button (SAVES the data when triggered from save button)
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pop(context); // Close modal
-                                _saveAboutData(); // Actually save the data
-                              },
-                              child: Container(
-                                width: 213,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: AppColors.lookGigPurple,
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF99ABC6,
-                                      ).withValues(alpha: 0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'CONTINUE FILLING',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing: 0.84,
-                                      color: AppColors.white,
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Undo Changes button
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _aboutController.text = _originalText;
-                                  _hasUnsavedChanges = false;
-                                });
-                                Navigator.pop(context); // Close modal
-                                Navigator.pop(context); // Go back to profile
-                              },
-                              child: Container(
-                                width: 213,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD6CDFE),
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF99ABC6,
-                                      ).withValues(alpha: 0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'UNDO CHANGES',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                      height: 1.302,
-                                      letterSpacing: 0.84,
-                                      color: AppColors.white,
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Draggable area with divider line
+            GestureDetector(
+              onVerticalDragUpdate: (details) {
+                // Enhanced drag sensitivity for the handle area
+                if (details.delta.dy > 2) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Container(
+                    width: 30,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.lookGigProfileText,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+
+            const SizedBox(height: 35),
+
+            // Title
+            const Text(
+              'Save Changes?',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                height: 1.302,
+                color: AppColors.lookGigProfileText,
+                decoration: TextDecoration.none,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Subtitle
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 44),
+              child: Text(
+                'Do you want to save the changes you made?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  height: 1.302,
+                  color: Color(0xFF524B6B),
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 56),
+
+            // Buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 81),
+              child: Column(
+                children: [
+                  // Save button
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context); // Close modal
+                      _saveAboutData(); // Save the data
+                    },
+                    child: Container(
+                      width: 213,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppColors.lookGigPurple,
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF99ABC6,
+                            ).withValues(alpha: 0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'SAVE',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: AppColors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Cancel button
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context); // Just close modal, don't save
+                    },
+                    child: Container(
+                      width: 213,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD6CDFE),
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF99ABC6,
+                            ).withValues(alpha: 0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'CANCEL',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: AppColors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 72 + bottomPadding), // Custom nav bar + system padding
+          ],
         ),
-      ],
+      ),
     );
   }
 }

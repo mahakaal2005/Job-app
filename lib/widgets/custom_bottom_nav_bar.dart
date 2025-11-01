@@ -15,8 +15,11 @@ class CustomBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get bottom padding for system navigation bar
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
     return Container(
-      height: 72,
+      height: 72 + bottomPadding, // Add system navigation bar height
       decoration: BoxDecoration(
         color: AppColors.white,
         boxShadow: [
@@ -27,9 +30,11 @@ class CustomBottomNavBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomPadding), // Push content up
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
           _buildNavItem(
             icon: Icons.home_outlined,
             activeIcon: Icons.home_outlined,
@@ -59,7 +64,8 @@ class CustomBottomNavBar extends StatelessWidget {
                   index: 4,
                   isActive: currentIndex == 4,
                 ),
-        ],
+          ],
+        ),
       ),
     );
   }

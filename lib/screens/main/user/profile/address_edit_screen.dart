@@ -15,15 +15,15 @@ class AddressEditScreen extends StatefulWidget {
 class _AddressEditScreenState extends State<AddressEditScreen> {
   final TextEditingController _streetController = TextEditingController();
   final TextEditingController _zipCodeController = TextEditingController();
-  
+
   String? _selectedCity;
   String? _selectedState;
   String? _selectedCountry;
-  
+
   bool _isSaving = false;
   bool _isLoading = true;
   bool _hasUnsavedChanges = false;
-  
+
   Map<String, dynamic> _originalData = {};
 
   // Static data for different countries
@@ -277,9 +277,7 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
       return states;
     }
     // For countries without predefined states, allow custom input
-    return [
-      DropdownItem(value: 'Other', label: 'Other (Enter manually)'),
-    ];
+    return [DropdownItem(value: 'Other', label: 'Other (Enter manually)')];
   }
 
   List<DropdownItem> get _availableCities {
@@ -288,9 +286,7 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
       return cities;
     }
     // For countries without predefined cities, allow custom input
-    return [
-      DropdownItem(value: 'Other', label: 'Other (Enter manually)'),
-    ];
+    return [DropdownItem(value: 'Other', label: 'Other (Enter manually)')];
   }
 
   // Countries list
@@ -397,21 +393,28 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+        final collectionName =
+            role == 'employer' ? 'employers' : 'users_specific';
 
-        final doc = await FirebaseFirestore.instance
-            .collection(collectionName)
-            .doc(user.uid)
-            .get();
+        final doc =
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .get();
 
         if (doc.exists && mounted) {
           final userData = doc.data() ?? {};
           setState(() {
             _streetController.text = userData['address'] ?? '';
-            _selectedCity = userData['city']?.isEmpty == true ? null : userData['city'];
-            _selectedState = userData['state']?.isEmpty == true ? null : userData['state'];
+            _selectedCity =
+                userData['city']?.isEmpty == true ? null : userData['city'];
+            _selectedState =
+                userData['state']?.isEmpty == true ? null : userData['state'];
             _zipCodeController.text = userData['zipCode'] ?? '';
-            _selectedCountry = userData['country']?.isEmpty == true ? null : (userData['country'] ?? 'US');
+            _selectedCountry =
+                userData['country']?.isEmpty == true
+                    ? null
+                    : (userData['country'] ?? 'US');
 
             _originalData = {
               'address': _streetController.text.trim(),
@@ -420,7 +423,7 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
               'zipCode': _zipCodeController.text.trim(),
               'country': _selectedCountry ?? '',
             };
-            
+
             _isLoading = false;
           });
         }
@@ -442,7 +445,8 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+        final collectionName =
+            role == 'employer' ? 'employers' : 'users_specific';
 
         final addressData = {
           'address': _streetController.text.trim(),
@@ -457,6 +461,9 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
             .collection(collectionName)
             .doc(user.uid)
             .update(addressData);
+
+        // Update profile completion status
+        AuthService.updateProfileCompletionStatus();
 
         if (mounted) {
           _showSuccessSnackBar('Address updated successfully!');
@@ -481,7 +488,14 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
       return false;
     }
     if (_selectedState == null || _selectedState!.isEmpty) {
-      final stateLabel = _selectedCountry == 'CA' ? 'Province' : _selectedCountry == 'GB' ? 'Region' : _selectedCountry == 'AU' ? 'State/Territory' : 'State';
+      final stateLabel =
+          _selectedCountry == 'CA'
+              ? 'Province'
+              : _selectedCountry == 'GB'
+              ? 'Region'
+              : _selectedCountry == 'AU'
+              ? 'State/Territory'
+              : 'State';
       _showErrorSnackBar('$stateLabel is required');
       return false;
     }
@@ -497,7 +511,11 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: AppColors.white, size: 20),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.white,
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
           ],
@@ -539,154 +557,144 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
   }
 
   Future<bool?> _showUndoModal() async {
-    return showDialog<bool>(
+    return showModalBottomSheet<bool>(
       context: context,
-      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) => _buildUndoModal(),
     );
   }
 
   Widget _buildUndoModal() {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: const Color(0xFF2C373B).withOpacity(0.6),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 20),
+            Container(
+              width: 30,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5B5858),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 20),
-                    Container(
-                      width: 30,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF5B5858),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 55),
-                    const Text(
-                      'Undo Changes ?',
-                      style: TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        height: 1.302,
-                        color: Color(0xFF150B3D),
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 44),
-                      child: Text(
-                        'Are you sure you want to change what you entered?',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 12,
-                          height: 1.302,
-                          color: Color(0xFF524B6B),
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 56),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 29),
-                      child: Column(
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.pop(context, false),
-                            child: Container(
-                              width: 317,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF130160),
-                                borderRadius: BorderRadius.circular(6),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF99ABC6).withOpacity(0.18),
-                                    blurRadius: 62,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'CONTINUE FILLING',
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                    height: 1.302,
-                                    letterSpacing: 0.84,
-                                    color: AppColors.white,
-                                    decoration: TextDecoration.none,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _hasUnsavedChanges = false;
-                              });
-                              Navigator.pop(context, true);
-                            },
-                            child: Container(
-                              width: 317,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFD6CDFE),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'UNDO CHANGES',
-                                  style: TextStyle(
-                                    fontFamily: 'DM Sans',
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                    height: 1.302,
-                                    letterSpacing: 0.84,
-                                    color: AppColors.white,
-                                    decoration: TextDecoration.none,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 55),
+            const Text(
+              'Undo Changes ?',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                height: 1.302,
+                color: Color(0xFF150B3D),
+                decoration: TextDecoration.none,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 44),
+              child: Text(
+                'Are you sure you want to change what you entered?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  height: 1.302,
+                  color: Color(0xFF524B6B),
+                  decoration: TextDecoration.none,
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 56),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 29),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context, false),
+                    child: Container(
+                      width: 317,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF130160),
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF99ABC6).withOpacity(0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'CONTINUE FILLING',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: AppColors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _hasUnsavedChanges = false;
+                      });
+                      Navigator.pop(context, true);
+                    },
+                    child: Container(
+                      width: 317,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD6CDFE),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'UNDO CHANGES',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: AppColors.white,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 72 + bottomPadding), // Custom nav bar + system padding
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -769,7 +777,12 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
                       CustomDropdownField(
                         labelText: 'City',
                         hintText: 'Select your city',
-                        value: _availableCities.any((city) => city.value == _selectedCity) ? _selectedCity : null,
+                        value:
+                            _availableCities.any(
+                                  (city) => city.value == _selectedCity,
+                                )
+                                ? _selectedCity
+                                : null,
                         items: _availableCities,
                         onChanged: (value) {
                           setState(() {
@@ -786,9 +799,28 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
 
                       // State dropdown
                       CustomDropdownField(
-                        labelText: _selectedCountry == 'CA' ? 'Province' : _selectedCountry == 'GB' ? 'Region' : _selectedCountry == 'AU' ? 'State/Territory' : 'State',
-                        hintText: _selectedCountry == 'CA' ? 'Select your province' : _selectedCountry == 'GB' ? 'Select your region' : _selectedCountry == 'AU' ? 'Select your state/territory' : 'Select your state',
-                        value: _availableStates.any((state) => state.value == _selectedState) ? _selectedState : null,
+                        labelText:
+                            _selectedCountry == 'CA'
+                                ? 'Province'
+                                : _selectedCountry == 'GB'
+                                ? 'Region'
+                                : _selectedCountry == 'AU'
+                                ? 'State/Territory'
+                                : 'State',
+                        hintText:
+                            _selectedCountry == 'CA'
+                                ? 'Select your province'
+                                : _selectedCountry == 'GB'
+                                ? 'Select your region'
+                                : _selectedCountry == 'AU'
+                                ? 'Select your state/territory'
+                                : 'Select your state',
+                        value:
+                            _availableStates.any(
+                                  (state) => state.value == _selectedState,
+                                )
+                                ? _selectedState
+                                : null,
                         items: _availableStates,
                         onChanged: (value) {
                           setState(() {
@@ -798,7 +830,14 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
                         },
                         enableSearch: true,
                         prefixIcon: Icons.map_rounded,
-                        modalTitle: _selectedCountry == 'CA' ? 'Select Province' : _selectedCountry == 'GB' ? 'Select Region' : _selectedCountry == 'AU' ? 'Select State/Territory' : 'Select State',
+                        modalTitle:
+                            _selectedCountry == 'CA'
+                                ? 'Select Province'
+                                : _selectedCountry == 'GB'
+                                ? 'Select Region'
+                                : _selectedCountry == 'AU'
+                                ? 'Select State/Territory'
+                                : 'Select State',
                       ),
 
                       const SizedBox(height: 16),
@@ -809,7 +848,10 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
                         label: _zipCodeLabel,
                         hintText: _zipCodeHint,
                         prefixIcon: Icons.local_post_office_rounded,
-                        keyboardType: _selectedCountry == 'CA' || _selectedCountry == 'GB' ? TextInputType.text : TextInputType.number,
+                        keyboardType:
+                            _selectedCountry == 'CA' || _selectedCountry == 'GB'
+                                ? TextInputType.text
+                                : TextInputType.number,
                       ),
 
                       const SizedBox(height: 16),
@@ -848,29 +890,32 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
                               borderRadius: BorderRadius.circular(6),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF99ABC6).withOpacity(0.18),
+                                  color: const Color(
+                                    0xFF99ABC6,
+                                  ).withOpacity(0.18),
                                   blurRadius: 62,
                                   offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
                             child: Center(
-                              child: _isSaving
-                                  ? const CircularProgressIndicator(
-                                      color: AppColors.white,
-                                      strokeWidth: 2,
-                                    )
-                                  : const Text(
-                                      'SAVE',
-                                      style: TextStyle(
-                                        fontFamily: 'DM Sans',
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14,
-                                        height: 1.302,
-                                        letterSpacing: 0.84,
+                              child:
+                                  _isSaving
+                                      ? const CircularProgressIndicator(
                                         color: AppColors.white,
+                                        strokeWidth: 2,
+                                      )
+                                      : const Text(
+                                        'SAVE',
+                                        style: TextStyle(
+                                          fontFamily: 'DM Sans',
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          height: 1.302,
+                                          letterSpacing: 0.84,
+                                          color: AppColors.white,
+                                        ),
                                       ),
-                                    ),
                             ),
                           ),
                         ),

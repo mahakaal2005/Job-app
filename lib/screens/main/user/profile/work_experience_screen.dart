@@ -30,11 +30,13 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('WorkExperienceScreen initState - experienceToEdit: ${widget.experienceToEdit}');
-    
+    debugPrint(
+      'WorkExperienceScreen initState - experienceToEdit: ${widget.experienceToEdit}',
+    );
+
     // Add listeners first, then populate fields
     _addListeners();
-    
+
     if (widget.experienceToEdit != null) {
       debugPrint('Experience data received: ${widget.experienceToEdit}');
       // Use WidgetsBinding to ensure the widget is fully built before populating
@@ -72,7 +74,7 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
     if (widget.experienceToEdit == null) {
       return;
     }
-    
+
     final currentData = {
       'jobTitle': _jobTitleController.text.trim(),
       'company': _companyController.text.trim(),
@@ -102,20 +104,21 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
     if (widget.experienceToEdit != null) {
       final exp = widget.experienceToEdit!;
       debugPrint('Populating fields with data: $exp');
-      
+
       // Populate controllers first
       _jobTitleController.text = exp['position'] ?? exp['jobTitle'] ?? '';
       _companyController.text = exp['company'] ?? '';
       _descriptionController.text = exp['description'] ?? '';
-      
+
       debugPrint('After setting controllers:');
       debugPrint('Job title controller: ${_jobTitleController.text}');
       debugPrint('Company controller: ${_companyController.text}');
       debugPrint('Description controller: ${_descriptionController.text}');
-      
+
       // Then update state variables and trigger rebuild
       setState(() {
-        _isCurrentPosition = exp['isCurrentJob'] ?? exp['isCurrentPosition'] ?? false;
+        _isCurrentPosition =
+            exp['isCurrentJob'] ?? exp['isCurrentPosition'] ?? false;
 
         // Safe date parsing with fallbacks
         if (exp['startDate'] != null) {
@@ -144,9 +147,9 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
         'endDate': _endDate?.toIso8601String() ?? '',
         'isCurrentPosition': _isCurrentPosition.toString(),
       };
-      
+
       debugPrint('Original data set: $_originalData');
-      
+
       // Force a rebuild to ensure UI updates
       if (mounted) {
         setState(() {});
@@ -296,9 +299,12 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
   }
 
   Future<void> _showSaveUndoModal() async {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) => _buildSaveUndoModal(),
     );
   }
@@ -326,19 +332,22 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
         };
 
         // Get current user document to check existing work experience data
-        final doc = await FirebaseFirestore.instance
-            .collection(collectionName)
-            .doc(user.uid)
-            .get();
+        final doc =
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .get();
 
         List<Map<String, dynamic>> experienceList = [];
-        
+
         if (doc.exists && doc.data() != null) {
           final existingExperience = doc.data()!['workExperience'];
-          
+
           // Handle existing work experience data
           if (existingExperience is List) {
-            experienceList = List<Map<String, dynamic>>.from(existingExperience);
+            experienceList = List<Map<String, dynamic>>.from(
+              existingExperience,
+            );
           } else if (existingExperience is Map<String, dynamic>) {
             experienceList = [existingExperience];
           }
@@ -348,9 +357,9 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
           // Editing existing experience - find and replace
           final editIndex = experienceList.indexWhere((exp) {
             return exp['position'] == widget.experienceToEdit!['position'] &&
-                   exp['company'] == widget.experienceToEdit!['company'];
+                exp['company'] == widget.experienceToEdit!['company'];
           });
-          
+
           if (editIndex != -1) {
             experienceList[editIndex] = experienceData;
           } else {
@@ -467,16 +476,18 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: widget.experienceToEdit == null, // Allow free navigation for new entries
+      canPop:
+          widget.experienceToEdit ==
+          null, // Allow free navigation for new entries
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         // For new work experience (add mode), always allow navigation
         if (widget.experienceToEdit == null) {
           Navigator.of(context).pop();
           return;
         }
-        
+
         // For editing existing work experience, check for unsaved changes
         final shouldPop = await _onWillPop();
         if (shouldPop && context.mounted) {
@@ -938,16 +949,18 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
                       'assets/images/calendar_icon_new.png',
                       width: 16,
                       height: 16,
-                      color: enabled
-                          ? const Color(0xFF524B6B)
-                          : const Color(0xFFAAA6B9),
+                      color:
+                          enabled
+                              ? const Color(0xFF524B6B)
+                              : const Color(0xFFAAA6B9),
                       errorBuilder: (context, error, stackTrace) {
                         return Icon(
                           Icons.calendar_today,
                           size: 16,
-                          color: enabled
-                              ? const Color(0xFF524B6B)
-                              : const Color(0xFFAAA6B9),
+                          color:
+                              enabled
+                                  ? const Color(0xFF524B6B)
+                                  : const Color(0xFFAAA6B9),
                         );
                       },
                     ),
@@ -1025,7 +1038,7 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
     if (widget.experienceToEdit == null) {
       return true;
     }
-    
+
     // For editing existing work experience, show modal only if there are unsaved changes
     if (_hasUnsavedChanges) {
       final result = await _showUndoModal();
@@ -1035,372 +1048,331 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
   }
 
   Future<bool?> _showUndoModal() async {
-    return showDialog<bool>(
+    return showModalBottomSheet<bool>(
       context: context,
-      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) => _buildUndoModal(),
     );
   }
 
   Widget _buildUndoModal() {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: const Color(0xFF2C373B).withValues(alpha: 0.6),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: 298,
-            decoration: const BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 20),
+          Container(
+            width: 30,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.lookGigProfileText,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 55),
+          const Text(
+            'Undo Changes ?',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              height: 1.302,
+              color: AppColors.lookGigProfileText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 44),
+            child: Text(
+              'Are you sure you want to change what you entered?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w400,
+                fontSize: 12,
+                height: 1.302,
+                color: Color(0xFF524B6B),
               ),
             ),
+          ),
+          const SizedBox(height: 56),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 81),
             child: Column(
               children: [
-                const SizedBox(height: 20),
-                Container(
-                  width: 30,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.lookGigProfileText,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 55),
-                const Text(
-                  'Undo Changes ?',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: AppColors.lookGigProfileText,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 44),
-                  child: Text(
-                    'Are you sure you want to change what you entered?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      height: 1.302,
-                      color: Color(0xFF524B6B),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context, false),
+                  child: Container(
+                    width: 213,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.lookGigPurple,
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(
+                            0xFF99ABC6,
+                          ).withValues(alpha: 0.18),
+                          blurRadius: 62,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'CONTINUE FILLING',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          height: 1.302,
+                          letterSpacing: 0.84,
+                          color: AppColors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 56),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 81),
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context, false),
-                        child: Container(
-                          width: 213,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: AppColors.lookGigPurple,
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(
-                                  0xFF99ABC6,
-                                ).withValues(alpha: 0.18),
-                                blurRadius: 62,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'CONTINUE FILLING',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                height: 1.302,
-                                letterSpacing: 0.84,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () {
+                    if (widget.experienceToEdit != null) {
+                      _populateFields();
+                    } else {
+                      _jobTitleController.clear();
+                      _companyController.clear();
+                      _descriptionController.clear();
+                      _startDate = null;
+                      _endDate = null;
+                      setState(() {
+                        _isCurrentPosition = false;
+                      });
+                    }
+                    setState(() {
+                      _hasUnsavedChanges = false;
+                    });
+                    Navigator.pop(context, true);
+                  },
+                  child: Container(
+                    width: 213,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD6CDFE),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'UNDO CHANGES',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          height: 1.302,
+                          letterSpacing: 0.84,
+                          color: AppColors.white,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      GestureDetector(
-                        onTap: () {
-                          if (widget.experienceToEdit != null) {
-                            _populateFields();
-                          } else {
-                            _jobTitleController.clear();
-                            _companyController.clear();
-                            _descriptionController.clear();
-                            _startDate = null;
-                            _endDate = null;
-                            setState(() {
-                              _isCurrentPosition = false;
-                            });
-                          }
-                          setState(() {
-                            _hasUnsavedChanges = false;
-                          });
-                          Navigator.pop(context, true);
-                        },
-                        child: Container(
-                          width: 213,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD6CDFE),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'UNDO CHANGES',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                height: 1.302,
-                                letterSpacing: 0.84,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
+          SizedBox(
+            height: 72 + bottomPadding,
+          ), // Custom nav bar + system padding
+        ],
+      ),
     );
   }
 
   void _showDeleteConfirmation() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) => _buildDeleteModal(),
     );
   }
 
   Widget _buildDeleteModal() {
-    return Stack(
-      children: [
-        // Background overlay - tap to dismiss
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: const Color(
-              0xFF2C373B,
-            ).withValues(alpha: 0.6), // From Figma fill_YQXHXE
-          ),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white, // From Figma fill_TRW696
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-
-        // Modal content with drag-to-dismiss
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: GestureDetector(
-            onVerticalDragUpdate: (details) {
-              // If dragging down, dismiss the modal
-              if (details.delta.dy > 0) {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white, // From Figma fill_TRW696
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 20,
-                  ), // Add bottom padding
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Draggable area with divider line
-                      GestureDetector(
-                        onVerticalDragUpdate: (details) {
-                          // Enhanced drag sensitivity for the handle area
-                          if (details.delta.dy > 2) {
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 25),
-                          child: Center(
-                            child: Container(
-                              width: 30,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF5B5858,
-                                ), // From Figma stroke_6L2HZG
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 25),
-
-                      // Title (positioned at x: 80, y: 589 from Figma)
-                      const Text(
-                        'Remove Work Experience ?',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize:
-                              20, // Made slightly bigger for better visibility
-                          height: 1.302,
-                          color: Color(0xFF150B3D), // From Figma fill_79EHDY
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Subtitle (positioned at x: 36, y: 621 from Figma)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 37),
-                        child: Text(
-                          'Are you sure you want to delete this work experience?',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
-                            height: 1.302,
-                            color: Color(0xFF524B6B), // From Figma fill_0JGF6G
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 56),
-
-                      // Buttons (positioned at x: 21, y: 677 from Figma)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 29),
-                        child: Column(
-                          children: [
-                            // Continue Filling button (Cancel deletion)
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pop(
-                                  context,
-                                ); // Close modal without deleting
-                              },
-                              child: Container(
-                                width: 317, // From Figma dimensions
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF130160,
-                                  ), // From Figma fill_66BY4O
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF99ABC6,
-                                      ).withValues(alpha: 0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'CONTINUE FILLING',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing:
-                                          0.84, // 6% letter spacing from Figma
-                                      color: Color(
-                                        0xFFFFFFFF,
-                                      ), // From Figma fill_TRW696
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Remove button (Actually delete)
-                            GestureDetector(
-                              onTap: () {
-                                _deleteWorkExperience(); // Actually delete the experience
-                              },
-                              child: Container(
-                                width: 317, // From Figma dimensions
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFD6CDFE,
-                                  ), // From Figma fill_PYBHAO
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'REMOVE',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing:
-                                          0.84, // 6% letter spacing from Figma
-                                      color: Color(
-                                        0xFFFFFFFF,
-                                      ), // From Figma fill_TRW696
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20), // Add bottom padding
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Draggable area with divider line
+            GestureDetector(
+              onVerticalDragUpdate: (details) {
+                // Enhanced drag sensitivity for the handle area
+                if (details.delta.dy > 2) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 25),
+                child: Center(
+                  child: Container(
+                    width: 30,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(
+                        0xFF5B5858,
+                      ), // From Figma stroke_6L2HZG
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+
+            const SizedBox(height: 25),
+
+            // Title (positioned at x: 80, y: 589 from Figma)
+            const Text(
+              'Remove Work Experience ?',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 20, // Made slightly bigger for better visibility
+                height: 1.302,
+                color: Color(0xFF150B3D), // From Figma fill_79EHDY
+                decoration: TextDecoration.none,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Subtitle (positioned at x: 36, y: 621 from Figma)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 37),
+              child: Text(
+                'Are you sure you want to delete this work experience?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  height: 1.302,
+                  color: Color(0xFF524B6B), // From Figma fill_0JGF6G
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 56),
+
+            // Buttons (positioned at x: 21, y: 677 from Figma)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 29),
+              child: Column(
+                children: [
+                  // Continue Filling button (Cancel deletion)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context); // Close modal without deleting
+                    },
+                    child: Container(
+                      width: 317, // From Figma dimensions
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(
+                          0xFF130160,
+                        ), // From Figma fill_66BY4O
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF99ABC6,
+                            ).withValues(alpha: 0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'CONTINUE FILLING',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84, // 6% letter spacing from Figma
+                            color: Color(0xFFFFFFFF), // From Figma fill_TRW696
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Remove button (Actually delete)
+                  GestureDetector(
+                    onTap: () {
+                      _deleteWorkExperience(); // Actually delete the experience
+                    },
+                    child: Container(
+                      width: 317, // From Figma dimensions
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(
+                          0xFFD6CDFE,
+                        ), // From Figma fill_PYBHAO
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'REMOVE',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84, // 6% letter spacing from Figma
+                            color: Color(0xFFFFFFFF), // From Figma fill_TRW696
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 72 + bottomPadding,
+            ), // Custom nav bar + system padding
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -1413,18 +1385,23 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
             role == 'employer' ? 'employers' : 'users_specific';
 
         // Get current user document to check existing work experience data
-        final doc = await FirebaseFirestore.instance
-            .collection(collectionName)
-            .doc(user.uid)
-            .get();
+        final doc =
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .get();
 
-        if (doc.exists && doc.data() != null && widget.experienceToEdit != null) {
+        if (doc.exists &&
+            doc.data() != null &&
+            widget.experienceToEdit != null) {
           final existingExperience = doc.data()!['workExperience'];
           List<Map<String, dynamic>> experienceList = [];
-          
+
           // Handle existing work experience data
           if (existingExperience is List) {
-            experienceList = List<Map<String, dynamic>>.from(existingExperience);
+            experienceList = List<Map<String, dynamic>>.from(
+              existingExperience,
+            );
           } else if (existingExperience is Map<String, dynamic>) {
             experienceList = [existingExperience];
           }
@@ -1432,7 +1409,7 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
           // Remove the specific work experience entry
           experienceList.removeWhere((exp) {
             return exp['position'] == widget.experienceToEdit!['position'] &&
-                   exp['company'] == widget.experienceToEdit!['company'];
+                exp['company'] == widget.experienceToEdit!['company'];
           });
 
           // Update with remaining experience entries or delete if empty
@@ -1441,17 +1418,17 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
                 .collection(collectionName)
                 .doc(user.uid)
                 .update({
-              'workExperience': FieldValue.delete(),
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
+                  'workExperience': FieldValue.delete(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
           } else {
             await FirebaseFirestore.instance
                 .collection(collectionName)
                 .doc(user.uid)
                 .update({
-              'workExperience': experienceList,
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
+                  'workExperience': experienceList,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
           }
         }
 
@@ -1470,211 +1447,177 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
   }
 
   Widget _buildSaveUndoModal() {
-    return Stack(
-      children: [
-        // Background overlay - tap to dismiss
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: const Color(0xFF2C373B).withValues(alpha: 0.6),
-          ),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-
-        // Modal content with drag-to-dismiss
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: GestureDetector(
-            onVerticalDragUpdate: (details) {
-              // If dragging down, dismiss the modal
-              if (details.delta.dy > 0) {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 20,
-                  ), // Add bottom padding
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Draggable area with divider line
-                      GestureDetector(
-                        onVerticalDragUpdate: (details) {
-                          // Enhanced drag sensitivity for the handle area
-                          if (details.delta.dy > 2) {
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 25),
-                          child: Center(
-                            child: Container(
-                              width: 30,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF5B5858,
-                                ), // From Figma stroke_C4NVQI
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 25),
-
-                      const SizedBox(height: 50),
-
-                      // Title (positioned at x: 125, y: 589 from Figma)
-                      const Text(
-                        'Undo Changes ?',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize:
-                              20, // Made slightly bigger for better visibility
-                          height: 1.302,
-                          color: Color(0xFF150B3D), // From Figma fill_JZK1EE
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Subtitle (positioned at x: 42, y: 621 from Figma)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 44),
-                        child: Text(
-                          'Are you sure you want to change what you entered?',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
-                            height: 1.302,
-                            color: Color(0xFF524B6B), // From Figma fill_9OWZ66
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 56),
-
-                      // Buttons (positioned at x: 21, y: 677 from Figma)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 29),
-                        child: Column(
-                          children: [
-                            // Continue Filling button (SAVES the data)
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pop(context); // Close modal
-                                _saveWorkExperience(); // Actually save the data
-                              },
-                              child: Container(
-                                width: 317, // From Figma dimensions
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF130160,
-                                  ), // From Figma fill_O4TSAF
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF99ABC6,
-                                      ).withValues(alpha: 0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'CONTINUE FILLING',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing:
-                                          0.84, // 6% letter spacing from Figma
-                                      color: Color(
-                                        0xFFFFFFFF,
-                                      ), // From Figma fill_257NCI
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            // Undo Changes button
-                            GestureDetector(
-                              onTap: () {
-                                // Reset to original values
-                                _resetToOriginalValues();
-                                setState(() {
-                                  _hasUnsavedChanges = false;
-                                });
-                                Navigator.pop(context); // Close modal
-                              },
-                              child: Container(
-                                width: 317, // From Figma dimensions
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFD6CDFE,
-                                  ), // From Figma fill_ZHIF4K
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'UNDO CHANGES',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing:
-                                          0.84, // 6% letter spacing from Figma
-                                      color: Color(
-                                        0xFFFFFFFF,
-                                      ), // From Figma fill_257NCI
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20), // Add bottom padding
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Draggable area with divider line
+            GestureDetector(
+              onVerticalDragUpdate: (details) {
+                // Enhanced drag sensitivity for the handle area
+                if (details.delta.dy > 2) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 25),
+                child: Center(
+                  child: Container(
+                    width: 30,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(
+                        0xFF5B5858,
+                      ), // From Figma stroke_C4NVQI
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+
+            const SizedBox(height: 25),
+
+            const SizedBox(height: 50),
+
+            // Title (positioned at x: 125, y: 589 from Figma)
+            const Text(
+              'Undo Changes ?',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 20, // Made slightly bigger for better visibility
+                height: 1.302,
+                color: Color(0xFF150B3D), // From Figma fill_JZK1EE
+                decoration: TextDecoration.none,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Subtitle (positioned at x: 42, y: 621 from Figma)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 44),
+              child: Text(
+                'Are you sure you want to change what you entered?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  height: 1.302,
+                  color: Color(0xFF524B6B), // From Figma fill_9OWZ66
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 56),
+
+            // Buttons (positioned at x: 21, y: 677 from Figma)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 29),
+              child: Column(
+                children: [
+                  // Continue Filling button (SAVES the data)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context); // Close modal
+                      _saveWorkExperience(); // Actually save the data
+                    },
+                    child: Container(
+                      width: 317, // From Figma dimensions
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(
+                          0xFF130160,
+                        ), // From Figma fill_O4TSAF
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF99ABC6,
+                            ).withValues(alpha: 0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'CONTINUE FILLING',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84, // 6% letter spacing from Figma
+                            color: Color(0xFFFFFFFF), // From Figma fill_257NCI
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Undo Changes button
+                  GestureDetector(
+                    onTap: () {
+                      // Reset to original values
+                      _resetToOriginalValues();
+                      setState(() {
+                        _hasUnsavedChanges = false;
+                      });
+                      Navigator.pop(context); // Close modal
+                    },
+                    child: Container(
+                      width: 317, // From Figma dimensions
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(
+                          0xFFD6CDFE,
+                        ), // From Figma fill_ZHIF4K
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'UNDO CHANGES',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84, // 6% letter spacing from Figma
+                            color: Color(0xFFFFFFFF), // From Figma fill_257NCI
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 72 + bottomPadding,
+            ), // Custom nav bar + system padding
+          ],
         ),
-      ],
+      ),
     );
   }
 }

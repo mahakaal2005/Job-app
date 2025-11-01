@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_work_app/routes/routes.dart';
 import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
+import 'package:get_work_app/utils/app_spacing.dart';
+import 'package:get_work_app/utils/email_validator.dart';
 import 'package:get_work_app/utils/error_handler.dart';
 import 'package:get_work_app/widgets/custom_toast.dart';
 
@@ -222,7 +224,7 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: AppColors.lookGigLightGray,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: AppSpacing.horizontal(context),
           child: Form(
             key: _formKey,
             child: Column(
@@ -400,16 +402,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       filled: true,
                       fillColor: Colors.white,
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                          .hasMatch(value.trim())) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
+                    validator: (value) => EmailValidator.validate(value),
                   ),
                 ),
 

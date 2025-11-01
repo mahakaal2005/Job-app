@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_work_app/services/auth_services.dart';
 import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/widgets/custom_toast.dart';
 import 'package:get_work_app/widgets/custom_dropdown_field.dart';
@@ -17,8 +18,8 @@ class CompanyDetailsEditScreen extends StatefulWidget {
 class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _EMPLOYERCountController;
-  late TextEditingController _establishedYearController;
   String? _selectedCompanySize;
+  String? _selectedEstablishedYear;
   bool _isSaving = false;
 
   final List<String> _companySizes = [
@@ -33,7 +34,7 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
   void initState() {
     super.initState();
     _EMPLOYERCountController = TextEditingController(text: widget.companyInfo['EMPLOYERCount'] ?? '');
-    _establishedYearController = TextEditingController(text: widget.companyInfo['establishedYear'] ?? '');
+    _selectedEstablishedYear = widget.companyInfo['establishedYear']?.toString();
     
     // Normalize company size value to match dropdown items
     final storedSize = widget.companyInfo['companySize'];
@@ -51,7 +52,6 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
   @override
   void dispose() {
     _EMPLOYERCountController.dispose();
-    _establishedYearController.dispose();
     super.dispose();
   }
 
@@ -70,9 +70,12 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
             .update({
           'companyInfo.companySize': _selectedCompanySize,
           'companyInfo.EMPLOYERCount': _EMPLOYERCountController.text.trim(),
-          'companyInfo.establishedYear': _establishedYearController.text.trim(),
+          'companyInfo.establishedYear': _selectedEstablishedYear ?? '',
           'updatedAt': FieldValue.serverTimestamp(),
         });
+
+        // Update profile completion status
+        AuthService.updateProfileCompletionStatus();
 
         if (mounted) {
           CustomToast.show(
@@ -122,13 +125,7 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
                       keyboardType: TextInputType.number,
                     ),
                     const SizedBox(height: 20),
-                    _buildTextField(
-                      controller: _establishedYearController,
-                      label: 'Established Year',
-                      hint: 'e.g., 2020',
-                      icon: Icons.calendar_today,
-                      keyboardType: TextInputType.number,
-                    ),
+                    _buildYearDropdownField(),
                     const SizedBox(height: 32),
                     _buildSaveButton(),
                   ],
@@ -249,6 +246,40 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please select company size';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildYearDropdownField() {
+    // Generate years from 1900 to current year
+    final currentYear = DateTime.now().year;
+    final List<String> years = List.generate(
+      currentYear - 1899,
+      (index) => (currentYear - index).toString(),
+    );
+
+    final List<DropdownItem> yearItems = years.map((year) {
+      return DropdownItem(value: year, label: year);
+    }).toList();
+
+    return CustomDropdownField(
+      labelText: 'Established Year',
+      hintText: 'Select year',
+      value: _selectedEstablishedYear,
+      items: yearItems,
+      onChanged: (value) {
+        setState(() {
+          _selectedEstablishedYear = value;
+        });
+      },
+      prefixIcon: Icons.calendar_today,
+      enableSearch: true,
+      modalTitle: 'Select Established Year',
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please select established year';
         }
         return null;
       },

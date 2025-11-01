@@ -67,7 +67,7 @@ class _EducationScreenState extends State<EducationScreen> {
     if (widget.educationToEdit == null) {
       return;
     }
-    
+
     final currentData = {
       'level': _levelController.text.trim(),
       'institution': _institutionController.text.trim(),
@@ -214,7 +214,7 @@ class _EducationScreenState extends State<EducationScreen> {
       _saveEducation();
       return;
     }
-    
+
     // For editing existing education, check for unsaved changes
     if (_hasUnsavedChanges) {
       _showSaveUndoModal();
@@ -256,16 +256,17 @@ class _EducationScreenState extends State<EducationScreen> {
         };
 
         // Get current user document to check existing education data
-        final doc = await FirebaseFirestore.instance
-            .collection(collectionName)
-            .doc(user.uid)
-            .get();
+        final doc =
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .get();
 
         List<Map<String, dynamic>> educationList = [];
-        
+
         if (doc.exists && doc.data() != null) {
           final existingEducation = doc.data()!['education'];
-          
+
           // Handle existing education data
           if (existingEducation is List) {
             educationList = List<Map<String, dynamic>>.from(existingEducation);
@@ -278,10 +279,10 @@ class _EducationScreenState extends State<EducationScreen> {
           // Editing existing education - find and replace
           final editIndex = educationList.indexWhere((edu) {
             return edu['level'] == widget.educationToEdit!['level'] &&
-                   edu['institution'] == widget.educationToEdit!['institution'] &&
-                   edu['field'] == widget.educationToEdit!['field'];
+                edu['institution'] == widget.educationToEdit!['institution'] &&
+                edu['field'] == widget.educationToEdit!['field'];
           });
-          
+
           if (editIndex != -1) {
             educationList[editIndex] = educationData;
           } else {
@@ -300,6 +301,9 @@ class _EducationScreenState extends State<EducationScreen> {
               'education': educationList,
               'updatedAt': FieldValue.serverTimestamp(),
             });
+
+        // Update profile completion status
+        AuthService.updateProfileCompletionStatus();
 
         if (mounted) {
           _showSuccessSnackBar('Education saved successfully!');
@@ -395,16 +399,18 @@ class _EducationScreenState extends State<EducationScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: widget.educationToEdit == null, // Allow free navigation for new entries
+      canPop:
+          widget.educationToEdit ==
+          null, // Allow free navigation for new entries
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         // For new education (add mode), always allow navigation
         if (widget.educationToEdit == null) {
           Navigator.of(context).pop();
           return;
         }
-        
+
         // For editing existing education, show modal only if there are unsaved changes
         if (_hasUnsavedChanges) {
           final shouldPop = await _showUndoModal();
@@ -432,28 +438,28 @@ class _EducationScreenState extends State<EducationScreen> {
                         child: SizedBox(
                           width: 24,
                           height: 24,
-                          child: widget.educationToEdit != null
-                              ? const Icon(
-                                  Icons.close,
-                                  color: Color(0xFF3B4657),
-                                  size: 24,
-                                )
-                              : Image.asset(
-                                  'assets/images/about_me_back_icon.png',
-                                  width: 24,
-                                  height: 24,
-                                  color: const Color(0xFF3B4657),
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.arrow_back,
-                                      color: Color(0xFF3B4657),
-                                      size: 24,
-                                    );
-                                  },
-                                ),
+                          child:
+                              widget.educationToEdit != null
+                                  ? const Icon(
+                                    Icons.close,
+                                    color: Color(0xFF3B4657),
+                                    size: 24,
+                                  )
+                                  : Image.asset(
+                                    'assets/images/about_me_back_icon.png',
+                                    width: 24,
+                                    height: 24,
+                                    color: const Color(0xFF3B4657),
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.arrow_back,
+                                        color: Color(0xFF3B4657),
+                                        size: 24,
+                                      );
+                                    },
+                                  ),
                         ),
                       ),
-
                     ],
                   ),
                 ),
@@ -471,7 +477,9 @@ class _EducationScreenState extends State<EducationScreen> {
                     children: [
                       // Title - dynamic based on edit mode
                       Text(
-                        widget.educationToEdit != null ? 'Change Education' : 'Add Education',
+                        widget.educationToEdit != null
+                            ? 'Change Education'
+                            : 'Add Education',
                         style: const TextStyle(
                           fontFamily: 'DM Sans',
                           fontWeight: FontWeight.w700,
@@ -619,22 +627,23 @@ class _EducationScreenState extends State<EducationScreen> {
             ],
           ),
           child: Center(
-            child: _isSaving
-                ? const CircularProgressIndicator(
-                    color: AppColors.white,
-                    strokeWidth: 2,
-                  )
-                : const Text(
-                    'SAVE',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      height: 1.302,
-                      letterSpacing: 0.84,
+            child:
+                _isSaving
+                    ? const CircularProgressIndicator(
                       color: AppColors.white,
+                      strokeWidth: 2,
+                    )
+                    : const Text(
+                      'SAVE',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        height: 1.302,
+                        letterSpacing: 0.84,
+                        color: AppColors.white,
+                      ),
                     ),
-                  ),
           ),
         ),
       ),
@@ -696,22 +705,23 @@ class _EducationScreenState extends State<EducationScreen> {
                 ],
               ),
               child: Center(
-                child: _isSaving
-                    ? const CircularProgressIndicator(
-                        color: AppColors.white,
-                        strokeWidth: 2,
-                      )
-                    : const Text(
-                        'SAVE',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          height: 1.302,
-                          letterSpacing: 0.84,
+                child:
+                    _isSaving
+                        ? const CircularProgressIndicator(
                           color: AppColors.white,
+                          strokeWidth: 2,
+                        )
+                        : const Text(
+                          'SAVE',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: AppColors.white,
+                          ),
                         ),
-                      ),
               ),
             ),
           ),
@@ -727,7 +737,7 @@ class _EducationScreenState extends State<EducationScreen> {
       Navigator.pop(context);
       return;
     }
-    
+
     // For editing existing education, show modal only if there are unsaved changes
     if (_hasUnsavedChanges) {
       final shouldPop = await _showUndoModal();
@@ -741,317 +751,292 @@ class _EducationScreenState extends State<EducationScreen> {
 
   // Modal implementations
   Future<bool?> _showUndoModal() async {
-    return showDialog<bool>(
+    return showModalBottomSheet<bool>(
       context: context,
-      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       builder: (context) => _buildUndoModal(),
     );
   }
 
   Widget _buildUndoModal() {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: const Color(0xFF2C373B).withValues(alpha: 0.6),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            height: 298,
-            decoration: const BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 20),
+          Container(
+            width: 30,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF5B5858),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 55),
+          const Text(
+            'Undo Changes ?',
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              height: 1.302,
+              color: Color(0xFF150B3D),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 44),
+            child: Text(
+              'Are you sure you want to change what you entered?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w400,
+                fontSize: 12,
+                height: 1.302,
+                color: Color(0xFF524B6B),
               ),
             ),
+          ),
+          const SizedBox(height: 56),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 81),
             child: Column(
               children: [
-                const SizedBox(height: 20),
-                Container(
-                  width: 30,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF5B5858),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 55),
-                const Text(
-                  'Undo Changes ?',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    height: 1.302,
-                    color: Color(0xFF150B3D),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 44),
-                  child: Text(
-                    'Are you sure you want to change what you entered?',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      height: 1.302,
-                      color: Color(0xFF524B6B),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context, false),
+                  child: Container(
+                    width: 213,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF130160),
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(
+                            0xFF99ABC6,
+                          ).withValues(alpha: 0.18),
+                          blurRadius: 62,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'CONTINUE FILLING',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          height: 1.302,
+                          letterSpacing: 0.84,
+                          color: AppColors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 56),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 81),
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context, false),
-                        child: Container(
-                          width: 213,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF130160),
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
-                                blurRadius: 62,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'CONTINUE FILLING',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                height: 1.302,
-                                letterSpacing: 0.84,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () {
+                    _resetToOriginalValues();
+                    setState(() {
+                      _hasUnsavedChanges = false;
+                    });
+                    Navigator.pop(context, true);
+                  },
+                  child: Container(
+                    width: 213,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD6CDFE),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'UNDO CHANGES',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          height: 1.302,
+                          letterSpacing: 0.84,
+                          color: AppColors.white,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      GestureDetector(
-                        onTap: () {
-                          _resetToOriginalValues();
-                          setState(() {
-                            _hasUnsavedChanges = false;
-                          });
-                          Navigator.pop(context, true);
-                        },
-                        child: Container(
-                          width: 213,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD6CDFE),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'UNDO CHANGES',
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                height: 1.302,
-                                letterSpacing: 0.84,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
+          SizedBox(
+            height: 72 + bottomPadding,
+          ), // Custom nav bar + system padding
+        ],
+      ),
     );
   }
 
   Widget _buildSaveUndoModal() {
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: const Color(0xFF2C373B).withValues(alpha: 0.6),
-          ),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
         ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: GestureDetector(
-            onVerticalDragUpdate: (details) {
-              if (details.delta.dy > 0) {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        onVerticalDragUpdate: (details) {
-                          if (details.delta.dy > 2) {
-                            Navigator.pop(context);
-                          }
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 25),
-                          child: Center(
-                            child: Container(
-                              width: 30,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF5B5858),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-                      const SizedBox(height: 50),
-                      const Text(
-                        'Undo Changes ?',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                          height: 1.302,
-                          color: Color(0xFF150B3D),
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 44),
-                        child: Text(
-                          'Are you sure you want to change what you entered?',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'DM Sans',
-                            fontWeight: FontWeight.w400,
-                            fontSize: 12,
-                            height: 1.302,
-                            color: Color(0xFF524B6B),
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 56),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 29),
-                        child: Column(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pop(context);
-                                _saveEducation();
-                              },
-                              child: Container(
-                                width: 317,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF130160),
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'CONTINUE FILLING',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing: 0.84,
-                                      color: Color(0xFFFFFFFF),
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            GestureDetector(
-                              onTap: () {
-                                _resetToOriginalValues();
-                                setState(() {
-                                  _hasUnsavedChanges = false;
-                                });
-                                Navigator.pop(context);
-                              },
-                              child: Container(
-                                width: 317,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD6CDFE),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'UNDO CHANGES',
-                                    style: TextStyle(
-                                      fontFamily: 'DM Sans',
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      height: 1.302,
-                                      letterSpacing: 0.84,
-                                      color: Color(0xFFFFFFFF),
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onVerticalDragUpdate: (details) {
+                if (details.delta.dy > 2) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 25),
+                child: Center(
+                  child: Container(
+                    width: 30,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5B5858),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 25),
+            const SizedBox(height: 50),
+            const Text(
+              'Undo Changes ?',
+              style: TextStyle(
+                fontFamily: 'DM Sans',
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                height: 1.302,
+                color: Color(0xFF150B3D),
+                decoration: TextDecoration.none,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 44),
+              child: Text(
+                'Are you sure you want to change what you entered?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12,
+                  height: 1.302,
+                  color: Color(0xFF524B6B),
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 56),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 29),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _saveEducation();
+                    },
+                    child: Container(
+                      width: 317,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF130160),
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF99ABC6,
+                            ).withValues(alpha: 0.18),
+                            blurRadius: 62,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'CONTINUE FILLING',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: Color(0xFFFFFFFF),
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () {
+                      _resetToOriginalValues();
+                      setState(() {
+                        _hasUnsavedChanges = false;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 317,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD6CDFE),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'UNDO CHANGES',
+                          style: TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.302,
+                            letterSpacing: 0.84,
+                            color: Color(0xFFFFFFFF),
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 72 + bottomPadding), // Custom nav bar + system padding
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -1121,9 +1106,9 @@ class _EducationScreenState extends State<EducationScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 25),
-                    
+
                     // Title (positioned at x: 108, y: 584 from Figma)
                     const Text(
                       'Remove Education ?',
@@ -1136,9 +1121,9 @@ class _EducationScreenState extends State<EducationScreen> {
                         decoration: TextDecoration.none,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Description (positioned at x: 55, y: 616 from Figma)
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 55),
@@ -1155,9 +1140,9 @@ class _EducationScreenState extends State<EducationScreen> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 45),
-                    
+
                     // Buttons (positioned at x: 29, y: 677 from Figma)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 29),
@@ -1170,11 +1155,15 @@ class _EducationScreenState extends State<EducationScreen> {
                               width: 317,
                               height: 50,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF130160), // From Figma fill_2UAMPF
+                                color: const Color(
+                                  0xFF130160,
+                                ), // From Figma fill_2UAMPF
                                 borderRadius: BorderRadius.circular(6),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
+                                    color: const Color(
+                                      0xFF99ABC6,
+                                    ).withValues(alpha: 0.18),
                                     blurRadius: 62,
                                     offset: const Offset(0, 4),
                                   ),
@@ -1196,9 +1185,9 @@ class _EducationScreenState extends State<EducationScreen> {
                               ),
                             ),
                           ),
-                          
+
                           const SizedBox(height: 10),
-                          
+
                           // Remove button (positioned at y: 60 from button group, width: 317, height: 50)
                           GestureDetector(
                             onTap: () {
@@ -1209,7 +1198,9 @@ class _EducationScreenState extends State<EducationScreen> {
                               width: 317,
                               height: 50,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFD6CDFE), // From Figma fill_BVXY7Z
+                                color: const Color(
+                                  0xFFD6CDFE,
+                                ), // From Figma fill_BVXY7Z
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Center(
@@ -1248,18 +1239,22 @@ class _EducationScreenState extends State<EducationScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final role = await AuthService.getUserRole();
-        final collectionName = role == 'employer' ? 'employers' : 'users_specific';
+        final collectionName =
+            role == 'employer' ? 'employers' : 'users_specific';
 
         // Get current user document to check existing education data
-        final doc = await FirebaseFirestore.instance
-            .collection(collectionName)
-            .doc(user.uid)
-            .get();
+        final doc =
+            await FirebaseFirestore.instance
+                .collection(collectionName)
+                .doc(user.uid)
+                .get();
 
-        if (doc.exists && doc.data() != null && widget.educationToEdit != null) {
+        if (doc.exists &&
+            doc.data() != null &&
+            widget.educationToEdit != null) {
           final existingEducation = doc.data()!['education'];
           List<Map<String, dynamic>> educationList = [];
-          
+
           // Handle existing education data
           if (existingEducation is List) {
             educationList = List<Map<String, dynamic>>.from(existingEducation);
@@ -1270,8 +1265,8 @@ class _EducationScreenState extends State<EducationScreen> {
           // Remove the specific education entry
           educationList.removeWhere((edu) {
             return edu['level'] == widget.educationToEdit!['level'] &&
-                   edu['institution'] == widget.educationToEdit!['institution'] &&
-                   edu['field'] == widget.educationToEdit!['field'];
+                edu['institution'] == widget.educationToEdit!['institution'] &&
+                edu['field'] == widget.educationToEdit!['field'];
           });
 
           // Update with remaining education entries or delete if empty
@@ -1280,17 +1275,17 @@ class _EducationScreenState extends State<EducationScreen> {
                 .collection(collectionName)
                 .doc(user.uid)
                 .update({
-              'education': FieldValue.delete(),
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
+                  'education': FieldValue.delete(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
           } else {
             await FirebaseFirestore.instance
                 .collection(collectionName)
                 .doc(user.uid)
                 .update({
-              'education': educationList,
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
+                  'education': educationList,
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
           }
         }
 
@@ -1312,14 +1307,26 @@ class _EducationScreenState extends State<EducationScreen> {
     // Education levels matching the onboarding screen
     final List<DropdownItem> educationLevels = [
       DropdownItem(value: 'High School Diploma', label: 'High School Diploma'),
-      DropdownItem(value: 'High School (In Progress)', label: 'High School (In Progress)'),
+      DropdownItem(
+        value: 'High School (In Progress)',
+        label: 'High School (In Progress)',
+      ),
       DropdownItem(value: 'Associate Degree', label: 'Associate Degree'),
       DropdownItem(value: 'Bachelor\'s Degree', label: 'Bachelor\'s Degree'),
-      DropdownItem(value: 'Bachelor\'s Degree (In Progress)', label: 'Bachelor\'s Degree (In Progress)'),
+      DropdownItem(
+        value: 'Bachelor\'s Degree (In Progress)',
+        label: 'Bachelor\'s Degree (In Progress)',
+      ),
       DropdownItem(value: 'Master\'s Degree', label: 'Master\'s Degree'),
-      DropdownItem(value: 'Master\'s Degree (In Progress)', label: 'Master\'s Degree (In Progress)'),
+      DropdownItem(
+        value: 'Master\'s Degree (In Progress)',
+        label: 'Master\'s Degree (In Progress)',
+      ),
       DropdownItem(value: 'Doctorate (PhD)', label: 'Doctorate (PhD)'),
-      DropdownItem(value: 'Doctorate (In Progress)', label: 'Doctorate (In Progress)'),
+      DropdownItem(
+        value: 'Doctorate (In Progress)',
+        label: 'Doctorate (In Progress)',
+      ),
       DropdownItem(value: 'Professional Degree', label: 'Professional Degree'),
       DropdownItem(value: 'Certification', label: 'Certification'),
       DropdownItem(value: 'Bootcamp', label: 'Bootcamp'),
@@ -1391,7 +1398,10 @@ class _EducationScreenState extends State<EducationScreen> {
                 color: Color(0xFFAAA6B9),
               ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
             ),
           ),
         ),
@@ -1445,7 +1455,10 @@ class _EducationScreenState extends State<EducationScreen> {
                 color: Color(0xFFAAA6B9),
               ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
             ),
           ),
         ),
@@ -1583,16 +1596,18 @@ class _EducationScreenState extends State<EducationScreen> {
                       'assets/images/calendar_icon_new.png',
                       width: 16,
                       height: 16,
-                      color: enabled
-                          ? const Color(0xFF524B6B)
-                          : const Color(0xFFAAA6B9),
+                      color:
+                          enabled
+                              ? const Color(0xFF524B6B)
+                              : const Color(0xFFAAA6B9),
                       errorBuilder: (context, error, stackTrace) {
                         return Icon(
                           Icons.calendar_today,
                           size: 16,
-                          color: enabled
-                              ? const Color(0xFF524B6B)
-                              : const Color(0xFFAAA6B9),
+                          color:
+                              enabled
+                                  ? const Color(0xFF524B6B)
+                                  : const Color(0xFFAAA6B9),
                         );
                       },
                     ),

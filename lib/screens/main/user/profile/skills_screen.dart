@@ -86,6 +86,9 @@ class _SkillsScreenState extends State<SkillsScreen> {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
+        // Update profile completion status
+        AuthService.updateProfileCompletionStatus();
+
         if (mounted) {
           _showSuccessSnackBar('Skills saved successfully!');
           Navigator.pop(context, true);

@@ -33,14 +33,15 @@ class BookmarkProvider with ChangeNotifier {
   }
 
   /// Load bookmarks from Firestore for the given user
+  /// Includes retry logic with delay for newly created users
   Future<void> _loadUserBookmarks(String userId) async {
     try {
       debugPrint('📚 BookmarkProvider: Loading bookmarks for user $userId');
       
-      // Determine which collection the user is in
-      final collection = await _getUserCollection(userId);
+      // Determine which collection the user is in (with retry for new users)
+      final collection = await _getUserCollectionWithRetry(userId);
       if (collection == null) {
-        debugPrint('⚠️ BookmarkProvider: User document not found in any collection');
+        debugPrint('⚠️ BookmarkProvider: User document not found in any collection after retries');
         _isInitialized = true;
         notifyListeners();
         return;
@@ -72,6 +73,30 @@ class BookmarkProvider with ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     }
+  }
+
+  /// Get user collection with retry logic for newly created users
+  /// New users might not have their document saved immediately
+  Future<String?> _getUserCollectionWithRetry(String userId, {int maxRetries = 3}) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      final collection = await _getUserCollection(userId);
+      
+      if (collection != null) {
+        if (attempt > 1) {
+          debugPrint('✅ BookmarkProvider: Found user document on attempt $attempt');
+        }
+        return collection;
+      }
+      
+      // If not found and not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        final delayMs = attempt * 500; // 500ms, 1000ms, 1500ms
+        debugPrint('⏳ BookmarkProvider: User document not found, retrying in ${delayMs}ms (attempt $attempt/$maxRetries)');
+        await Future.delayed(Duration(milliseconds: delayMs));
+      }
+    }
+    
+    return null;
   }
 
   /// Determine which Firestore collection the user belongs to

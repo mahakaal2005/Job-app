@@ -104,6 +104,9 @@ class _ResumeScreenState extends State<ResumeScreen> {
               .doc(user.uid)
               .update(updateData);
 
+          // Update profile completion status
+          AuthService.updateProfileCompletionStatus();
+
           setState(() {
             _userData['resumeUrl'] = uploadResult['pdfUrl'];
             _userData['resumeFileName'] = file.name;
