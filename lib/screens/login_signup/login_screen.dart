@@ -205,6 +205,20 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
       }
+    } on NoAccountException catch (e) {
+      // Handle no account found case
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        CustomToast.show(
+          context,
+          message: 'No account found. Please sign up first.',
+          isSuccess: false,
+          duration: const Duration(seconds: 3),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {

@@ -3,6 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+// Custom exception for no account found
+class NoAccountException implements Exception {
+  final String message;
+  NoAccountException(this.message);
+  @override
+  String toString() => message;
+}
+
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -155,14 +163,18 @@ class AuthService {
         credential,
       );
 
-      // Check if this is a new user or existing user
-      if (userCredential.additionalUserInfo?.isNewUser == true) {
-        // This is a new user, they need to complete profile setup
-        // We'll handle this in the UI by checking if user document exists
-        return userCredential;
+      // CRITICAL FIX: Check if user document exists in Firestore
+      String? role = await getUserRole();
+      
+      if (role == null) {
+        // No account exists - sign them out and throw error
+        await signOut();
+        throw NoAccountException('No account found. Please sign up first.');
       }
 
       return userCredential;
+    } on NoAccountException {
+      rethrow; // Pass through our custom exception
     } on FirebaseAuthException catch (e) {
       throw FirebaseAuthException(code: e.code);
     } catch (e) {

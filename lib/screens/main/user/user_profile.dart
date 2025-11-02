@@ -911,7 +911,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           iconPath: 'assets/images/work_experience_icon.png',
           onTap: () => _navigateToMyApplications(),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 100),
       ],
     );
   }
@@ -1089,7 +1089,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           // Save button
           _buildSaveButton(),
-          const SizedBox(height: 20),
+          const SizedBox(height: 100),
         ],
       ),
     );

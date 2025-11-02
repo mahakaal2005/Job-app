@@ -188,9 +188,11 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   }
 
   Future<void> _showSaveUndoModal() async {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: true,
       builder: (context) => _buildSaveUndoModal(),
     );
   }
@@ -596,21 +598,20 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   }
 
   Widget _buildSaveUndoModal() {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             // Draggable area with divider line
             GestureDetector(
               onVerticalDragUpdate: (details) {
@@ -757,8 +758,9 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 72 + bottomPadding), // Custom nav bar + system padding
-          ],
+            const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

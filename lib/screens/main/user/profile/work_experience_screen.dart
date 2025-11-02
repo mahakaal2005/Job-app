@@ -1447,21 +1447,20 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
   }
 
   Widget _buildSaveUndoModal() {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20), // Add bottom padding
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             // Draggable area with divider line
             GestureDetector(
               onVerticalDragUpdate: (details) {
@@ -1492,33 +1491,33 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
 
             const SizedBox(height: 50),
 
-            // Title (positioned at x: 125, y: 589 from Figma)
+            // Title
             const Text(
-              'Undo Changes ?',
+              'Save Changes?',
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontWeight: FontWeight.w700,
-                fontSize: 20, // Made slightly bigger for better visibility
+                fontSize: 20,
                 height: 1.302,
-                color: Color(0xFF150B3D), // From Figma fill_JZK1EE
+                color: Color(0xFF150B3D),
                 decoration: TextDecoration.none,
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // Subtitle (positioned at x: 42, y: 621 from Figma)
+            // Subtitle
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 44),
               child: Text(
-                'Are you sure you want to change what you entered?',
+                'Do you want to save the changes you made?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontWeight: FontWeight.w400,
                   fontSize: 12,
                   height: 1.302,
-                  color: Color(0xFF524B6B), // From Figma fill_9OWZ66
+                  color: Color(0xFF524B6B),
                   decoration: TextDecoration.none,
                 ),
               ),
@@ -1531,25 +1530,21 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 29),
               child: Column(
                 children: [
-                  // Continue Filling button (SAVES the data)
+                  // Save button
                   GestureDetector(
                     onTap: () {
                       Navigator.pop(context); // Close modal
-                      _saveWorkExperience(); // Actually save the data
+                      _saveWorkExperience(); // Save the data
                     },
                     child: Container(
-                      width: 317, // From Figma dimensions
+                      width: 317,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color(
-                          0xFF130160,
-                        ), // From Figma fill_O4TSAF
+                        color: const Color(0xFF130160),
                         borderRadius: BorderRadius.circular(6),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFF99ABC6,
-                            ).withValues(alpha: 0.18),
+                            color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
                             blurRadius: 62,
                             offset: const Offset(0, 4),
                           ),
@@ -1557,14 +1552,14 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
                       ),
                       child: const Center(
                         child: Text(
-                          'CONTINUE FILLING',
+                          'SAVE',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                             height: 1.302,
-                            letterSpacing: 0.84, // 6% letter spacing from Figma
-                            color: Color(0xFFFFFFFF), // From Figma fill_257NCI
+                            letterSpacing: 0.84,
+                            color: Color(0xFFFFFFFF),
                             decoration: TextDecoration.none,
                           ),
                         ),
@@ -1574,35 +1569,28 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
 
                   const SizedBox(height: 10),
 
-                  // Undo Changes button
+                  // Cancel button
                   GestureDetector(
                     onTap: () {
-                      // Reset to original values
-                      _resetToOriginalValues();
-                      setState(() {
-                        _hasUnsavedChanges = false;
-                      });
-                      Navigator.pop(context); // Close modal
+                      Navigator.pop(context); // Just close modal, don't save
                     },
                     child: Container(
-                      width: 317, // From Figma dimensions
+                      width: 317,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFD6CDFE,
-                        ), // From Figma fill_ZHIF4K
+                        color: const Color(0xFFD6CDFE),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Center(
                         child: Text(
-                          'UNDO CHANGES',
+                          'CANCEL',
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                             height: 1.302,
-                            letterSpacing: 0.84, // 6% letter spacing from Figma
-                            color: Color(0xFFFFFFFF), // From Figma fill_257NCI
+                            letterSpacing: 0.84,
+                            color: Color(0xFFFFFFFF),
                             decoration: TextDecoration.none,
                           ),
                         ),
@@ -1612,10 +1600,9 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
                 ],
               ),
             ),
-            SizedBox(
-              height: 72 + bottomPadding,
-            ), // Custom nav bar + system padding
-          ],
+            const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
