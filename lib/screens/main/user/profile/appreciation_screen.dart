@@ -208,14 +208,17 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
   }
 
   Widget _buildRemoveConfirmationModal() {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
     return Container(
-      height: 308,
       decoration: const BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        children: [
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // Top divider line
           Padding(
             padding: const EdgeInsets.only(top: 25),
@@ -331,7 +334,10 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
               ],
             ),
           ),
+          
+          const SizedBox(height: 20),
         ],
+      ),
       ),
     );
   }
@@ -512,85 +518,92 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
 
             // Content area (positioned at x: 20, y: 94 from Figma)
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title (positioned at x: 0, y: 0 from Figma)
-                    Text(
-                      widget.appreciationToEdit != null ? 'Edit Appreciation' : 'Add Appreciation',
-                      style: const TextStyle(
-                        fontFamily: 'DM Sans',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                        height: 1.302,
-                        color: Color(0xFF150A33), // From Figma fill_H7HVAU
-                      ),
-                    ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width.clamp(0, 375),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title (positioned at x: 0, y: 0 from Figma)
+                        Text(
+                          widget.appreciationToEdit != null ? 'Edit Appreciation' : 'Add Appreciation',
+                          style: const TextStyle(
+                            fontFamily: 'DM Sans',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                            height: 1.302,
+                            color: Color(0xFF150A33), // From Figma fill_H7HVAU
+                          ),
+                        ),
 
-                    const SizedBox(height: 52),
+                        const SizedBox(height: 52),
 
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            // Award name field (positioned at x: 0, y: 52 from Figma)
-                            _buildInputField(
-                              label: 'Award name',
-                              controller: _awardNameController,
-                              height: 66,
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Category field (positioned at x: 0, y: 138 from Figma)
-                            _buildInputField(
-                              label: 'Category/Achievement achieved',
-                              controller: _categoryController,
-                              height: 66,
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Date fields row
-                            Row(
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
                               children: [
-                                // Start date field
-                                _buildDateField(
-                                  label: 'Start date',
-                                  date: _startDate,
-                                  onTap: _selectStartDate,
-                                  width: 160,
+                                // Award name field (positioned at x: 0, y: 52 from Figma)
+                                _buildInputField(
+                                  label: 'Award name',
+                                  controller: _awardNameController,
+                                  height: 66,
                                 ),
-                                const SizedBox(width: 15),
-                                // End date field
-                                _buildDateField(
-                                  label: 'End date',
-                                  date: _endDate,
-                                  onTap: _selectEndDate,
-                                  width: 160,
+
+                                const SizedBox(height: 20),
+
+                                // Category field (positioned at x: 0, y: 138 from Figma)
+                                _buildInputField(
+                                  label: 'Category/Achievement achieved',
+                                  controller: _categoryController,
+                                  height: 66,
                                 ),
+
+                                const SizedBox(height: 20),
+
+                                // Date fields row
+                                Row(
+                                  children: [
+                                    // Start date field
+                                    Expanded(
+                                      child: _buildDateField(
+                                        label: 'Start date',
+                                        date: _startDate,
+                                        onTap: _selectStartDate,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 15),
+                                    // End date field
+                                    Expanded(
+                                      child: _buildDateField(
+                                        label: 'End date',
+                                        date: _endDate,
+                                        onTap: _selectEndDate,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // Description field (positioned at x: 0, y: 310 from Figma)
+                                _buildInputField(
+                                  label: 'Description',
+                                  controller: _descriptionController,
+                                  height: 181,
+                                  isMultiline: true,
+                                  placeholder: 'Write additional information here',
+                                ),
+
+                                const SizedBox(height: 40),
                               ],
                             ),
-
-                            const SizedBox(height: 20),
-
-                            // Description field (positioned at x: 0, y: 310 from Figma)
-                            _buildInputField(
-                              label: 'Description',
-                              controller: _descriptionController,
-                              height: 181,
-                              isMultiline: true,
-                              placeholder: 'Write additional information here',
-                            ),
-
-                            const SizedBox(height: 40),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -617,7 +630,7 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
     String? placeholder,
   }) {
     return SizedBox(
-      width: width ?? 335,
+      width: double.infinity,
       height: height,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,7 +707,6 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
     double? width,
   }) {
     return SizedBox(
-      width: width ?? 160,
       height: 66,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -762,39 +774,41 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
   }
 
   Widget _buildAddModeButton() {
-    return GestureDetector(
-      onTap: _isSaving ? null : _saveAppreciation,
-      child: Container(
-        width: 213,
-        height: 50,
-        decoration: BoxDecoration(
-          color: const Color(0xFF130160), // From Figma fill_QXYSVH
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF99ABC6).withOpacity(0.18),
-              blurRadius: 62,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: _isSaving
-              ? const CircularProgressIndicator(
-                  color: AppColors.white,
-                  strokeWidth: 2,
-                )
-              : const Text(
-                  'SAVE',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    height: 1.302,
-                    letterSpacing: 0.84,
-                    color: AppColors.white, // From Figma fill_NG1RWS
+    return Center(
+      child: GestureDetector(
+        onTap: _isSaving ? null : _saveAppreciation,
+        child: Container(
+          width: MediaQuery.of(context).size.width.clamp(213, 335),
+          height: 50,
+          decoration: BoxDecoration(
+            color: const Color(0xFF130160), // From Figma fill_QXYSVH
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF99ABC6).withOpacity(0.18),
+                blurRadius: 62,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: _isSaving
+                ? const CircularProgressIndicator(
+                    color: AppColors.white,
+                    strokeWidth: 2,
+                  )
+                : const Text(
+                    'SAVE',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      height: 1.302,
+                      letterSpacing: 0.84,
+                      color: AppColors.white, // From Figma fill_NG1RWS
+                    ),
                   ),
-                ),
+          ),
         ),
       ),
     );

@@ -255,88 +255,95 @@ class _ResumeScreenState extends State<ResumeScreen> {
 
             // Content area
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  20,
-                  64,
-                  20,
-                  0,
-                ), // y: 94 from Figma
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title (positioned at x: 0, y: 0 from Figma)
-                    const Text(
-                      'Add Resume',
-                      style: TextStyle(
-                        fontFamily: 'Open Sans', // From Figma style_VR3ZQ9
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        height: 1.362,
-                        color: Color(0xFF150A33), // From Figma fill_PYV02H
-                      ),
-                    ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    20,
+                    64,
+                    20,
+                    0,
+                  ), // y: 94 from Figma
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width.clamp(0, 375),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title (positioned at x: 0, y: 0 from Figma)
+                        const Text(
+                          'Add Resume',
+                          style: TextStyle(
+                            fontFamily: 'Open Sans', // From Figma style_VR3ZQ9
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            height: 1.362,
+                            color: Color(0xFF150A33), // From Figma fill_PYV02H
+                          ),
+                        ),
 
-                    const SizedBox(height: 52), // Gap to upload section
-                    // Upload section or resume display
-                    hasResume ? _buildResumeDisplay() : _buildUploadSection(),
+                        const SizedBox(height: 52), // Gap to upload section
+                        // Upload section or resume display
+                        hasResume ? _buildResumeDisplay() : _buildUploadSection(),
 
-                    const SizedBox(height: 15), // Gap to description
-                    // Description text
-                    const Text(
-                      'Upload files in PDF format up to 5 MB. Just upload it once and you can use it in your next application.',
-                      style: TextStyle(
-                        fontFamily: 'Open Sans', // From Figma style_0FJQYN
-                        fontWeight: FontWeight.w400,
-                        fontSize: 10,
-                        height: 1.362,
-                        color: Color(0xFFAAA6B9), // From Figma fill_2VH8BQ
-                      ),
+                        const SizedBox(height: 15), // Gap to description
+                        // Description text
+                        const Text(
+                          'Upload files in PDF format up to 5 MB. Just upload it once and you can use it in your next application.',
+                          style: TextStyle(
+                            fontFamily: 'Open Sans', // From Figma style_0FJQYN
+                            fontWeight: FontWeight.w400,
+                            fontSize: 10,
+                            height: 1.362,
+                            color: Color(0xFFAAA6B9), // From Figma fill_2VH8BQ
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
 
             // Save button (positioned at x: 81, y: 672 from Figma)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(81, 0, 81, 50),
-              child: GestureDetector(
-                onTap: _isSaving ? null : () => Navigator.pop(context, true),
-                child: Container(
-                  width: 213,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF130160), // From Figma fill_8UHQ79
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF99ABC6).withOpacity(0.18),
-                        blurRadius: 62,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child:
-                        _isSaving
-                            ? const CircularProgressIndicator(
-                              color: AppColors.white,
-                              strokeWidth: 2,
-                            )
-                            : const Text(
-                              'SAVE',
-                              style: TextStyle(
-                                fontFamily:
-                                    'DM Sans', // From Figma style_FYLOY7
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                                height: 1.302,
-                                letterSpacing: 0.84,
-                                color:
-                                    AppColors.white, // From Figma fill_3YB7JO
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 50),
+                child: GestureDetector(
+                  onTap: _isSaving ? null : () => Navigator.pop(context, true),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width.clamp(213, 335),
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF130160), // From Figma fill_8UHQ79
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF99ABC6).withOpacity(0.18),
+                          blurRadius: 62,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child:
+                          _isSaving
+                              ? const CircularProgressIndicator(
+                                color: AppColors.white,
+                                strokeWidth: 2,
+                              )
+                              : const Text(
+                                'SAVE',
+                                style: TextStyle(
+                                  fontFamily:
+                                      'DM Sans', // From Figma style_FYLOY7
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  height: 1.302,
+                                  letterSpacing: 0.84,
+                                  color:
+                                      AppColors.white, // From Figma fill_3YB7JO
+                                ),
                               ),
-                            ),
+                    ),
                   ),
                 ),
               ),
@@ -351,7 +358,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
     return GestureDetector(
       onTap: _isUploadingResume ? null : _uploadResume,
       child: Container(
-        width: 335, // From Figma layout_T9MVY3
+        width: double.infinity,
         height: 75,
         decoration: BoxDecoration(
           color: Colors.transparent,
@@ -433,7 +440,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
     return GestureDetector(
       onTap: _openResume,
       child: Container(
-        width: 335,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: const Color(
             0xFF3F13E4,

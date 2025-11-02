@@ -427,26 +427,24 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
 
                     // About me section
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 40),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 40),
 
-                            // About me card
-                            SizedBox(
-                              width: 335,
-                              height: 284,
-                              child: Stack(
-                                children: [
-                                  // Title
-                                  Positioned(
-                                    top: 0,
-                                    left: 0,
-                                    child: Text(
+                              // About me card
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width.clamp(0, 335),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Title
+                                    const Text(
                                       'About me',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontFamily: 'Open Sans',
                                         fontWeight: FontWeight.w600,
                                         fontSize: 16,
@@ -454,14 +452,12 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                                         color: AppColors.lookGigProfileText,
                                       ),
                                     ),
-                                  ),
 
-                                  // Input card
-                                  Positioned(
-                                    top: 52,
-                                    left: 0,
-                                    child: Container(
-                                      width: 335,
+                                    const SizedBox(height: 22),
+
+                                    // Input card
+                                    Container(
+                                      width: double.infinity,
                                       height: 232,
                                       decoration: BoxDecoration(
                                         color: AppColors.white,
@@ -532,19 +528,17 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
 
-                            const Spacer(),
+                              const Spacer(),
 
-                            // Save button
-                            Center(
-                              child: GestureDetector(
+                              // Save button
+                              GestureDetector(
                                 onTap: _isSaving ? null : _showSaveConfirmation,
                                 child: Container(
-                                  width: 213,
+                                  width: MediaQuery.of(context).size.width.clamp(213, 335),
                                   height: 50,
                                   decoration: BoxDecoration(
                                     color: AppColors.lookGigPurple,
@@ -580,10 +574,10 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                                   ),
                                 ),
                               ),
-                            ),
 
-                            const SizedBox(height: 40),
-                          ],
+                              const SizedBox(height: 40),
+                            ],
+                          ),
                         ),
                       ),
                     ),

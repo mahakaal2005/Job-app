@@ -201,11 +201,20 @@ class _LoginScreenState extends State<LoginScreen> {
           await _navigateBasedOnUserRole();
         }
       } else if (mounted) {
+        // User cancelled Google Sign-In
         setState(() {
           _isLoading = false;
         });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google Sign-In was cancelled. Please try again.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
-    } on NoAccountException catch (e) {
+    } on NoAccountException {
       // Handle no account found case
       if (mounted) {
         setState(() {
@@ -309,107 +318,102 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 64),
 
                     // Email input
-                    SizedBox(
-                      width: 317,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 3),
-                            child: Text(
-                              'Email',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.lookGigPurple,
-                                fontFamily: 'DM Sans',
-                                height: 1.302,
-                              ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(left: 3),
+                          child: Text(
+                            'Email',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.lookGigPurple,
+                              fontFamily: 'DM Sans',
+                              height: 1.302,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Container(
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: AppColors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF99ABC6).withOpacity(0.18),
-                                  blurRadius: 62,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF99ABC6).withOpacity(0.18),
+                                blurRadius: 62,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.lookGigPurple.withOpacity(0.6),
+                              fontFamily: 'DM Sans',
+                              height: 1.302,
                             ),
-                            child: TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              style: TextStyle(
+                            decoration: InputDecoration(
+                              hintText: 'Brandonelouis@gmail.com',
+                              hintStyle: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.lookGigPurple.withOpacity(0.6),
                                 fontFamily: 'DM Sans',
                                 height: 1.302,
                               ),
-                              decoration: InputDecoration(
-                                hintText: 'Brandonelouis@gmail.com',
-                                hintStyle: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.lookGigPurple.withOpacity(0.6),
-                                  fontFamily: 'DM Sans',
-                                  height: 1.302,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.lookGigPurple,
-                                    width: 1,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Colors.red),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: Colors.red, width: 1),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 17,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(
+                                  color: AppColors.lookGigPurple,
+                                  width: 1,
                                 ),
                               ),
-                              validator: (value) => EmailValidator.validate(value),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: Colors.red),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: Colors.red, width: 1),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 17,
+                              ),
                             ),
+                            validator: (value) => EmailValidator.validate(value),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 15),
 
                     // Password input
-                    SizedBox(
-                      width: 317,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 3),
-                            child: Text(
-                              'Password',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lookGigPurple,
-                                fontFamily: 'Open Sans',
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(left: 3),
+                          child: Text(
+                            'Password',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.lookGigPurple,
+                              fontFamily: 'Open Sans',
                                 height: 1.3618,
                               ),
                             ),
@@ -496,60 +500,57 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                    ),
 
                     const SizedBox(height: 20),
 
                     // Remember me and Forgot password row
-                    SizedBox(
-                      width: 317,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Remember me checkbox
-                          Row(
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE6E1FF),
-                                  borderRadius: BorderRadius.circular(5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF99ABC6).withOpacity(0.18),
-                                      blurRadius: 62,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _rememberMe = value ?? false;
-                                    });
-                                  },
-                                  activeColor: const Color(0xFFE6E1FF),
-                                  checkColor: const Color(0xFFAAA6B9),
-                                  side: BorderSide.none,
-                                ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Remember me checkbox
+                        Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE6E1FF),
+                                borderRadius: BorderRadius.circular(5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF99ABC6).withOpacity(0.18),
+                                    blurRadius: 62,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 7),
-                              const Text(
-                                'Remember me',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: Color(0xFFAAA6B9),
-                                  fontFamily: 'DM Sans',
-                                  height: 1.302,
-                                ),
+                              child: Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                                activeColor: const Color(0xFFE6E1FF),
+                                checkColor: const Color(0xFFAAA6B9),
+                                side: BorderSide.none,
                               ),
-                            ],
-                          ),
-                          // Forgot password
-                          TextButton(
+                            ),
+                            const SizedBox(width: 7),
+                            const Text(
+                              'Remember me',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFFAAA6B9),
+                                fontFamily: 'DM Sans',
+                                height: 1.302,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Forgot password
+                        TextButton(
                             onPressed: _forgotPassword,
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
@@ -569,13 +570,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                    ),
 
                     const SizedBox(height: 36),
 
                     // Login Button
                     Container(
-                      width: 266,
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 266),
                       height: 50,
                       decoration: BoxDecoration(
                         color: AppColors.lookGigPurple,
@@ -620,7 +621,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Sign in with Google Button
                     Container(
-                      width: 264,
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 264),
                       height: 50,
                       decoration: BoxDecoration(
                         color: const Color(0xFFD6CDFE),

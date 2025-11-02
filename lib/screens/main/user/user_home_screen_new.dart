@@ -624,134 +624,139 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   }
 
   Widget _buildPromotionalBanner() {
-    return Padding(
-      padding: AppSpacing.horizontal(context),
-      child: SizedBox(
-        width: 329,
-        height: 181,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // Bottom container layer at (0, 0) - 329x181 with rounded corners (transparent/white background)
-            Positioned(
-              left: 0,
-              top: 0,
-              child: Container(
-                width: 329,
-                height: 181,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(6),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bannerWidth = screenWidth * 0.9; // 90% of screen width
+    final bannerHeight = bannerWidth * 0.55; // Maintain aspect ratio
+    final blueBoxHeight = bannerHeight * 0.79; // 79% of banner height
+    final blueBoxTop = bannerHeight * 0.21; // Start at 21% from top
+    
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+        child: SizedBox(
+          width: bannerWidth,
+          height: bannerHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Bottom container layer - transparent background
+              Positioned(
+                left: 0,
+                top: 0,
+                child: Container(
+                  width: bannerWidth,
+                  height: bannerHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ),
-            ),
-            // Blue rectangle (middle layer) at (0, 38) - 329x143 - THIS IS THE ACTUAL BLUE BACKGROUND
-            Positioned(
-              left: 0,
-              top: 38,
-              child: Container(
-                width: 329,
-                height: 143,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF130160),
-                  borderRadius: BorderRadius.circular(6),
+              // Blue rectangle - CHANGED COLOR TO #2f51a7
+              Positioned(
+                left: 0,
+                top: blueBoxTop,
+                child: Container(
+                  width: bannerWidth,
+                  height: blueBoxHeight,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2f51a7), // Changed from 0xFF130160
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ),
-            ),
-            // Lady's photo at (160, 0) - 216x193 - positioned at top of banner
-            // Lady extends from y=0 to y=193 (12px below banner bottom at 181)
-            // Blue box: y=38 to y=181, so lady's bottom extends 12px below blue box bottom
-            // This creates the effect of lady standing ON the blue box
-            Positioned(
-              left: 160,
-              top: 0,
-              child: Image.asset(
-                'assets/images/banner_lady.png',
-                width: 216,
-                height: 193,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 216,
-                    height: 193,
-                    color: Colors.grey[300],
-                    child: const Icon(
-                      Icons.person,
-                      size: 80,
-                      color: Colors.white,
-                    ),
-                  );
-                },
+              // Lady's photo - responsive positioning
+              Positioned(
+                left: bannerWidth * 0.486, // ~49% from left
+                top: 0,
+                child: Image.asset(
+                  'assets/images/banner_lady.png',
+                  width: bannerWidth * 0.656, // ~66% of banner width
+                  height: bannerHeight * 1.066, // Slightly taller than banner
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: bannerWidth * 0.656,
+                      height: bannerHeight * 1.066,
+                      color: Colors.grey[300],
+                      child: Icon(
+                        Icons.person,
+                        size: bannerWidth * 0.24,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            // Text overlay - Group 65 at (17, 62) within banner
-            Positioned(
-              left: 17,
-              top: 62,
-              child: SizedBox(
-                width: 141,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // "50% off" at (0, 0) within Group 65
-                    const Text(
-                      '50% off',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFFFFFFFF),
-                        fontFamily: 'DM Sans',
-                        height: 1.302,
-                      ),
-                    ),
-                    // "take any courses" at (0, 21) within Group 65
-                    const Text(
-                      'take any courses',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFFFFFFFF),
-                        fontFamily: 'DM Sans',
-                        height: 1.302,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Button at (0, 62) within Group 65
-                    GestureDetector(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Course feature coming soon!'),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 90,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF9228),
-                          borderRadius: BorderRadius.circular(6),
+              // Text overlay - responsive positioning
+              Positioned(
+                left: bannerWidth * 0.052, // ~5% from left
+                top: bannerHeight * 0.343, // ~34% from top
+                child: SizedBox(
+                  width: bannerWidth * 0.428, // ~43% of banner width
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // "50% off"
+                      Text(
+                        '50% off',
+                        style: TextStyle(
+                          fontSize: bannerWidth * 0.055, // Responsive font size
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFFFFFFFF),
+                          fontFamily: 'DM Sans',
+                          height: 1.302,
                         ),
-                        child: const Center(
-                          child: Text(
-                            'Join Now',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFFFFFFFF),
-                              fontFamily: 'DM Sans',
-                              height: 1.302,
+                      ),
+                      // "take any courses"
+                      Text(
+                        'take any courses',
+                        style: TextStyle(
+                          fontSize: bannerWidth * 0.055, // Responsive font size
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFFFFFFFF),
+                          fontFamily: 'DM Sans',
+                          height: 1.302,
+                        ),
+                      ),
+                      SizedBox(height: bannerHeight * 0.088),
+                      // Button
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Course feature coming soon!'),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: bannerWidth * 0.274, // Responsive button width
+                          height: bannerHeight * 0.144, // Responsive button height
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9228),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Join Now',
+                              style: TextStyle(
+                                fontSize: bannerWidth * 0.0395, // Responsive font size
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFFFFFFFF),
+                                fontFamily: 'DM Sans',
+                                height: 1.302,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

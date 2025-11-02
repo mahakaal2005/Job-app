@@ -122,56 +122,66 @@ class AuthService {
     }
   }
 
-  // Sign in with Google
-  static Future<UserCredential?> signInWithGoogle() async {
+  // Private method: Authenticate with Google (no Firestore checks)
+  static Future<UserCredential?> _authenticateWithGoogle() async {
     try {
-      // CRITICAL: Sign out first to force account picker
-      // This ensures the user is always prompted to choose an account
-      // even if they previously signed in with Google
+      // Sign out first to force account picker
       try {
         await _googleSignIn.signOut();
-        print(
-          'ðŸ”„ Signed out from Google before sign-in to force account picker',
-        );
+        print('🔄 Signed out from Google before sign-in to force account picker');
       } catch (e) {
-        print('âš ï¸ Pre-signin signOut failed (this is okay): $e');
-        // Continue even if signOut fails
+        print('⚠️ Pre-signin signOut failed (this is okay): $e');
       }
 
       // Trigger the authentication flow
-      // This will now ALWAYS show the account picker
-      // signIn() (not signInSilently()) ensures the picker is shown
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        // User cancelled the sign-in
-        return null;
+        return null; // User cancelled
       }
 
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      // Obtain the auth details
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      // Create a new credential
+      // Create credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase with the Google credential
-      UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
+      // Sign in to Firebase
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
+      print('✅ Google authentication successful for: ${userCredential.user?.email}');
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      throw FirebaseAuthException(code: e.code);
+    } catch (e) {
+      throw Exception('Google authentication failed: ${e.toString()}');
+    }
+  }
 
-      // CRITICAL FIX: Check if user document exists in Firestore
-      String? role = await getUserRole();
+  // Sign in with Google (for existing users only)
+  static Future<UserCredential?> signInWithGoogle() async {
+    try {
+      // Step 1: Authenticate with Google
+      UserCredential? userCredential = await _authenticateWithGoogle();
       
-      if (role == null) {
+      if (userCredential == null) {
+        return null; // User cancelled
+      }
+
+      // Step 2: Check if user document exists (WITHOUT creating default)
+      print('🔍 Checking if user document exists in Firestore...');
+      bool documentExists = await _checkUserDocumentExists();
+      
+      if (!documentExists) {
         // No account exists - sign them out and throw error
+        print('❌ No Firestore document found - signing out user');
         await signOut();
         throw NoAccountException('No account found. Please sign up first.');
       }
 
+      print('✅ User document found - sign-in successful');
       return userCredential;
     } on NoAccountException {
       rethrow; // Pass through our custom exception
@@ -187,17 +197,53 @@ class AuthService {
     required String role, // 'employer' or 'user'
   }) async {
     try {
-      // First, sign in with Google
-      UserCredential? userCredential = await signInWithGoogle();
+      // Step 1: Authenticate with Google (don't check for existing document)
+      UserCredential? userCredential = await _authenticateWithGoogle();
 
       if (userCredential == null) return null;
 
-      // Create user document with the specified role
+      // Step 2: Create user document with the specified role
       await _createOrUpdateGoogleUser(userCredential.user!, role);
 
+      print('✅ Google sign-up completed successfully with role: $role');
       return userCredential;
     } catch (e) {
       throw Exception('Google Sign-Up failed: ${e.toString()}');
+    }
+  }
+
+  // Check if user document exists (WITHOUT creating default)
+  static Future<bool> _checkUserDocumentExists() async {
+    if (currentUser == null) return false;
+
+    try {
+      // Check employers collection
+      DocumentSnapshot employerDoc = await _firestore
+          .collection('employers')
+          .doc(currentUser!.uid)
+          .get();
+
+      if (employerDoc.exists) {
+        print('✅ Found document in employers collection');
+        return true;
+      }
+
+      // Check users_specific collection
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users_specific')
+          .doc(currentUser!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        print('✅ Found document in users_specific collection');
+        return true;
+      }
+
+      print('❌ No document found in either collection');
+      return false;
+    } catch (e) {
+      print('⚠️ Error checking user document: $e');
+      return false;
     }
   }
 
@@ -461,27 +507,13 @@ class AuthService {
         print('⚠️ [GET_ROLE] Migration failed: $e');
       }
 
-      // User document doesn't exist - create default
-      print('\n🔨 [GET_ROLE] No user document found - creating default document...');
+      // User document doesn't exist - return null (DO NOT CREATE DEFAULT)
+      print('\n❌ [GET_ROLE] No user document found in any collection');
       print('📧 [GET_ROLE] Email: ${currentUser!.email}');
       print('🆔 [GET_ROLE] UID: ${currentUser!.uid}');
-      print('👤 [GET_ROLE] Name: ${currentUser!.displayName ?? "Unknown"}');
-      
-      try {
-        print('⏳ [GET_ROLE] Calling _createUserDocument with role: user');
-        await _createUserDocument('user'); // Default to regular user
-        print('✅ [GET_ROLE] Default user document created successfully');
-        print('🎯 [GET_ROLE] Returning role: user');
-        print('🔵 ═══════════════════════════════════════════════════════\n');
-        return 'user';
-      } catch (e) {
-        print('⚠️ [GET_ROLE] FAILED to create default user document:');
-        print('   Error: $e');
-        print('   Type: ${e.runtimeType}');
-        print('🎯 [GET_ROLE] Returning fallback role: user');
-        print('🔵 ═══════════════════════════════════════════════════════\n');
-        return 'user';
-      }
+      print('🎯 [GET_ROLE] Returning: null (user needs to sign up)');
+      print('🔵 ═══════════════════════════════════════════════════════\n');
+      return null;
     } catch (e) {
       print('\n🔴 ═══════════════════════════════════════════════════════');
       print('🔴 [GET_ROLE] CRITICAL ERROR in getUserRole');

@@ -536,14 +536,7 @@ class _EmpProfileState extends State<EmpProfile> {
         ),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF9228).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: const Color(0xFFFF9228), size: 24),
-          ),
+          leading: Icon(icon, color: const Color(0xFFFF9228), size: 24),
           title: Text(
             title,
             style: const TextStyle(

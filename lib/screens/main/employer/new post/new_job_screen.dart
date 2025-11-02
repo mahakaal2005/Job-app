@@ -362,85 +362,78 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   }
 
   Widget _buildCustomHeader(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 140,
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(30),
+        bottomRight: Radius.circular(30),
       ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-        child: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/header_background.png'),
-              fit: BoxFit.cover,
-            ),
-            gradient: LinearGradient(
-              colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/header_background.png'),
+            fit: BoxFit.cover,
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 27, vertical: 16),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: AppColors.white,
-                        size: 24,
-                      ),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.lookGigProfileGradientStart,
+              AppColors.lookGigProfileGradientEnd,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(27, 16, 27, 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: AppColors.white,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Create New Job',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DM Sans',
-                          ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Create New Job',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'DM Sans',
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Post a new job opening',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            fontFamily: 'DM Sans',
-                          ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Post a new job opening',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'DM Sans',
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

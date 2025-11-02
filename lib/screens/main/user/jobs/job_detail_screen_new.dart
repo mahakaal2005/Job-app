@@ -470,106 +470,111 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
   }
 
   Widget _buildTabButtons() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final buttonWidth = (screenWidth - 38 - 11) / 2; // (screen width - horizontal padding - gap) / 2
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 19),
+      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05), // 5% padding
       child: Row(
         children: [
           // Description tab
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isDescriptionTab = true;
-                // Reset description expansion when switching to description tab
-                _isDescriptionExpanded = false;
-              });
-            },
-            child: AnimatedScale(
-              scale: _isDescriptionTab ? 1.02 : 0.98,
-              duration: const Duration(milliseconds: 150),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                width: 162,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  // Selected: Dark purple, Unselected: Light purple
-                  color: _isDescriptionTab 
-                      ? AppColors.lookGigPurple      // Active: Dark purple #130160
-                      : const Color(0xFFD6CDFE),     // Inactive: Light purple
-                  borderRadius: BorderRadius.circular(6),
-                  // Enhanced shadow when active for depth
-                  boxShadow: _isDescriptionTab
-                      ? [
-                          BoxShadow(
-                            color: AppColors.lookGigPurple.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                            spreadRadius: 0,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  'Description',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: _isDescriptionTab ? FontWeight.w700 : FontWeight.w600,
-                    fontSize: 14,
-                    height: 1.302,
-                    // White text when active, dark purple when inactive
-                    color: _isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isDescriptionTab = true;
+                  // Reset description expansion when switching to description tab
+                  _isDescriptionExpanded = false;
+                });
+              },
+              child: AnimatedScale(
+                scale: _isDescriptionTab ? 1.02 : 0.98,
+                duration: const Duration(milliseconds: 150),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    // Selected: Dark purple, Unselected: Light purple
+                    color: _isDescriptionTab 
+                        ? AppColors.lookGigPurple      // Active: Dark purple #130160
+                        : const Color(0xFFD6CDFE),     // Inactive: Light purple
+                    borderRadius: BorderRadius.circular(6),
+                    // Enhanced shadow when active for depth
+                    boxShadow: _isDescriptionTab
+                        ? [
+                            BoxShadow(
+                              color: AppColors.lookGigPurple.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    'Description',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: _isDescriptionTab ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 14,
+                      height: 1.302,
+                      // White text when active, dark purple when inactive
+                      color: _isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
           
-          const SizedBox(width: 11),
+          SizedBox(width: screenWidth * 0.03), // 3% gap
           
           // Company tab
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isDescriptionTab = false;
-              });
-            },
-            child: AnimatedScale(
-              scale: !_isDescriptionTab ? 1.02 : 0.98,
-              duration: const Duration(milliseconds: 150),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                width: 162,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  // Selected: Dark purple, Unselected: Light purple
-                  color: !_isDescriptionTab 
-                      ? AppColors.lookGigPurple      // Active: Dark purple #130160
-                      : const Color(0xFFD6CDFE),     // Inactive: Light purple
-                  borderRadius: BorderRadius.circular(6),
-                  // Enhanced shadow when active for depth
-                  boxShadow: !_isDescriptionTab
-                      ? [
-                          BoxShadow(
-                            color: AppColors.lookGigPurple.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                            spreadRadius: 0,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  'Company',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontWeight: !_isDescriptionTab ? FontWeight.w700 : FontWeight.w600,
-                    fontSize: 14,
-                    height: 1.302,
-                    // White text when active, dark purple when inactive
-                    color: !_isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isDescriptionTab = false;
+                });
+              },
+              child: AnimatedScale(
+                scale: !_isDescriptionTab ? 1.02 : 0.98,
+                duration: const Duration(milliseconds: 150),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    // Selected: Dark purple, Unselected: Light purple
+                    color: !_isDescriptionTab 
+                        ? AppColors.lookGigPurple      // Active: Dark purple #130160
+                        : const Color(0xFFD6CDFE),     // Inactive: Light purple
+                    borderRadius: BorderRadius.circular(6),
+                    // Enhanced shadow when active for depth
+                    boxShadow: !_isDescriptionTab
+                        ? [
+                            BoxShadow(
+                              color: AppColors.lookGigPurple.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                              spreadRadius: 0,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    'Company',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: !_isDescriptionTab ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 14,
+                      height: 1.302,
+                      // White text when active, dark purple when inactive
+                      color: !_isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
+                    ),
                   ),
                 ),
               ),
@@ -1327,6 +1332,11 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                 ),
               ),
             ),
+            
+            const SizedBox(width: 15),
+            
+            // Spacer to balance the save button on the left
+            const SizedBox(width: 50),
           ],
         ),
       ),

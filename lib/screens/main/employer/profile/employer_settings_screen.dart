@@ -14,253 +14,289 @@ class EMPLOYERSettingsScreen extends StatefulWidget {
 
 class _EMPLOYERSettingsScreenState extends State<EMPLOYERSettingsScreen> {
   bool _notificationsEnabled = true;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _buildSettingCard(
-                    icon: Icons.notifications_outlined,
-                    title: 'Notifications',
-                    hasToggle: true,
-                    toggleValue: _notificationsEnabled,
-                    onToggleChanged: (value) {
-                      setState(() {
-                        _notificationsEnabled = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSettingCard(
-                    icon: Icons.lock_outline,
-                    title: 'Change Password',
-                    onTap: () {
-                      // Navigate to employer change password screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EmployerUpdatePasswordScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSettingCard(
-                    icon: Icons.privacy_tip_outlined,
-                    title: 'Privacy Policy',
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.privacyPolicy);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSettingCard(
-                    icon: Icons.help_outline,
-                    title: 'Help & Support',
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.helpSupport);
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  _buildLogoutCard(),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-        child: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/header_background.png'),
-              fit: BoxFit.cover,
-            ),
-            gradient: LinearGradient(
-              colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 27, vertical: 16),
+      backgroundColor: const Color(0xFFF9F9F9),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with back button and title
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 30, 20, 0),
               child: Row(
                 children: [
+                  // Back button
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: AppColors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Settings',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'DM Sans',
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Manage your account',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            fontFamily: 'DM Sans',
-                          ),
-                        ),
-                      ],
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xFF524B6B),
+                      size: 24,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+
+            // Settings title
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 64, 20, 0),
+              child: Row(
+                children: [
+                  const Text(
+                    'Settings',
+                    style: TextStyle(
+                      fontFamily: 'DM Sans',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      height: 1.302,
+                      color: Color(0xFF150A33),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 47),
+
+            // Settings items
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    // Notifications setting
+                    _buildSettingItem(
+                      icon: Icons.notifications_outlined,
+                      title: 'Notifications',
+                      hasToggle: true,
+                      toggleValue: _notificationsEnabled,
+                      onToggleChanged: (value) {
+                        setState(() {
+                          _notificationsEnabled = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Password setting
+                    _buildSettingItem(
+                      icon: Icons.lock_outline,
+                      title: 'Password',
+                      hasArrow: true,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EmployerUpdatePasswordScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Privacy Policy setting
+                    _buildSettingItem(
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Privacy Policy',
+                      hasArrow: true,
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.privacyPolicy);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Help & Support setting
+                    _buildSettingItem(
+                      icon: Icons.help_outline,
+                      title: 'Help & Support',
+                      hasArrow: true,
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.helpSupport);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Logout setting
+                    _buildSettingItem(
+                      icon: Icons.logout,
+                      title: 'Logout',
+                      hasArrow: true,
+                      isLogout: true,
+                      onTap: _showLogoutConfirmation,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Save button
+                    _buildSaveButton(),
+                    const SizedBox(height: 50),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSettingCard({
+  Widget _buildSettingItem({
     required IconData icon,
     required String title,
+    String? subtitle,
     bool hasToggle = false,
     bool toggleValue = false,
     ValueChanged<bool>? onToggleChanged,
+    bool hasArrow = false,
+    bool isLogout = false,
     VoidCallback? onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.profileCardShadow,
-            blurRadius: 62,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF9228).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: const Color(0xFFFF9228), size: 24),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 335,
+        height: subtitle != null ? 60 : 50,
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF99ABC6).withOpacity(0.18),
+              blurRadius: 62,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.lookGigProfileText,
-          ),
-        ),
-        trailing: hasToggle
-            ? Switch(
-                value: toggleValue,
-                onChanged: onToggleChanged,
-                activeThumbColor: const Color(0xFFFF9228),
-              )
-            : const Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: AppColors.lookGigDescriptionText,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+          child: Row(
+            children: [
+              // Icon
+              Icon(
+                icon,
+                size: 24,
+                color: isLogout ? AppColors.error : const Color(0xFF150B3D),
               ),
-        onTap: hasToggle ? null : onTap,
+              const SizedBox(width: 11),
+
+              // Title and subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 1.302,
+                        color: isLogout ? AppColors.error : const Color(0xFF150B3D),
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 10,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Toggle switch or arrow
+              if (hasToggle)
+                _buildToggleSwitch(toggleValue, onToggleChanged!)
+              else if (hasArrow)
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 12,
+                  color: isLogout ? AppColors.error : const Color(0xFF150B3D),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildLogoutCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.profileCardShadow,
-            blurRadius: 62,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.error.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.logout, color: AppColors.error, size: 24),
+  Widget _buildToggleSwitch(bool value, ValueChanged<bool> onChanged) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: Container(
+        width: 38,
+        height: 19,
+        decoration: BoxDecoration(
+          color: value ? const Color(0xFF56CD54) : const Color(0xFFE5E5E5),
+          borderRadius: BorderRadius.circular(19),
         ),
-        title: const Text(
-          'Logout',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.error,
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 13,
+            height: 13,
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              shape: BoxShape.circle,
+            ),
           ),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: AppColors.error,
-        ),
-        onTap: () => _showLogoutDialog(),
       ),
     );
   }
 
-  void _showLogoutDialog() async {
+  Widget _buildSaveButton() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _saveSettings,
+      child: Container(
+        width: 213,
+        height: 50,
+        decoration: BoxDecoration(
+          color: const Color(0xFF130160),
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF99ABC6).withOpacity(0.18),
+              blurRadius: 62,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: _isLoading
+              ? const CircularProgressIndicator(
+                  color: AppColors.white,
+                  strokeWidth: 2,
+                )
+              : const Text(
+                  'SAVE',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    height: 1.302,
+                    letterSpacing: 0.84,
+                    color: AppColors.white,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation() async {
     final result = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -269,7 +305,6 @@ class _EMPLOYERSettingsScreenState extends State<EMPLOYERSettingsScreen> {
     );
 
     if (result == true) {
-      // User confirmed logout
       _logout();
     }
   }
@@ -278,134 +313,178 @@ class _EMPLOYERSettingsScreenState extends State<EMPLOYERSettingsScreen> {
     return SafeArea(
       child: Container(
         decoration: const BoxDecoration(
-          color: AppColors.white, // From Figma fill_RCMW2W
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          color: AppColors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-          // Top divider line (positioned at x: 173, y: 25 from Figma)
-          Padding(
-            padding: const EdgeInsets.only(top: 25),
-            child: Container(
-              width: 30, // From Figma layout_4NW3L8
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFF130160), // From Figma stroke_BSUCMX
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 30),
-          
-          // Log out title (positioned at x: 158, y: 75 from Figma)
-          const Text(
-            'Log out',
-            style: TextStyle(
-              fontFamily: 'DM Sans', // From Figma style_LO4LE8
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              height: 1.302,
-              color: Color(0xFF150B3D), // From Figma fill_OYSX7Z
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Confirmation message (positioned at x: 100, y: 107 from Figma)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 100),
-            child: Text(
-              'Are you sure you want to leave?',
-              style: TextStyle(
-                fontFamily: 'DM Sans', // From Figma style_4CT1AL
-                fontWeight: FontWeight.w400,
-                fontSize: 12,
-                height: 1.302,
-                color: Color(0xFF524B6B), // From Figma fill_YOI2NZ
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          
-          const SizedBox(height: 40),
-          
-          // Buttons (positioned at x: 29, y: 168 from Figma)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 29), // From Figma layout_U18LLN
-            child: Column(
-              children: [
-                // Yes button (positioned at x: 0, y: 0 from Figma)
-                GestureDetector(
-                  onTap: () => Navigator.pop(context, true),
+              // Draggable handle
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 25),
+                child: Center(
                   child: Container(
-                    width: 317, // From Figma layout_YIFPU2
-                    height: 50,
+                    width: 30,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF130160), // From Figma fill_UTF6FG
-                      borderRadius: BorderRadius.circular(6),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF99ABC6).withOpacity(0.18), // From Figma effect_H91LQV
-                          blurRadius: 62,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'YES',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans', // From Figma style_4PAAIK
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          height: 1.302,
-                          letterSpacing: 0.84,
-                          color: AppColors.white, // From Figma fill_RCMW2W
-                        ),
-                      ),
+                      color: const Color(0xFF5B5858),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                
-                const SizedBox(height: 10),
-                
-                // Cancel button (positioned at x: 0, y: 60 from Figma)
-                GestureDetector(
-                  onTap: () => Navigator.pop(context, false),
-                  child: Container(
-                    width: 317, // From Figma layout_YIFPU2
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD6CDFE), // From Figma fill_J8341B
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'CANCEL',
-                        style: TextStyle(
-                          fontFamily: 'DM Sans', // From Figma style_4PAAIK
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          height: 1.302,
-                          letterSpacing: 0.84,
-                          color: AppColors.white, // From Figma fill_RCMW2W
+              ),
+
+              const SizedBox(height: 25),
+
+              // Title
+              const Text(
+                'Log out',
+                style: TextStyle(
+                  fontFamily: 'DM Sans',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  height: 1.302,
+                  color: Color(0xFF150B3D),
+                  decoration: TextDecoration.none,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Subtitle
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 100),
+                child: Text(
+                  'Are you sure you want to leave?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                    height: 1.302,
+                    color: Color(0xFF524B6B),
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // Buttons
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 29),
+                child: Column(
+                  children: [
+                    // Yes button
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context, true),
+                      child: Container(
+                        width: 317,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF130160),
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF99ABC6).withOpacity(0.18),
+                              blurRadius: 62,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'YES',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              height: 1.302,
+                              letterSpacing: 0.84,
+                              color: AppColors.white,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+
+                    const SizedBox(height: 10),
+
+                    // Cancel button
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context, false),
+                      child: Container(
+                        width: 317,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD6CDFE),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'CANCEL',
+                            style: TextStyle(
+                              fontFamily: 'DM Sans',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              height: 1.302,
+                              letterSpacing: 0.84,
+                              color: AppColors.white,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _saveSettings() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Simulate saving settings
+      await Future.delayed(const Duration(seconds: 1));
+      
+      if (mounted) {
+        CustomToast.show(
+          context,
+          message: 'Settings saved successfully!',
+          isSuccess: true,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomToast.show(
+          context,
+          message: 'Error saving settings: $e',
+          isSuccess: false,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _logout() async {

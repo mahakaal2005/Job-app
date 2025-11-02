@@ -540,187 +540,237 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
 
                     // Work experience form
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 40),
-
-                            // Title
-                            Text(
-                              widget.experienceToEdit != null
-                                  ? 'Change work experience'
-                                  : 'Add work experience',
-                              style: const TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                height: 1.302,
-                                color: AppColors.lookGigProfileText,
-                              ),
-                            ),
-
-                            const SizedBox(height: 52),
-
-                            // Job title field
-                            _buildInputField(
-                              controller: _jobTitleController,
-                              label: 'Job title',
-                              hintText: 'Enter job title',
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Company field
-                            _buildInputField(
-                              controller: _companyController,
-                              label: 'Company',
-                              hintText: 'Enter company name',
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Date fields row
-                            Row(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width.clamp(0, 375),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: _buildDatePickerField(
-                                    label: 'Start date',
-                                    date: _startDate,
-                                    onTap: _selectStartDate,
-                                  ),
-                                ),
-                                const SizedBox(width: 15),
-                                Expanded(
-                                  child: _buildDatePickerField(
-                                    label: 'End date',
-                                    date: _endDate,
-                                    onTap:
-                                        _isCurrentPosition
-                                            ? null
-                                            : _selectEndDate,
-                                    enabled: !_isCurrentPosition,
-                                  ),
-                                ),
-                              ],
-                            ),
+                                const SizedBox(height: 40),
 
-                            const SizedBox(height: 20),
-
-                            // Current position checkbox
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _isCurrentPosition = !_isCurrentPosition;
-                                      if (_isCurrentPosition) {
-                                        _endDate = null;
-                                      }
-                                    });
-                                    _onFieldChanged();
-                                  },
-                                  child: Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.white,
-                                      borderRadius: BorderRadius.circular(5),
-                                      border: Border.all(
-                                        color:
-                                            _isCurrentPosition
-                                                ? AppColors.lookGigPurple
-                                                : const Color(0xFF524B6B),
-                                        width: 1.5,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFF99ABC6,
-                                          ).withValues(alpha: 0.18),
-                                          blurRadius: 62,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child:
-                                        _isCurrentPosition
-                                            ? const Icon(
-                                              Icons.check,
-                                              size: 16,
-                                              color: AppColors.lookGigPurple,
-                                            )
-                                            : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 23),
-                                const Text(
-                                  'This is my position now',
-                                  style: TextStyle(
+                                // Title
+                                Text(
+                                  widget.experienceToEdit != null
+                                      ? 'Change work experience'
+                                      : 'Add work experience',
+                                  style: const TextStyle(
                                     fontFamily: 'DM Sans',
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
                                     height: 1.302,
-                                    color: Color(0xFF524B6B),
+                                    color: AppColors.lookGigProfileText,
                                   ),
                                 ),
-                              ],
-                            ),
 
-                            const SizedBox(height: 20),
+                                const SizedBox(height: 52),
 
-                            // Description field
-                            _buildDescriptionField(),
+                                // Job title field
+                                _buildInputField(
+                                  controller: _jobTitleController,
+                                  label: 'Job title',
+                                  hintText: 'Enter job title',
+                                ),
 
-                            const Spacer(),
+                                const SizedBox(height: 20),
 
-                            // Buttons
-                            if (widget.experienceToEdit != null) ...[
-                              // Edit mode: Remove and Save buttons
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () => _showDeleteConfirmation(),
+                                // Company field
+                                _buildInputField(
+                                  controller: _companyController,
+                                  label: 'Company',
+                                  hintText: 'Enter company name',
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // Date fields row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildDatePickerField(
+                                        label: 'Start date',
+                                        date: _startDate,
+                                        onTap: _selectStartDate,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 15),
+                                    Expanded(
+                                      child: _buildDatePickerField(
+                                        label: 'End date',
+                                        date: _endDate,
+                                        onTap:
+                                            _isCurrentPosition
+                                                ? null
+                                                : _selectEndDate,
+                                        enabled: !_isCurrentPosition,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // Current position checkbox
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _isCurrentPosition = !_isCurrentPosition;
+                                          if (_isCurrentPosition) {
+                                            _endDate = null;
+                                          }
+                                        });
+                                        _onFieldChanged();
+                                      },
                                       child: Container(
-                                        height: 50,
+                                        width: 24,
+                                        height: 24,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFD6CDFE),
-                                          borderRadius: BorderRadius.circular(
-                                            6,
+                                          color: AppColors.white,
+                                          borderRadius: BorderRadius.circular(5),
+                                          border: Border.all(
+                                            color:
+                                                _isCurrentPosition
+                                                    ? AppColors.lookGigPurple
+                                                    : const Color(0xFF524B6B),
+                                            width: 1.5,
                                           ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(
+                                                0xFF99ABC6,
+                                              ).withValues(alpha: 0.18),
+                                              blurRadius: 62,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
                                         ),
-                                        child: const Center(
-                                          child: Text(
-                                            'REMOVE',
-                                            style: TextStyle(
-                                              fontFamily: 'DM Sans',
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 14,
-                                              height: 1.302,
-                                              letterSpacing: 0.84,
-                                              color: AppColors.white,
+                                        child:
+                                            _isCurrentPosition
+                                                ? const Icon(
+                                                  Icons.check,
+                                                  size: 16,
+                                                  color: AppColors.lookGigPurple,
+                                                )
+                                                : null,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 23),
+                                    const Text(
+                                      'This is my position now',
+                                      style: TextStyle(
+                                        fontFamily: 'DM Sans',
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 12,
+                                        height: 1.302,
+                                        color: Color(0xFF524B6B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                // Description field
+                                _buildDescriptionField(),
+
+                                const Spacer(),
+
+                                // Buttons
+                                if (widget.experienceToEdit != null) ...[
+                                  // Edit mode: Remove and Save buttons
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () => _showDeleteConfirmation(),
+                                          child: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFD6CDFE),
+                                              borderRadius: BorderRadius.circular(
+                                                6,
+                                              ),
+                                            ),
+                                            child: const Center(
+                                              child: Text(
+                                                'REMOVE',
+                                                style: TextStyle(
+                                                  fontFamily: 'DM Sans',
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
+                                                  height: 1.302,
+                                                  letterSpacing: 0.84,
+                                                  color: AppColors.white,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 15),
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap:
+                                              _isSaving
+                                                  ? null
+                                                  : _showSaveConfirmation,
+                                          child: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: AppColors.lookGigPurple,
+                                              borderRadius: BorderRadius.circular(
+                                                6,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(
+                                                    0xFF99ABC6,
+                                                  ).withValues(alpha: 0.18),
+                                                  blurRadius: 62,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Center(
+                                              child:
+                                                  _isSaving
+                                                      ? const CircularProgressIndicator(
+                                                        color: AppColors.white,
+                                                        strokeWidth: 2,
+                                                      )
+                                                      : const Text(
+                                                        'SAVE',
+                                                        style: TextStyle(
+                                                          fontFamily: 'DM Sans',
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          fontSize: 14,
+                                                          height: 1.302,
+                                                          letterSpacing: 0.84,
+                                                          color: AppColors.white,
+                                                        ),
+                                                      ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 15),
-                                  Expanded(
+                                ] else ...[
+                                  // Add mode: Single Save button
+                                  Center(
                                     child: GestureDetector(
                                       onTap:
-                                          _isSaving
-                                              ? null
-                                              : _showSaveConfirmation,
+                                          _isSaving ? null : _showSaveConfirmation,
                                       child: Container(
+                                        width: MediaQuery.of(context).size.width.clamp(213, 335),
                                         height: 50,
                                         decoration: BoxDecoration(
                                           color: AppColors.lookGigPurple,
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
+                                          borderRadius: BorderRadius.circular(6),
                                           boxShadow: [
                                             BoxShadow(
                                               color: const Color(
@@ -742,8 +792,7 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
                                                     'SAVE',
                                                     style: TextStyle(
                                                       fontFamily: 'DM Sans',
-                                                      fontWeight:
-                                                          FontWeight.w700,
+                                                      fontWeight: FontWeight.w700,
                                                       fontSize: 14,
                                                       height: 1.302,
                                                       letterSpacing: 0.84,
@@ -755,55 +804,11 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
                                     ),
                                   ),
                                 ],
-                              ),
-                            ] else ...[
-                              // Add mode: Single Save button
-                              Center(
-                                child: GestureDetector(
-                                  onTap:
-                                      _isSaving ? null : _showSaveConfirmation,
-                                  child: Container(
-                                    width: 213,
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.lookGigPurple,
-                                      borderRadius: BorderRadius.circular(6),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFF99ABC6,
-                                          ).withValues(alpha: 0.18),
-                                          blurRadius: 62,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child:
-                                          _isSaving
-                                              ? const CircularProgressIndicator(
-                                                color: AppColors.white,
-                                                strokeWidth: 2,
-                                              )
-                                              : const Text(
-                                                'SAVE',
-                                                style: TextStyle(
-                                                  fontFamily: 'DM Sans',
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 14,
-                                                  height: 1.302,
-                                                  letterSpacing: 0.84,
-                                                  color: AppColors.white,
-                                                ),
-                                              ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
 
-                            const SizedBox(height: 40),
-                          ],
+                                const SizedBox(height: 40),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -824,66 +829,63 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
     double? width,
     bool enabled = true,
   }) {
-    return SizedBox(
-      width: width ?? 335,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'DM Sans',
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              height: 1.302,
-              color: AppColors.lookGigProfileText,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: 'DM Sans',
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            height: 1.302,
+            color: AppColors.lookGigProfileText,
           ),
-          const SizedBox(height: 10),
-          Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
-                  blurRadius: 62,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: controller,
-              enabled: enabled,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                hintText: hintText,
-                hintStyle: const TextStyle(
-                  fontFamily: 'DM Sans',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 12,
-                  color: Color(0xFFAAA6B9),
-                ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF99ABC6).withValues(alpha: 0.18),
+                blurRadius: 62,
+                offset: const Offset(0, 4),
               ),
-              style: TextStyle(
+            ],
+          ),
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
+              hintText: hintText,
+              hintStyle: const TextStyle(
                 fontFamily: 'DM Sans',
                 fontWeight: FontWeight.w400,
                 fontSize: 12,
-                color:
-                    enabled ? const Color(0xFF524B6B) : const Color(0xFFAAA6B9),
+                color: Color(0xFFAAA6B9),
               ),
             ),
+            style: TextStyle(
+              fontFamily: 'DM Sans',
+              fontWeight: FontWeight.w400,
+              fontSize: 12,
+              color:
+                  enabled ? const Color(0xFF524B6B) : const Color(0xFFAAA6B9),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -990,7 +992,7 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
         ),
         const SizedBox(height: 10),
         Container(
-          width: 335,
+          width: double.infinity,
           height: 155,
           decoration: BoxDecoration(
             color: AppColors.white,
