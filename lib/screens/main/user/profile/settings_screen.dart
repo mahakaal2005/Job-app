@@ -406,14 +406,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildLogoutModal() {
-    return Container(
-      height: 308, // From Figma layout_3M40KY
-      decoration: const BoxDecoration(
-        color: AppColors.white, // From Figma fill_RCMW2W
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white, // From Figma fill_RCMW2W
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
           // Top divider line (positioned at x: 173, y: 25 from Figma)
           Padding(
             padding: const EdgeInsets.only(top: 25),
@@ -529,7 +532,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

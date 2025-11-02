@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_work_app/utils/app_colors.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:get_work_app/widgets/custom_toast.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EmpHelpSupportScreen extends StatelessWidget {
   const EmpHelpSupportScreen({super.key});
@@ -33,10 +33,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
 
   // Launch phone app with support number
   Future<void> _launchPhone(BuildContext context) async {
-    final Uri phoneUri = Uri(
-      scheme: 'tel',
-      path: supportPhone,
-    );
+    final Uri phoneUri = Uri(scheme: 'tel', path: supportPhone);
 
     try {
       await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
@@ -56,12 +53,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.lookGigLightGray,
       body: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(
-            child: _buildBody(context),
-          ),
-        ],
+        children: [_buildHeader(context), Expanded(child: _buildBody(context))],
       ),
     );
   }
@@ -69,7 +61,6 @@ class EmpHelpSupportScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 140,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
@@ -247,7 +238,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 40),
         ],
       ),
     );
@@ -366,7 +357,11 @@ class EmpHelpSupportScreen extends StatelessWidget {
         ),
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          childrenPadding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+          childrenPadding: const EdgeInsets.only(
+            left: 20,
+            right: 20,
+            bottom: 20,
+          ),
           leading: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
@@ -429,9 +424,10 @@ class EmpHelpSupportScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isClosed
-                ? AppColors.error.withOpacity(0.1)
-                : const Color(0xFFFF9228).withOpacity(0.1),
+            color:
+                isClosed
+                    ? AppColors.error.withOpacity(0.1)
+                    : const Color(0xFFFF9228).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(

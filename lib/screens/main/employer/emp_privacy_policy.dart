@@ -103,7 +103,7 @@ class EmpPrivacyPolicyScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -116,7 +116,6 @@ class EmpPrivacyPolicyScreen extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 140,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
@@ -221,7 +220,11 @@ class EmpPrivacyPolicyScreen extends StatelessWidget {
         ),
         child: ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          childrenPadding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+          childrenPadding: const EdgeInsets.only(
+            left: 20,
+            right: 20,
+            bottom: 20,
+          ),
           leading: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(

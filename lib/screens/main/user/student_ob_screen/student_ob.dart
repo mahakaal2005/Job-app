@@ -891,11 +891,13 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
   ValidationResult _validateSpecificPage(int pageIndex) {
     switch (pageIndex) {
       case 0: // Personal Info
-        if (_phoneController.text.trim().isEmpty) {
+        // Validate phone number
+        final phoneError = _validatePhone(_phoneController.text);
+        if (phoneError != null) {
           return ValidationResult.invalid(
             pageWithError: 0,
             fieldName: 'Phone Number',
-            errorMessage: 'Phone number is required on Personal Info page',
+            errorMessage: phoneError,
             focusNode: FocusNode(),
           );
         }
@@ -913,11 +915,13 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             errorMessage: 'Date of birth is required on Personal Info page',
           );
         }
-        if (_ageController.text.trim().isEmpty) {
+        // Validate age
+        final ageError = _validateAge(_ageController.text);
+        if (ageError != null) {
           return ValidationResult.invalid(
             pageWithError: 0,
             fieldName: 'Age',
-            errorMessage: 'Age is required on Personal Info page',
+            errorMessage: ageError,
             focusNode: FocusNode(),
           );
         }
@@ -1039,11 +1043,11 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       SnackBar(
         content: Text(result.errorMessage ?? 'Please complete all required fields'),
         backgroundColor: Colors.red,
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Go to Page',
-          textColor: Colors.white,
-          onPressed: () => _navigateToPageWithError(result),
+        duration: const Duration(milliseconds: 1500),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
       ),
     );

@@ -197,7 +197,12 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
           _buildHeader(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: 72 + MediaQuery.of(context).padding.bottom + 20, // Custom nav bar + system padding + extra space
+              ),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -326,7 +331,6 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
                     ),
                     const SizedBox(height: 40),
                     _buildSaveButton(),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -340,7 +344,6 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      height: 140,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),

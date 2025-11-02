@@ -290,6 +290,86 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
     return null;
   }
 
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required';
+    }
+    // Remove spaces and special characters for validation
+    final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // Get country-specific length requirements
+    final countryLengths = _getCountryPhoneLengths(_selectedCountryCode);
+    final minLength = countryLengths['min'] ?? 10;
+    final maxLength = countryLengths['max'] ?? 10;
+    
+    // Check length based on country
+    if (cleaned.length < minLength) {
+      return 'Phone number must be at least $minLength digits';
+    }
+    if (cleaned.length > maxLength) {
+      return 'Phone number must not exceed $maxLength digits';
+    }
+    
+    // Country-specific format validation
+    if (_selectedCountryCode == '+91' && cleaned.isNotEmpty) {
+      // Indian mobile numbers must start with 6, 7, 8, or 9
+      final firstDigit = cleaned[0];
+      if (!['6', '7', '8', '9'].contains(firstDigit)) {
+        return 'Indian mobile numbers must start with 6, 7, 8, or 9';
+      }
+    }
+    
+    return null; // Valid
+  }
+  
+  // Helper method to get country-specific phone length requirements
+  Map<String, int> _getCountryPhoneLengths(String countryCode) {
+    // Country code to length mapping
+    final Map<String, Map<String, int>> countryLengths = {
+      '+91': {'min': 10, 'max': 10},  // India
+      '+1': {'min': 10, 'max': 10},   // US/Canada
+      '+44': {'min': 10, 'max': 10},  // UK
+      '+61': {'min': 9, 'max': 9},    // Australia
+      '+49': {'min': 10, 'max': 11},  // Germany
+      '+33': {'min': 9, 'max': 9},    // France
+      '+81': {'min': 10, 'max': 10},  // Japan
+      '+86': {'min': 11, 'max': 11},  // China
+      '+55': {'min': 10, 'max': 11},  // Brazil
+      '+7': {'min': 10, 'max': 10},   // Russia
+      '+82': {'min': 9, 'max': 10},   // South Korea
+      '+52': {'min': 10, 'max': 10},  // Mexico
+      '+39': {'min': 9, 'max': 10},   // Italy
+      '+34': {'min': 9, 'max': 9},    // Spain
+      '+31': {'min': 9, 'max': 9},    // Netherlands
+      '+41': {'min': 9, 'max': 9},    // Switzerland
+      '+46': {'min': 9, 'max': 10},   // Sweden
+      '+65': {'min': 8, 'max': 8},    // Singapore
+      '+971': {'min': 9, 'max': 9},   // UAE
+      '+966': {'min': 9, 'max': 9},   // Saudi Arabia
+      '+27': {'min': 9, 'max': 9},    // South Africa
+      '+92': {'min': 10, 'max': 10},  // Pakistan
+      '+880': {'min': 10, 'max': 10}, // Bangladesh
+      '+94': {'min': 9, 'max': 9},    // Sri Lanka
+      '+977': {'min': 10, 'max': 10}, // Nepal
+      '+60': {'min': 9, 'max': 10},   // Malaysia
+      '+62': {'min': 10, 'max': 12},  // Indonesia
+      '+66': {'min': 9, 'max': 9},    // Thailand
+      '+63': {'min': 10, 'max': 10},  // Philippines
+      '+84': {'min': 9, 'max': 10},   // Vietnam
+      '+90': {'min': 10, 'max': 10},  // Turkey
+      '+48': {'min': 9, 'max': 9},    // Poland
+      '+54': {'min': 10, 'max': 10},  // Argentina
+      '+56': {'min': 9, 'max': 9},    // Chile
+      '+57': {'min': 10, 'max': 10},  // Colombia
+      '+20': {'min': 10, 'max': 10},  // Egypt
+      '+234': {'min': 10, 'max': 10}, // Nigeria
+      '+254': {'min': 9, 'max': 9},   // Kenya
+      '+64': {'min': 9, 'max': 10},   // New Zealand
+    };
+    
+    return countryLengths[countryCode] ?? {'min': 10, 'max': 10}; // Default to 10 if country not found
+  }
+
   final List<String> _industries = [
     'Technology',
     'Healthcare',
@@ -833,12 +913,30 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
       return;
     }
     
-    CustomToast.show(
-      context,
-      message: message,
-      isSuccess: !isError,
-      duration: Duration(seconds: duration ?? (isError ? 3 : 2)),
-    );
+    // Use SnackBar for validation errors with action button
+    if (action != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : Colors.green,
+          duration: Duration(milliseconds: duration != null ? duration * 1000 : 1500),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          action: action,
+        ),
+      );
+    } else {
+      // Use CustomToast for simple messages
+      CustomToast.show(
+        context,
+        message: message,
+        isSuccess: !isError,
+        duration: const Duration(milliseconds: 1500),
+      );
+    }
   }
 
   void _nextPage() {
@@ -937,11 +1035,13 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
             focusNode: FocusNode(),
           );
         }
-        if (_companyPhoneController.text.trim().isEmpty) {
+        // Validate company phone number
+        final phoneError = _validatePhone(_companyPhoneController.text);
+        if (phoneError != null) {
           return EmployerValidationResult.invalid(
             pageWithError: 0,
             fieldName: 'Company Phone',
-            errorMessage: 'Company phone number is required on Company Information page',
+            errorMessage: phoneError,
             focusNode: FocusNode(),
           );
         }
@@ -1091,14 +1191,16 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
   void _showValidationError(EmployerValidationResult result) {
     if (result.isValid) return;
     
-    _showSnackBar(
-      result.errorMessage ?? 'Please complete all required fields',
-      isError: true,
-      duration: 4,
-      action: SnackBarAction(
-        label: 'Go to Page',
-        textColor: Colors.white,
-        onPressed: () => _navigateToPageWithError(result),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.errorMessage ?? 'Please complete all required fields'),
+        backgroundColor: Colors.red,
+        duration: const Duration(milliseconds: 1500),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
     );
     

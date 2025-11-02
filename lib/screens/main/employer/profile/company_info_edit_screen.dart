@@ -153,7 +153,6 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      height: 140,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),

@@ -21,6 +21,8 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   bool _isSaving = false;
+  String _selectedCountryCode = '+91'; // Default to India
+  String? _phoneError; // Track phone validation error
 
   @override
   void initState() {
@@ -28,6 +30,95 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
     _websiteController = TextEditingController(text: widget.companyInfo['companyWebsite'] ?? '');
     _emailController = TextEditingController(text: widget.companyInfo['companyEmail'] ?? '');
     _phoneController = TextEditingController(text: widget.companyInfo['companyPhone'] ?? '');
+  }
+
+  // Country-aware phone length validation
+  Map<String, int> _getCountryPhoneLengths(String countryCode) {
+    final Map<String, Map<String, int>> countryLengths = {
+      '+91': {'min': 10, 'max': 10},   // India
+      '+1': {'min': 10, 'max': 10},    // US/Canada
+      '+44': {'min': 10, 'max': 10},   // UK
+      '+61': {'min': 9, 'max': 9},     // Australia
+      '+49': {'min': 10, 'max': 11},   // Germany
+      '+33': {'min': 9, 'max': 9},     // France
+      '+81': {'min': 10, 'max': 10},   // Japan
+      '+86': {'min': 11, 'max': 11},   // China
+      '+55': {'min': 10, 'max': 11},   // Brazil
+      '+7': {'min': 10, 'max': 10},    // Russia
+      '+82': {'min': 9, 'max': 10},    // South Korea
+      '+52': {'min': 10, 'max': 10},   // Mexico
+      '+39': {'min': 9, 'max': 10},    // Italy
+      '+34': {'min': 9, 'max': 9},     // Spain
+      '+31': {'min': 9, 'max': 9},     // Netherlands
+      '+41': {'min': 9, 'max': 9},     // Switzerland
+      '+46': {'min': 9, 'max': 10},    // Sweden
+      '+65': {'min': 8, 'max': 8},     // Singapore
+      '+971': {'min': 9, 'max': 9},    // UAE
+      '+966': {'min': 9, 'max': 9},    // Saudi Arabia
+      '+27': {'min': 9, 'max': 9},     // South Africa
+      '+92': {'min': 10, 'max': 10},   // Pakistan
+      '+880': {'min': 10, 'max': 10},  // Bangladesh
+      '+94': {'min': 9, 'max': 9},     // Sri Lanka
+      '+977': {'min': 10, 'max': 10},  // Nepal
+      '+60': {'min': 9, 'max': 10},    // Malaysia
+      '+62': {'min': 10, 'max': 12},   // Indonesia
+      '+66': {'min': 9, 'max': 9},     // Thailand
+      '+63': {'min': 10, 'max': 10},   // Philippines
+      '+84': {'min': 9, 'max': 10},    // Vietnam
+      '+90': {'min': 10, 'max': 10},   // Turkey
+      '+48': {'min': 9, 'max': 9},     // Poland
+      '+54': {'min': 10, 'max': 10},   // Argentina
+      '+56': {'min': 9, 'max': 9},     // Chile
+      '+57': {'min': 10, 'max': 10},   // Colombia
+      '+20': {'min': 10, 'max': 10},   // Egypt
+      '+234': {'min': 10, 'max': 10},  // Nigeria
+      '+254': {'min': 9, 'max': 9},    // Kenya
+      '+64': {'min': 9, 'max': 10},    // New Zealand
+    };
+    
+    return countryLengths[countryCode] ?? {'min': 10, 'max': 10};
+  }
+
+  // Validate phone number with country-aware rules
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required';
+    }
+    
+    final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (cleaned.isEmpty) {
+      return 'Please enter a valid phone number';
+    }
+    
+    // Get country-specific requirements
+    final countryLengths = _getCountryPhoneLengths(_selectedCountryCode);
+    final minLength = countryLengths['min'] ?? 10;
+    final maxLength = countryLengths['max'] ?? 10;
+    
+    // Validate length
+    if (cleaned.length < minLength) {
+      if (minLength == maxLength) {
+        return 'Phone number must be exactly $minLength digits';
+      }
+      return 'Phone number must be at least $minLength digits';
+    }
+    if (cleaned.length > maxLength) {
+      if (minLength == maxLength) {
+        return 'Phone number must be exactly $maxLength digits';
+      }
+      return 'Phone number must not exceed $maxLength digits';
+    }
+    
+    // Country-specific format rules
+    if (_selectedCountryCode == '+91') {
+      final firstDigit = cleaned[0];
+      if (!['6', '7', '8', '9'].contains(firstDigit)) {
+        return 'Indian mobile numbers must start with 6, 7, 8, or 9';
+      }
+    }
+    
+    return null; // Valid
   }
 
   @override
@@ -39,7 +130,28 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
   }
 
   Future<void> _saveChanges() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Validate phone first and show error
+    final phoneValidationError = _validatePhone(_phoneController.text);
+    if (phoneValidationError != null) {
+      setState(() {
+        _phoneError = phoneValidationError;
+      });
+      CustomToast.show(
+        context,
+        message: phoneValidationError,
+        isSuccess: false,
+      );
+      return;
+    }
+    
+    if (!_formKey.currentState!.validate()) {
+      CustomToast.show(
+        context,
+        message: 'Please fix all errors before saving',
+        isSuccess: false,
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
 
@@ -130,7 +242,6 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      height: 140,
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
@@ -305,15 +416,85 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
           phoneController: _phoneController,
           labelText: '',
           hintText: 'Enter phone number',
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Phone number is required';
+          onCountryCodeChanged: (countryCode) {
+            setState(() {
+              _selectedCountryCode = countryCode;
+              _phoneError = null; // Clear error on country change
+            });
+            // Revalidate when country changes
+            final error = _validatePhone(_phoneController.text);
+            if (error != null) {
+              setState(() {
+                _phoneError = error;
+              });
             }
-            return null;
+          },
+          validator: (value) {
+            final error = _validatePhone(value);
+            setState(() {
+              _phoneError = error;
+            });
+            return error;
           },
         ),
+        // Display error message prominently
+        if (_phoneError != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _phoneError!,
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'DM Sans',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        // Show hint for current country
+        if (_phoneError == null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _getPhoneHint(),
+            style: TextStyle(
+              color: AppColors.lookGigDescriptionText,
+              fontSize: 12,
+              fontFamily: 'DM Sans',
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  String _getPhoneHint() {
+    final countryLengths = _getCountryPhoneLengths(_selectedCountryCode);
+    final minLength = countryLengths['min'] ?? 10;
+    final maxLength = countryLengths['max'] ?? 10;
+    
+    if (minLength == maxLength) {
+      if (_selectedCountryCode == '+91') {
+        return 'Enter $minLength digits starting with 6, 7, 8, or 9';
+      }
+      return 'Enter exactly $minLength digits';
+    } else {
+      return 'Enter $minLength to $maxLength digits';
+    }
   }
 
   Widget _buildSaveButton() {
