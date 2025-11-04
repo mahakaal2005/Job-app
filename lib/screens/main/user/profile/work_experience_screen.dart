@@ -826,7 +826,6 @@ class _WorkExperienceScreenState extends State<WorkExperienceScreen> {
     required TextEditingController controller,
     required String label,
     required String hintText,
-    double? width,
     bool enabled = true,
   }) {
     return Column(

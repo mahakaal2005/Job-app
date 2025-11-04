@@ -638,7 +638,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
               title: 'Total Applications',
               value: _applications.length.toString(),
               icon: Icons.people_alt_outlined,
-              color: const Color(0xFFFF9228),
+              color: const Color(0xFF2F51A7),
               subtitle: 'All time',
               onTap: () {
                 // Navigate to all applicants screen
@@ -659,7 +659,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
               title: 'Active Jobs',
               value: _jobs.length.toString(),
               icon: Icons.work_outline,
-              color: const Color(0xFFFF9228),
+              color: const Color(0xFF2F51A7),
               subtitle: 'Currently posted',
               onTap: () {
                 // Navigate to all jobs screen
@@ -674,7 +674,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
               title: 'Pending Reviews',
               value: (_applicationStatusCounts['pending'] ?? 0).toString(),
               icon: Icons.hourglass_empty_outlined,
-              color: const Color(0xFFFF9228),
+              color: const Color(0xFF2F51A7),
               subtitle: 'Awaiting action',
               onTap: () {
                 // Navigate to applicants filtered by pending status
@@ -695,7 +695,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
               title: 'Hired',
               value: (_applicationStatusCounts['accepted'] ?? 0).toString(),
               icon: Icons.check_circle_outline,
-              color: const Color(0xFFFF9228),
+              color: const Color(0xFF2F51A7),
               subtitle: 'Successful hires',
               onTap: () {
                 // Navigate to applicants filtered by accepted status
@@ -928,7 +928,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                   }).toList(),
               isCurved: true,
               curveSmoothness: 0.3,
-              color: const Color(0xFFFF9228),
+              color: const Color(0xFF2F51A7),
               barWidth: 2,
               isStrokeCapRound: true,
               dotData: FlDotData(
@@ -936,7 +936,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                 getDotPainter: (spot, percent, barData, index) {
                   return FlDotCirclePainter(
                     radius: 3,
-                    color: const Color(0xFFFF9228),
+                    color: const Color(0xFF2F51A7),
                     strokeWidth: 2,
                     strokeColor: Colors.white,
                   );
@@ -946,8 +946,8 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFFF9228).withOpacity(0.3),
-                    const Color(0xFFFF9228).withOpacity(0.05),
+                    const Color(0xFF2F51A7).withOpacity(0.3),
+                    const Color(0xFF2F51A7).withOpacity(0.05),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -973,7 +973,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     _jobTypeDistribution.entries.map((entry) {
                       final colors = [
                         AppColors.lookGigPurple,
-                        const Color(0xFFFF9228),
+                        const Color(0xFF2F51A7),
                         AppColors.lookGigProfileGradientEnd,
                         AppColors.lookGigDescriptionText,
                         AppColors.lookGigActiveIcon,
@@ -1012,7 +1012,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
   Widget _buildJobTypeLegend() {
     final colors = [
       AppColors.lookGigPurple,
-      const Color(0xFFFF9228),
+      const Color(0xFF2F51A7),
       AppColors.lookGigProfileGradientEnd,
       AppColors.lookGigDescriptionText,
       AppColors.lookGigActiveIcon,
@@ -1155,7 +1155,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                   barRods: [
                     BarChartRodData(
                       toY: (entry.value['count'] as int).toDouble(),
-                      color: const Color(0xFFFF9228),
+                      color: const Color(0xFF2F51A7),
                       width: 20,
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(4),
@@ -1317,7 +1317,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
       case 'shortlisted':
         return AppColors.warning;
       case 'interviewed':
-        return const Color(0xFFFF9228);
+        return const Color(0xFF2F51A7);
       default:
         return AppColors.lookGigPurple;
     }

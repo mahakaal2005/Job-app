@@ -323,7 +323,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                             Text(
                               'Applied for ${applicant['jobTitle']}',
                               style: const TextStyle(
-                                color: Colors.orange,
+                                color: const Color(0xFF2F51A7),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -430,7 +430,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
       case 'rejected':
         return Colors.red;
       case 'shortlisted':
-        return Colors.orange;
+        return const Color(0xFF2F51A7);
       default:
         return AppColors.lookGigPurple;
     }
@@ -539,7 +539,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor:
-                isSelected ? const Color(0xFFFF9228) : Colors.grey[200], // Orange when selected
+                isSelected ? const Color(0xFF2F51A7) : Colors.grey[200], // Orange when selected
             foregroundColor:
                 isSelected ? AppColors.white : AppColors.primaryText,
             padding: const EdgeInsets.symmetric(vertical: 12),

@@ -1331,7 +1331,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
         return const EmployerFieldHintWidget(
           hint: 'Upload your business registration or license document',
           icon: Icons.description_outlined,
-          color: Colors.orange,
+          color: const Color(0xFF2F51A7),
         );
       case 'Employee ID Card':
         return const EmployerFieldHintWidget(
@@ -1994,10 +1994,10 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
             decoration: BoxDecoration(
               color: allRequiredDocsUploaded 
                   ? Colors.green.withOpacity(0.1) 
-                  : Colors.orange.withOpacity(0.1),
+                  : const Color(0xFF2F51A7).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: allRequiredDocsUploaded ? Colors.green : Colors.orange,
+                color: allRequiredDocsUploaded ? Colors.green : const Color(0xFF2F51A7),
                 width: 1,
               ),
             ),
@@ -2005,7 +2005,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
               children: [
                 Icon(
                   allRequiredDocsUploaded ? Icons.check_circle : Icons.info,
-                  color: allRequiredDocsUploaded ? Colors.green : Colors.orange,
+                  color: allRequiredDocsUploaded ? Colors.green : const Color(0xFF2F51A7),
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -2015,7 +2015,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                         ? 'All required documents uploaded! Click COMPLETE to finish.'
                         : 'Please upload all required documents to proceed',
                     style: TextStyle(
-                      color: allRequiredDocsUploaded ? Colors.green : Colors.orange,
+                      color: allRequiredDocsUploaded ? Colors.green : const Color(0xFF2F51A7),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -2080,7 +2080,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
             label: const Text('Add Document'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.grey.withOpacity(0.1),
-              foregroundColor: AppColors.lookGigOrange,
+              foregroundColor: const Color(0xFF2F51A7),
               elevation: 0,
             ),
           ),
@@ -2096,7 +2096,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
                     return Card(
                       child: ListTile(
-                        leading: const Icon(Icons.description, color: AppColors.lookGigOrange),
+                        leading: const Icon(Icons.description, color: const Color(0xFF2F51A7)),
                         title: Text(
                           fileName,
                           style: const TextStyle(fontSize: 14),
@@ -2205,14 +2205,14 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                               const Icon(
                                 Icons.description,
                                 size: 24,
-                                color: AppColors.lookGigOrange,
+                                color: const Color(0xFF2F51A7),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 file.path.split('/').last,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.lookGigOrange,
+                                  color: const Color(0xFF2F51A7),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -2225,7 +2225,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                         Icon(
                           isImage ? Icons.image : Icons.upload_file,
                           size: 32,
-                          color: isRequired ? Colors.red : AppColors.lookGigOrange,
+                          color: isRequired ? Colors.red : const Color(0xFF2F51A7),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -2234,7 +2234,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                               : 'Tap to select file',
                           style: TextStyle(
                             fontSize: 14,
-                            color: isRequired ? Colors.red : AppColors.lookGigOrange,
+                            color: isRequired ? Colors.red : const Color(0xFF2F51A7),
                           ),
                         ),
                       ],

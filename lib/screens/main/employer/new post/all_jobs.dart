@@ -277,10 +277,10 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFF9228) : AppColors.surfaceColor,
+          color: isSelected ? const Color(0xFF2F51A7) : AppColors.surfaceColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFFFF9228) : AppColors.dividerColor,
+            color: isSelected ? const Color(0xFF2F51A7) : AppColors.dividerColor,
           ),
         ),
         child: Text(
@@ -357,7 +357,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                             job.companyName,
                             style: TextStyle(
                               fontSize: 14,
-                              color: const Color(0xFFFF9228),
+                              color: const Color(0xFF2F51A7),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -446,7 +446,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                     _buildStatChip(
                       Icons.people,
                       '$applicantCount Applicants',
-                      const Color(0xFFFF9228),
+                      const Color(0xFF2F51A7),
                     ),
                     const SizedBox(width: 12),
                     _buildStatChip(
@@ -520,7 +520,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
             child: Icon(
               Icons.work_outline,
               size: 64,
-              color: const Color(0xFFFF9228),
+              color: const Color(0xFF2F51A7),
             ),
           ),
           const SizedBox(height: 24),

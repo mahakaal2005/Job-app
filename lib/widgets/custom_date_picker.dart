@@ -280,7 +280,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                 height: isSelected ? 108 : 52,
                 decoration: BoxDecoration(
                   color: isSelected 
-                      ? const Color(0xFFFF9228) 
+                      ? const Color(0xFF2F51A7) 
                       : const Color(0xFFC4C4C4).withOpacity(0.6),
                   borderRadius: BorderRadius.circular(isSelected ? 15 : 10),
                 ),
@@ -334,7 +334,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                 height: isSelected ? 108 : 52,
                 decoration: BoxDecoration(
                   color: isSelected 
-                      ? const Color(0xFFFF9228) 
+                      ? const Color(0xFF2F51A7) 
                       : const Color(0xFFC4C4C4).withOpacity(0.6),
                   borderRadius: BorderRadius.circular(isSelected ? 15 : 10),
                 ),

@@ -273,7 +273,7 @@ class _LanguageDetailScreenState extends State<LanguageDetailScreen> {
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: _isFirstLanguage 
-                                            ? const Color(0xFFFF9228)
+                                            ? const Color(0xFF2F51A7)
                                             : const Color(0xFFAAA6B9),
                                         width: 2,
                                       ),
@@ -285,7 +285,7 @@ class _LanguageDetailScreenState extends State<LanguageDetailScreen> {
                                               height: 12,
                                               decoration: const BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: Color(0xFFFF9228),
+                                                color: Color(0xFF2F51A7),
                                               ),
                                             ),
                                           )

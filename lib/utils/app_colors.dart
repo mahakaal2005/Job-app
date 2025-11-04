@@ -9,6 +9,7 @@ class AppColors {
   static const Color neonBlue = Color(0xFF00D4FF);
   static const Color deepBlue = Color(0xFF003D99);
   static const Color royalBlue = Color(0xFF4169E1);
+  static const Color profileIconBlue = Color(0xFF2F51A7); // Profile icon color
 
   // Core Colors - Pure Contrast
   static const Color black = Color(0xFF000000);

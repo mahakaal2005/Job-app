@@ -1335,7 +1335,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         return const FieldHintWidget(
           hint: 'Select at least 3 skills that match your expertise',
           icon: Icons.star_outline,
-          color: Colors.orange,
+          color: const Color(0xFF2F51A7),
         );
       case 'Resume':
         return const FieldHintWidget(
@@ -1456,8 +1456,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       borderColor = Colors.green;
       suffixIcon = const Icon(Icons.check_circle, color: Colors.green, size: 20);
     } else if (isValid == false) {
-      borderColor = Colors.orange;
-      suffixIcon = const Icon(Icons.warning, color: Colors.orange, size: 20);
+      borderColor = const Color(0xFF2F51A7);
+      suffixIcon = const Icon(Icons.warning, color: const Color(0xFF2F51A7), size: 20);
     }
     
     return InputDecoration(
@@ -1486,7 +1486,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       filled: fillColor != null,
       fillColor: fillColor,
       helperText: isValid == false ? _getValidationMessage(fieldName) : null,
-      helperStyle: const TextStyle(color: Colors.orange, fontSize: 12),
+      helperStyle: const TextStyle(color: const Color(0xFF2F51A7), fontSize: 12),
     );
   }
 
@@ -1576,10 +1576,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: currentPageValid ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        color: currentPageValid ? Colors.green.withOpacity(0.1) : const Color(0xFF2F51A7).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: currentPageValid ? Colors.green : Colors.orange,
+          color: currentPageValid ? Colors.green : const Color(0xFF2F51A7),
           width: 1,
         ),
       ),
@@ -1587,7 +1587,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         children: [
           Icon(
             currentPageValid ? Icons.check_circle : Icons.info,
-            color: currentPageValid ? Colors.green : Colors.orange,
+            color: currentPageValid ? Colors.green : const Color(0xFF2F51A7),
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -1597,7 +1597,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   ? 'This page is complete! ${completionPercentage == 1.0 ? "Ready to finish!" : "Continue to next page."}'
                   : 'Please complete all required fields on this page',
               style: TextStyle(
-                color: currentPageValid ? Colors.green : Colors.orange,
+                color: currentPageValid ? Colors.green : const Color(0xFF2F51A7),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -1607,7 +1607,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             Text(
               '${(completionPercentage * 100).toInt()}%',
               style: TextStyle(
-                color: currentPageValid ? Colors.green : Colors.orange,
+                color: currentPageValid ? Colors.green : const Color(0xFF2F51A7),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -1726,13 +1726,6 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         setState(() {
           _isLoading = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You can complete your profile later from Settings'),
-            backgroundColor: Colors.orange,
-          ),
-        );
 
         // Navigate to user home screen
         Navigator.pushNamedAndRemoveUntil(
@@ -2187,7 +2180,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     children: [
                       const Icon(
                         Icons.info_outline,
-                        color: Colors.orange,
+                        color: const Color(0xFF2F51A7),
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -2200,7 +2193,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                                   : 'Please upload your resume to complete',
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Colors.orange,
+                            color: const Color(0xFF2F51A7),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -2324,13 +2317,6 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           setState(() {
             _isLoading = false;
           });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You can complete your profile later from Settings'),
-              backgroundColor: Colors.orange,
-            ),
-          );
 
           // Navigate to home
           Navigator.pushNamedAndRemoveUntil(
@@ -2460,12 +2446,12 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       'assets/images/calendar_icon_new.png',
                       width: 20,
                       height: 20,
-                      color: AppColors.lookGigOrange,
+                      color: const Color(0xFF2F51A7),
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(
                           Icons.calendar_today,
                           size: 20,
-                          color: AppColors.lookGigOrange,
+                          color: const Color(0xFF2F51A7),
                         );
                       },
                     ),
@@ -2500,7 +2486,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             readOnly: true,
             decoration: const InputDecoration(
               hintText: 'Age will be calculated from date of birth',
-              prefixIcon: Icon(Icons.cake, color: AppColors.lookGigOrange),
+              prefixIcon: Icon(Icons.cake, color: const Color(0xFF2F51A7)),
             ),
           ),
         ],
@@ -2538,7 +2524,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                 color: Colors.grey,
                 fontSize: 16,
               ),
-              prefixIcon: Icon(Icons.home, color: AppColors.lookGigOrange),
+              prefixIcon: Icon(Icons.home, color: const Color(0xFF2F51A7)),
             ),
             onChanged: (value) => setState(() {}),
           ),
@@ -2649,7 +2635,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         ),
                         prefixIcon: const Icon(
                           Icons.local_post_office,
-                          color: AppColors.lookGigOrange,
+                          color: const Color(0xFF2F51A7),
                         ),
                       ),
                       onChanged: (value) => setState(() {}),
@@ -2713,7 +2699,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               controller: _customEducationController,
               decoration: const InputDecoration(
                 hintText: 'Enter your education level',
-                prefixIcon: Icon(Icons.edit, color: AppColors.lookGigOrange),
+                prefixIcon: Icon(Icons.edit, color: const Color(0xFF2F51A7)),
               ),
               onChanged: (value) => setState(() {}),
             ),
@@ -2731,7 +2717,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             controller: _collegeController,
             decoration: const InputDecoration(
               hintText: 'Enter your college or institution name',
-              prefixIcon: Icon(Icons.business, color: AppColors.lookGigOrange),
+              prefixIcon: Icon(Icons.business, color: const Color(0xFF2F51A7)),
             ),
             onChanged: (value) => setState(() {}),
           ),
@@ -2792,7 +2778,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               hintText: 'Search skills...',
               prefixIcon: const Icon(
                 Icons.search,
-                color: AppColors.lookGigOrange,
+                color: const Color(0xFF2F51A7),
               ),
               suffixIcon:
                   _skillsSearchController.text.isNotEmpty

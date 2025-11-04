@@ -84,7 +84,7 @@ class _RecentJobsCardState extends State<RecentJobsCard> {
                 child: Text(
                   'See All',
                   style: TextStyle(
-                    color: const Color(0xFFFF9228),
+                    color: const Color(0xFF2F51A7),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

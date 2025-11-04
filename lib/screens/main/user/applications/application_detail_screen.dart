@@ -201,10 +201,10 @@ class ApplicationDetailScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9228).withOpacity(0.15),
+                  color: const Color(0xFF2F51A7).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: const Color(0xFFFF9228), size: 20),
+                child: Icon(icon, color: const Color(0xFF2F51A7), size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -267,10 +267,10 @@ class ApplicationDetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF9228).withOpacity(0.1),
+        color: const Color(0xFF2F51A7).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFFF9228).withOpacity(0.3),
+          color: const Color(0xFF2F51A7).withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -281,12 +281,12 @@ class ApplicationDetailScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9228).withOpacity(0.2),
+                  color: const Color(0xFF2F51A7).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.description,
-                  color: Color(0xFFFF9228),
+                  color: Color(0xFF2F51A7),
                   size: 24,
                 ),
               ),
@@ -350,7 +350,7 @@ class ApplicationDetailScreen extends StatelessWidget {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF9228),
+                  backgroundColor: const Color(0xFF2F51A7),
                   foregroundColor: AppColors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -372,9 +372,9 @@ class ApplicationDetailScreen extends StatelessWidget {
       case 'rejected':
         return Colors.red;
       case 'shortlisted':
-        return const Color(0xFFFF9228);
+        return const Color(0xFF2F51A7);
       default:
-        return const Color(0xFFFF9228);
+        return const Color(0xFF2F51A7);
     }
   }
 

@@ -308,17 +308,17 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
                       heightFactor: 1.0,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 12, top: 16),
-                        child: Icon(icon, color: const Color(0xFFFF9228)),
+                        child: Icon(icon, color: const Color(0xFF2F51A7)),
                       ),
                     )
-                  : Icon(icon, color: const Color(0xFFFF9228)),
+                  : Icon(icon, color: const Color(0xFF2F51A7)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFFF9228), width: 2),
+                borderSide: const BorderSide(color: Color(0xFF2F51A7), width: 2),
               ),
               filled: true,
               fillColor: AppColors.white,

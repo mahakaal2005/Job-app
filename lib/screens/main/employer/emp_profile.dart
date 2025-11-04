@@ -536,7 +536,7 @@ class _EmpProfileState extends State<EmpProfile> {
         ),
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          leading: Icon(icon, color: const Color(0xFFFF9228), size: 24),
+          leading: Icon(icon, color: const Color(0xFF2F51A7), size: 24),
           title: Text(
             title,
             style: const TextStyle(
@@ -583,10 +583,10 @@ class _EmpProfileState extends State<EmpProfile> {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9228).withOpacity(0.1),
+              color: const Color(0xFF2F51A7).withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: const Color(0xFFFF9228), size: 20),
+            child: Icon(icon, color: const Color(0xFF2F51A7), size: 20),
           ),
           title: Text(
             title,
@@ -725,19 +725,19 @@ class _EmpProfileState extends State<EmpProfile> {
                           title: 'Jobs',
                           value: _jobCount.toString(),
                           icon: Icons.work_outline,
-                          color: const Color(0xFFFF9228),
+                          color: const Color(0xFF2F51A7),
                         ),
                         _buildStatCard(
                           title: 'Since',
                           value: establishedYear,
                           icon: Icons.access_time,
-                          color: const Color(0xFFFF9228),
+                          color: const Color(0xFF2F51A7),
                         ),
                         _buildStatCard(
                           title: 'Size',
                           value: companySize.split(' ')[0],
                           icon: Icons.business,
-                          color: const Color(0xFFFF9228),
+                          color: const Color(0xFF2F51A7),
                         ),
                       ],
                     ),

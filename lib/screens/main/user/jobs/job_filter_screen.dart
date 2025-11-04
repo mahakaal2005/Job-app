@@ -262,7 +262,7 @@ class _JobFilterScreenState extends State<JobFilterScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFFFF9228),
+                            color: Color(0xFF2F51A7),
                             fontFamily: 'Open Sans',
                             height: 1.362,
                           ),
@@ -469,7 +469,7 @@ class _JobFilterScreenState extends State<JobFilterScreen> {
                     decoration: BoxDecoration(
                       color:
                           isSelected
-                              ? const Color(0xFFFCA34D)
+                              ? const Color(0xFF2F51A7)
                               : const Color(0xFFCBC9D4).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -545,7 +545,7 @@ class _JobFilterScreenState extends State<JobFilterScreen> {
                     decoration: BoxDecoration(
                       color:
                           isSelected
-                              ? const Color(0xFFFCA34D)
+                              ? const Color(0xFF2F51A7)
                               : const Color(0xFFCBC9D4).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -667,7 +667,7 @@ class _JobFilterScreenState extends State<JobFilterScreen> {
             width: 335,
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                activeTrackColor: const Color(0xFFFF9228), // Orange track between handles
+                activeTrackColor: const Color(0xFF2F51A7), // Orange track between handles
                 inactiveTrackColor: const Color(0xFFCCC4C2), // Gray track outside handles
                 thumbColor: Colors.white,
                 overlayShape: const RoundSliderOverlayShape(

@@ -504,26 +504,20 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                       // Call icon
                       GestureDetector(
                         onTap: _makeCall,
-                        child: Image.asset(
-                          'assets/images/chat_call_icon.png',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.call, color: Color(0xFFFF9228), size: 24);
-                          },
+                        child: const Icon(
+                          Icons.call,
+                          color: Color(0xFF2F51A7),
+                          size: 24,
                         ),
                       ),
                       const SizedBox(width: 10),
                       // Search icon
                       GestureDetector(
                         onTap: _toggleSearch,
-                        child: Image.asset(
-                          'assets/images/chat_search_icon.png',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.search, color: Color(0xFFFF9228), size: 24);
-                          },
+                        child: const Icon(
+                          Icons.search,
+                          color: Color(0xFF2F51A7),
+                          size: 24,
                         ),
                       ),
                     ],
@@ -755,7 +749,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> with WidgetsBinding
                       maxWidth: MediaQuery.of(context).size.width * 0.65,
                     ),
                     decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF130160) : const Color(0xFFFF9228).withOpacity(0.1),
+                      color: isMe ? const Color(0xFF130160) : const Color(0xFF2F51A7).withOpacity(0.1),
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(15),
                         topRight: const Radius.circular(15),

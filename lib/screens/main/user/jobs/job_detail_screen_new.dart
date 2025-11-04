@@ -1230,7 +1230,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                           child: Icon(
                             _isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
                             key: ValueKey(_isBookmarked),
-                            color: const Color(0xFFFCA34D),
+                            color: const Color(0xFF2F51A7),
                             size: 24,
                           ),
                         ),
@@ -1291,7 +1291,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                         height: 50,
                         decoration: BoxDecoration(
                           color: _hasApplied 
-                              ? const Color(0xFFFF9228) 
+                              ? const Color(0xFF2F51A7) 
                               : AppColors.lookGigPurple,
                           borderRadius: BorderRadius.circular(6),
                           boxShadow: [

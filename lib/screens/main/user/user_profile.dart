@@ -1159,42 +1159,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: 24,
                       child:
                           title.toLowerCase() == 'language'
-                              ? Image.asset(
-                                'assets/images/language_icon_new.png',
-                                width: 24,
-                                height: 24,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.language,
-                                    size: 24,
-                                    color: Color(0xFFFF9228),
-                                  );
-                                },
+                              ? const Icon(
+                                Icons.language,
+                                size: 24,
+                                color: Color(0xFF2F51A7),
                               )
                               : title.toLowerCase() == 'appreciation'
-                              ? Image.asset(
-                                'assets/images/appreciation_icon.png',
-                                width: 24,
-                                height: 24,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.emoji_events,
-                                    size: 24,
-                                    color: Color(0xFFFF9228),
-                                  );
-                                },
+                              ? const Icon(
+                                Icons.emoji_events,
+                                size: 24,
+                                color: Color(0xFF2F51A7),
                               )
                               : Image.asset(
                                 iconPath,
                                 width: 24,
                                 height: 24,
-                                color: const Color(0xFFFF9228),
+                                color: const Color(0xFF2F51A7),
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Icon(
                                     Icons.info,
                                     size: 24,
-                                    color: Color(0xFFFF9228),
+                                    color: Color(0xFF2F51A7),
                                   );
                                 },
                               ),
@@ -1226,12 +1211,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     : 'assets/images/add_icon.png',
                                 width: 24,
                                 height: 24,
-                                color: const Color(0xFFFF9228),
+                                color: const Color(0xFF2F51A7),
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Icon(
                                     Icons.add,
                                     size: 24,
-                                    color: Color(0xFFFF9228),
+                                    color: Color(0xFF2F51A7),
                                   );
                                 },
                               )
@@ -1240,12 +1225,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 'assets/images/add_icon.png',
                                 width: 24,
                                 height: 24,
-                                color: const Color(0xFFFF9228),
+                                color: const Color(0xFF2F51A7),
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Icon(
                                     Icons.add,
                                     size: 24,
-                                    color: Color(0xFFFF9228),
+                                    color: Color(0xFF2F51A7),
                                   );
                                 },
                               )
@@ -1253,12 +1238,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 'assets/images/edit_icon.png',
                                 width: 24,
                                 height: 24,
-                                color: const Color(0xFFFF9228),
+                                color: const Color(0xFF2F51A7),
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Icon(
                                     Icons.edit,
                                     size: 24,
-                                    color: Color(0xFFFF9228),
+                                    color: Color(0xFF2F51A7),
                                   );
                                 },
                               ),
@@ -1444,12 +1429,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             'assets/images/edit_icon.png',
                             width: 24,
                             height: 24,
-                            color: const Color(0xFFFF9228),
+                            color: const Color(0xFF2F51A7),
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(
                                 Icons.edit,
                                 size: 24,
-                                color: Color(0xFFFF9228),
+                                color: Color(0xFF2F51A7),
                               );
                             },
                           ),
@@ -1658,12 +1643,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             'assets/images/education_edit_icon.png',
                             width: 24,
                             height: 24,
-                            color: const Color(0xFFFF9228),
+                            color: const Color(0xFF2F51A7),
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(
                                 Icons.edit,
                                 size: 24,
-                                color: Color(0xFFFF9228),
+                                color: Color(0xFF2F51A7),
                               );
                             },
                           ),
@@ -2121,12 +2106,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   'assets/images/appreciation_edit_icon.png',
                                   width: 24,
                                   height: 24,
-                                  color: const Color(0xFFFF9228),
+                                  color: const Color(0xFF2F51A7),
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Icon(
                                       Icons.edit,
                                       size: 24,
-                                      color: Color(0xFFFF9228),
+                                      color: Color(0xFF2F51A7),
                                     );
                                   },
                                 ),
@@ -3715,7 +3700,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color:
                                 _selectedGender == 'Male'
                                     ? const Color(
-                                      0xFFFF9228,
+                                      0xFF2F51A7,
                                     ) // From Figma stroke_2S3WJQ
                                     : const Color(
                                       0xFF524B6B,
@@ -3732,8 +3717,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: Color(
-                                        0xFFFFB237,
-                                      ), // From Figma fill_70N5SX
+                                        0xFF2F51A7,
+                                      ), // Changed to blue
                                     ),
                                   ),
                                 )
@@ -3791,7 +3776,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           border: Border.all(
                             color:
                                 _selectedGender == 'Female'
-                                    ? const Color(0xFFFF9228)
+                                    ? const Color(0xFF2F51A7)
                                     : const Color(0xFF524B6B),
                             width: 1.5,
                           ),
@@ -3805,7 +3790,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: Color(
-                                        0xFFFF9228,
+                                        0xFF2F51A7,
                                       ), // From Figma fill_HMEZ2A
                                     ),
                                   ),

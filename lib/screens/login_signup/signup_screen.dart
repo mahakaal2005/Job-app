@@ -752,10 +752,10 @@ class _SignupScreenState extends State<SignupScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
-                              color: Colors.orange,
+                              color: const Color(0xFF2F51A7),
                               fontFamily: 'Open Sans',
                               decoration: TextDecoration.underline,
-                              decorationColor: Colors.orange,
+                              decorationColor: const Color(0xFF2F51A7),
                               height: 1.3618,
                             ),
                           ),

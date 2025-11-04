@@ -363,14 +363,14 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(color: AppColors.lookGigDescriptionText),
-              prefixIcon: Icon(icon, color: const Color(0xFFFF9228)),
+              prefixIcon: Icon(icon, color: const Color(0xFF2F51A7)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFFF9228), width: 2),
+                borderSide: const BorderSide(color: Color(0xFF2F51A7), width: 2),
               ),
               filled: true,
               fillColor: AppColors.white,

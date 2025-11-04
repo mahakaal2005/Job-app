@@ -81,7 +81,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFFFF9228),
+                        color: Color(0xFF2F51A7),
                       ),
                     )
                   : _filteredApplications.isEmpty
@@ -155,7 +155,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
         setState(() => _selectedFilter = filter);
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? const Color(0xFFFF9228) : Colors.grey[200],
+        backgroundColor: isSelected ? const Color(0xFF2F51A7) : Colors.grey[200],
         foregroundColor: isSelected ? AppColors.white : AppColors.primaryText,
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
@@ -364,9 +364,9 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
       case 'rejected':
         return Colors.red;
       case 'shortlisted':
-        return const Color(0xFFFF9228);
+        return const Color(0xFF2F51A7);
       default:
-        return const Color(0xFFFF9228);
+        return const Color(0xFF2F51A7);
     }
   }
 }

@@ -86,7 +86,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       !_selectedSkills.contains(skill),
                 )
                 .toList();
-        _showSkillSuggestions = _filteredSkills.isNotEmpty;
+        // Always show suggestions when there's text (for custom skill option)
+        _showSkillSuggestions = true;
       }
     });
   }
@@ -472,15 +473,21 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             controller: _skillSearchController,
             style: TextStyle(color: AppColors.primaryText),
             onChanged: _filterSkills,
+            onFieldSubmitted: (value) {
+              // Add custom skill when Enter is pressed
+              if (value.trim().isNotEmpty) {
+                _addSkill(value.trim());
+              }
+            },
             onTap: () {
               if (_skillSearchController.text.isNotEmpty) {
                 _filterSkills(_skillSearchController.text);
               }
             },
             decoration: InputDecoration(
-              hintText: 'Search and add skills...',
+              hintText: 'Search or type custom skill (press Enter to add)...',
               hintStyle: TextStyle(color: AppColors.hintText),
-              prefixIcon: Icon(Icons.search, color: const Color(0xFFFF9228)),
+              prefixIcon: Icon(Icons.search, color: const Color(0xFF2F51A7)),
               suffixIcon:
                   _skillSearchController.text.isNotEmpty
                       ? IconButton(
@@ -506,10 +513,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         ),
 
         // Skill Suggestions Dropdown
-        if (_showSkillSuggestions && _filteredSkills.isNotEmpty)
+        if (_showSkillSuggestions && _skillSearchController.text.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 4),
-            constraints: const BoxConstraints(maxHeight: 200),
+            constraints: const BoxConstraints(maxHeight: 250),
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(12),
@@ -521,30 +528,91 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 ),
               ],
             ),
-            child: ListView.builder(
+            child: ListView(
               shrinkWrap: true,
-              itemCount:
-                  _filteredSkills.length > 5 ? 5 : _filteredSkills.length,
-              itemBuilder: (context, index) {
-                final skill = _filteredSkills[index];
-                return ListTile(
-                  dense: true,
-                  title: Text(
-                    skill,
-                    style: TextStyle(
-                      color: AppColors.primaryText,
-                      fontSize: 14,
+              children: [
+                // Show matching skills from predefined list
+                if (_filteredSkills.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: Text(
+                      'Suggested Skills',
+                      style: TextStyle(
+                        color: AppColors.hintText,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  leading: Icon(
-                    Icons.add_circle_outline,
-                    color: const Color(0xFFFF9228),
+                  ...(_filteredSkills.length > 5
+                          ? _filteredSkills.sublist(0, 5)
+                          : _filteredSkills)
+                      .map(
+                    (skill) => ListTile(
+                      dense: true,
+                      title: Text(
+                        skill,
+                        style: TextStyle(
+                          color: AppColors.primaryText,
+                          fontSize: 14,
+                        ),
+                      ),
+                      leading: Icon(
+                        Icons.add_circle_outline,
+                        color: const Color(0xFF2F51A7),
+                        size: 20,
+                      ),
+                      onTap: () => _addSkill(skill),
+                      hoverColor: const Color(0xFF2F51A7).withOpacity(0.1),
+                    ),
+                  ),
+                ],
+                
+                // Divider if there are suggestions
+                if (_filteredSkills.isNotEmpty)
+                  Divider(
+                    color: AppColors.dividerColor,
+                    thickness: 1,
+                    height: 1,
+                  ),
+                
+                // Always show option to add custom skill
+                ListTile(
+                  dense: true,
+                  title: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        color: AppColors.primaryText,
+                        fontSize: 14,
+                      ),
+                      children: [
+                        const TextSpan(text: 'Add '),
+                        TextSpan(
+                          text: '"${_skillSearchController.text.trim()}"',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2F51A7),
+                          ),
+                        ),
+                        const TextSpan(text: ' as custom skill'),
+                      ],
+                    ),
+                  ),
+                  leading: const Icon(
+                    Icons.add_box,
+                    color: Color(0xFF2F51A7),
                     size: 20,
                   ),
-                  onTap: () => _addSkill(skill),
-                  hoverColor: const Color(0xFFFF9228).withOpacity(0.1),
-                );
-              },
+                  onTap: () {
+                    final customSkill = _skillSearchController.text.trim();
+                    if (customSkill.isNotEmpty) {
+                      _addSkill(customSkill);
+                    }
+                  },
+                  tileColor: const Color(0xFF2F51A7).withOpacity(0.05),
+                  hoverColor: const Color(0xFF2F51A7).withOpacity(0.1),
+                ),
+              ],
             ),
           ),
 
@@ -571,10 +639,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF9228).withOpacity(0.1),
+                      color: const Color(0xFF2F51A7).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: const Color(0xFFFF9228).withOpacity(0.3),
+                        color: const Color(0xFF2F51A7).withOpacity(0.3),
                       ),
                     ),
                     child: Row(
@@ -583,7 +651,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                         Text(
                           skill,
                           style: TextStyle(
-                            color: const Color(0xFFFF9228),
+                            color: const Color(0xFF2F51A7),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -594,13 +662,13 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF9228).withOpacity(0.2),
+                              color: const Color(0xFF2F51A7).withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.close,
                               size: 14,
-                              color: const Color(0xFFFF9228),
+                              color: const Color(0xFF2F51A7),
                             ),
                           ),
                         ),
@@ -623,7 +691,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFFFF9228),
+            color: const Color(0xFF2F51A7),
           ),
         ),
         const SizedBox(height: 10),
@@ -636,7 +704,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   hintText: 'Add job benefits',
                   prefixIcon: const Icon(
                     Icons.card_giftcard,
-                    color: Color(0xFFFF9228),
+                    color: Color(0xFF2F51A7),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -644,7 +712,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
-                      color: Color(0xFFFF9228),
+                      color: Color(0xFF2F51A7),
                       width: 2,
                     ),
                   ),
@@ -660,7 +728,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             ElevatedButton(
               onPressed: _addBenefit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9228),
+                backgroundColor: const Color(0xFF2F51A7),
                 padding: const EdgeInsets.all(15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -745,10 +813,10 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       heightFactor: 1.0,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 12, top: 16),
-                        child: Icon(icon, color: const Color(0xFFFF9228)),
+                        child: Icon(icon, color: const Color(0xFF2F51A7)),
                       ),
                     )
-                  : Icon(icon, color: const Color(0xFFFF9228)),
+                  : Icon(icon, color: const Color(0xFF2F51A7)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -756,7 +824,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFFFF9228),
+                  color: Color(0xFF2F51A7),
                   width: 2,
                 ),
               ),
@@ -816,7 +884,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             onChanged: onChanged,
             style: TextStyle(color: AppColors.primaryText),
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: const Color(0xFFFF9228)),
+              prefixIcon: Icon(icon, color: const Color(0xFF2F51A7)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -824,7 +892,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFFFF9228),
+                  color: Color(0xFF2F51A7),
                   width: 2,
                 ),
               ),
@@ -901,7 +969,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
-                        color: Color(0xFFFF9228),
+                        color: Color(0xFF2F51A7),
                         width: 2,
                       ),
                     ),
@@ -919,7 +987,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9228),
+                color: const Color(0xFF2F51A7),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -955,7 +1023,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     width: 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF9228),
+                      color: const Color(0xFF2F51A7),
                       shape: BoxShape.circle,
                     ),
                   ),

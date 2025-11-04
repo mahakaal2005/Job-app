@@ -362,7 +362,7 @@ class _SkillsScreenState extends State<SkillsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 15),
       decoration: BoxDecoration(
         color: isHighlighted 
-            ? const Color(0xFFFF9228) // From Figma fill_L1IL8Z (orange)
+            ? const Color(0xFF2F51A7) // From Figma fill_L1IL8Z (orange)
             : const Color(0xFFCBC9D4).withOpacity(0.2), // From Figma fill_CNKLBU with opacity
         borderRadius: BorderRadius.circular(10),
       ),

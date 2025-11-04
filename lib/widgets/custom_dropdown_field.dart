@@ -242,7 +242,7 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
         hintStyle: const TextStyle(color: AppColors.hintText),
         suffixIcon: const Icon(Icons.arrow_drop_down),
         prefixIcon: widget.prefixIcon != null 
-            ? Icon(widget.prefixIcon, color: const Color(0xFFFF9228))
+            ? Icon(widget.prefixIcon, color: const Color(0xFF2F51A7))
             : null,
       ),
       controller: TextEditingController(text: displayText),

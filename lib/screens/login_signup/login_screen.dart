@@ -60,12 +60,30 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
         
-        // If user not found, redirect to signup
-        if (e.code == 'user-not-found') {
-          _showAccountNotExistDialog();
+        // If user not found, show toast to sign up
+        // Check for multiple error codes that indicate account doesn't exist
+        if (e.code == 'user-not-found' || 
+            e.code == 'invalid-credential' ||
+            e.code == 'INVALID_LOGIN_CREDENTIALS') {
+          CustomToast.show(
+            context,
+            message: 'No account found. Please sign up first.',
+            isSuccess: false,
+            duration: const Duration(seconds: 3),
+          );
+        } else if (e.code == 'wrong-password') {
+          CustomToast.show(
+            context,
+            message: 'Incorrect password. Please try again.',
+            isSuccess: false,
+            duration: const Duration(seconds: 3),
+          );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Login failed')),
+          CustomToast.show(
+            context,
+            message: e.message ?? 'Login failed',
+            isSuccess: false,
+            duration: const Duration(seconds: 3),
           );
         }
       }
@@ -126,35 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showAccountNotExistDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Account Not Found'),
-        content: const Text(
-          'This email is not registered. Would you like to create a new account?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(
-                context,
-                AppRoutes.signup,
-                arguments: _emailController.text.trim(),
-              );
-            },
-            child: const Text('Sign Up'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _forgotPassword() {
     Navigator.pushNamed(context, AppRoutes.forgotPassword);
   }
@@ -177,11 +166,11 @@ class _LoginScreenState extends State<LoginScreen> {
             _isLoading = false;
           });
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please complete your profile setup'),
-              backgroundColor: Colors.orange,
-            ),
+          CustomToast.show(
+            context,
+            message: 'Please complete your profile setup',
+            isSuccess: false,
+            duration: const Duration(seconds: 2),
           );
           
           Navigator.pushReplacementNamed(
@@ -206,12 +195,11 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google Sign-In was cancelled. Please try again.'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
-          ),
+        CustomToast.show(
+          context,
+          message: 'Google Sign-In was cancelled. Please try again.',
+          isSuccess: false,
+          duration: const Duration(seconds: 2),
         );
       }
     } on NoAccountException {
@@ -686,10 +674,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
-                                color: Colors.orange,
+                                color: const Color(0xFF2F51A7),
                                 fontFamily: 'Open Sans',
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.orange,
+                                decorationColor: const Color(0xFF2F51A7),
                                 height: 1.3618,
                               ),
                             ),

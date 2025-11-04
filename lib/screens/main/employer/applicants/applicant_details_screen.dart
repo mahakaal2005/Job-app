@@ -300,7 +300,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(
-                                              0xFFFF9228,
+                                              0xFF2F51A7,
                                             ).withOpacity(0.15),
                                             borderRadius: BorderRadius.circular(
                                               8,
@@ -309,7 +309,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                           child: Text(
                                             skill,
                                             style: const TextStyle(
-                                              color: Color(0xFFFF9228),
+                                              color: Color(0xFF2F51A7),
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
                                               fontFamily: 'DM Sans',
@@ -352,7 +352,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                   if (_isLoading)
                     const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFFFF9228),
+                        color: Color(0xFF2F51A7),
                       ),
                     )
                   else if (_resumePreviewUrl != null)
@@ -458,7 +458,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                                       loadingProgress
                                                           .expectedTotalBytes!
                                                   : null,
-                                          color: const Color(0xFFFF9228),
+                                          color: const Color(0xFF2F51A7),
                                         ),
                                       );
                                     },
@@ -548,10 +548,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF9228).withOpacity(0.1),
+                              color: const Color(0xFF2F51A7).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: const Color(0xFFFF9228).withOpacity(0.3),
+                                color: const Color(0xFF2F51A7).withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -564,13 +564,13 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color: const Color(
-                                          0xFFFF9228,
+                                          0xFF2F51A7,
                                         ).withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: const Icon(
                                         Icons.description,
-                                        color: Color(0xFFFF9228),
+                                        color: Color(0xFF2F51A7),
                                         size: 24,
                                       ),
                                     ),
@@ -684,7 +684,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                           ),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(
-                                              0xFFFF9228,
+                                              0xFF2F51A7,
                                             ),
                                             foregroundColor: AppColors.white,
                                             shape: RoundedRectangleBorder(
@@ -708,7 +708,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                       children: [
                                         Icon(
                                           Icons.info_outline,
-                                          color: const Color(0xFFFF9228),
+                                          color: const Color(0xFF2F51A7),
                                           size: 18,
                                         ),
                                         const SizedBox(width: 8),
@@ -799,7 +799,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFF9228),
+                                  backgroundColor: const Color(0xFF2F51A7),
                                   foregroundColor: AppColors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
@@ -1061,10 +1061,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9228).withOpacity(0.15),
+                  color: const Color(0xFF2F51A7).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: const Color(0xFFFF9228), size: 20),
+                child: Icon(icon, color: const Color(0xFF2F51A7), size: 20),
               ),
               const SizedBox(width: 12),
               Text(
@@ -1093,10 +1093,10 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9228).withOpacity(0.15),
+              color: const Color(0xFF2F51A7).withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: const Color(0xFFFF9228), size: 18),
+            child: Icon(icon, color: const Color(0xFF2F51A7), size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1142,7 +1142,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9228).withOpacity(0.15),
+              color: const Color(0xFF2F51A7).withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: SizedBox(
@@ -1152,11 +1152,11 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                 iconPath,
                 width: 18,
                 height: 18,
-                color: const Color(0xFFFF9228),
+                color: const Color(0xFF2F51A7),
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(
                     Icons.calendar_today_outlined,
-                    color: Color(0xFFFF9228),
+                    color: Color(0xFF2F51A7),
                     size: 18,
                   );
                 },
@@ -1206,9 +1206,9 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
       case 'rejected':
         return Colors.red;
       case 'shortlisted':
-        return const Color(0xFFFF9228);
+        return const Color(0xFF2F51A7);
       default:
-        return const Color(0xFFFF9228); // Orange for pending
+        return const Color(0xFF2F51A7); // Orange for pending
     }
   }
 

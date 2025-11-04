@@ -988,7 +988,7 @@ class _AddressEditScreenState extends State<AddressEditScreen> {
               ),
               prefixIcon: Icon(
                 prefixIcon,
-                color: const Color(0xFFFF9228),
+                color: const Color(0xFF2F51A7),
                 size: 20,
               ),
               border: InputBorder.none,

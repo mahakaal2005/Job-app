@@ -28,7 +28,7 @@ class CustomCheckbox extends StatelessWidget {
           borderRadius: BorderRadius.circular(4), // Rounded corners like in the image
           border: Border.all(
             color: isSelected 
-                ? const Color(0xFFFF9228) // Orange border when selected
+                ? const Color(0xFF2F51A7) // Orange border when selected
                 : const Color(0xFF9CA3AF), // Light gray border when unselected
             width: 2,
           ),
@@ -37,7 +37,7 @@ class CustomCheckbox extends StatelessWidget {
         child: isSelected
             ? const Icon(
                 Icons.check,
-                color: Color(0xFFFF9228), // Orange checkmark (same color as border)
+                color: Color(0xFF2F51A7), // Orange checkmark (same color as border)
                 size: 14, // Proper size for the checkmark
               )
             : null,
@@ -58,7 +58,7 @@ class CustomRadioButton extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.size = 18,
-    this.selectedColor = const Color(0xFFFF9228),
+    this.selectedColor = const Color(0xFF2F51A7),
     this.unselectedColor = const Color(0xFF524B6B),
   });
 

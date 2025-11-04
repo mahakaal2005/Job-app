@@ -547,7 +547,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
             children: [
               Icon(
                 Icons.badge_outlined,
-                color: const Color(0xFFFF9228),
+                color: const Color(0xFF2F51A7),
                 size: 24,
               ),
               const SizedBox(width: 12),
@@ -606,7 +606,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9228),
+                backgroundColor: const Color(0xFF2F51A7),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

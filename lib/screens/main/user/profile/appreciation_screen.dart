@@ -624,7 +624,6 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
   Widget _buildInputField({
     required String label,
     required TextEditingController controller,
-    double? width,
     double height = 66,
     bool isMultiline = false,
     String? placeholder,
@@ -704,7 +703,6 @@ class _AppreciationScreenState extends State<AppreciationScreen> {
     required String label,
     required DateTime? date,
     required VoidCallback onTap,
-    double? width,
   }) {
     return SizedBox(
       height: 66,

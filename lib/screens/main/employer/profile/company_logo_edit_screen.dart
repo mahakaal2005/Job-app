@@ -583,12 +583,12 @@ class _CompanyLogoEditScreenState extends State<CompanyLogoEditScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: (isDestructive ? AppColors.error : const Color(0xFFFF9228)).withOpacity(0.1),
+            color: (isDestructive ? AppColors.error : const Color(0xFF2F51A7)).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
-            color: isDestructive ? AppColors.error : const Color(0xFFFF9228),
+            color: isDestructive ? AppColors.error : const Color(0xFF2F51A7),
             size: 24,
           ),
         ),

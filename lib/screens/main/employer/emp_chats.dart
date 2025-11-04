@@ -71,17 +71,10 @@ class _EmpChatsState extends State<EmpChats> {
                       Padding(
                         padding: const EdgeInsets.only(right: 15),
                         child: IconButton(
-                          icon: Image.asset(
-                            'assets/images/messages_edit_icon.png',
-                            width: 24,
-                            height: 24,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.edit,
-                                color: Color(0xFFFF9228),
-                                size: 24,
-                              );
-                            },
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Color(0xFF2F51A7),
+                            size: 24,
                           ),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -336,7 +329,7 @@ class _EmpChatsState extends State<EmpChats> {
                               errorBuilder: (context, error, stackTrace) {
                                 return const Icon(
                                   Icons.delete_outline,
-                                  color: Color(0xFFFF9228),
+                                  color: Color(0xFF2F51A7),
                                   size: 28,
                                 );
                               },
@@ -491,7 +484,7 @@ class _EmpChatsState extends State<EmpChats> {
                                     width: 14,
                                     height: 14,
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFFFF9228),
+                                      color: Color(0xFF2F51A7),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Center(

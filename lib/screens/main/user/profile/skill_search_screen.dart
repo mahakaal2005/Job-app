@@ -362,7 +362,7 @@ class _SkillSearchScreenState extends State<SkillSearchScreen> {
                         fontSize: 12,
                         height: 1.302,
                         color: isNewSkill
-                            ? const Color(0xFFFF9228) // Orange for new skills
+                            ? const Color(0xFF2F51A7) // Orange for new skills
                             : isSelected 
                                 ? const Color(0xFF130160) // Purple for existing selected
                                 : const Color(0xFF524B6B), // Gray for unselected
@@ -376,7 +376,7 @@ class _SkillSearchScreenState extends State<SkillSearchScreen> {
                       Icons.check_circle,
                       size: 20,
                       color: isNewSkill 
-                          ? const Color(0xFFFF9228) // Orange for new skills
+                          ? const Color(0xFF2F51A7) // Orange for new skills
                           : const Color(0xFF130160), // Purple for existing
                     ),
                 ],

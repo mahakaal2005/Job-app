@@ -471,7 +471,7 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
                         const SizedBox(width: 14),
                         const Icon(
                           Icons.search,
-                          color: Color(0xFFAAA6B9),
+                          color: Color(0xFF2F51A7),
                           size: 24,
                         ),
                         const SizedBox(width: 10),
@@ -534,7 +534,7 @@ class _FilteredJobsScreenState extends State<FilteredJobsScreen> {
                         const SizedBox(width: 14),
                         const Icon(
                           Icons.location_on,
-                          color: Color(0xFFFF9228),
+                          color: Color(0xFF2F51A7),
                           size: 24,
                         ),
                         const SizedBox(width: 10),
