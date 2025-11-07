@@ -1331,7 +1331,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
         return const EmployerFieldHintWidget(
           hint: 'Upload your business registration or license document',
           icon: Icons.description_outlined,
-          color: const Color(0xFF2F51A7),
+          color: Color(0xFF2F51A7),
         );
       case 'Employee ID Card':
         return const EmployerFieldHintWidget(
@@ -2096,7 +2096,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
 
                     return Card(
                       child: ListTile(
-                        leading: const Icon(Icons.description, color: const Color(0xFF2F51A7)),
+                        leading: const Icon(Icons.description, color: Color(0xFF2F51A7)),
                         title: Text(
                           fileName,
                           style: const TextStyle(fontSize: 14),
@@ -2205,14 +2205,14 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                               const Icon(
                                 Icons.description,
                                 size: 24,
-                                color: const Color(0xFF2F51A7),
+                                color: Color(0xFF2F51A7),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 file.path.split('/').last,
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: const Color(0xFF2F51A7),
+                                  color: Color(0xFF2F51A7),
                                 ),
                                 textAlign: TextAlign.center,
                               ),

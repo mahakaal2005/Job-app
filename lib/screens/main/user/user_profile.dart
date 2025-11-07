@@ -663,7 +663,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shareText += '\n\n📄 Resume Preview: $resumePreviewUrl';
       }
 
-      shareText += '\n\n✨ Shared from Look Gig App';
+      shareText += '\n\n✨ Shared from Gig Work App';
 
       debugPrint('=== FINAL SHARE TEXT ===');
       debugPrint(shareText);

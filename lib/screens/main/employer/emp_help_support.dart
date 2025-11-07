@@ -15,7 +15,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: supportEmail,
-      query: 'subject=Support Request - Look Gig App',
+      query: 'subject=Support Request - Gig Work App',
     );
 
     try {

@@ -19,6 +19,7 @@ import 'package:get_work_app/utils/app_colors.dart';
 import 'package:get_work_app/utils/app_spacing.dart';
 import 'package:get_work_app/utils/error_handler.dart';
 import 'package:get_work_app/utils/image_utils.dart';
+import 'package:get_work_app/utils/responsive.dart';
 import 'package:get_work_app/widgets/custom_bottom_nav_bar.dart';
 // import 'package:get_work_app/widgets/profile_completion_widget.dart';
 import 'package:provider/provider.dart';
@@ -1195,6 +1196,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
               children: [
                 if (job.experienceLevel.isNotEmpty) ...[
                   _buildJobTag(
+                    context,
                     job.experienceLevel,
                     const Color(0xFFCBC9D4),
                     false,
@@ -1202,13 +1204,19 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                   const SizedBox(width: 8),
                 ],
                 _buildJobTag(
+                  context,
                   job.employmentType,
                   const Color(0xFFCBC9D4),
                   false,
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: Responsive.isSmallScreen(context) ? 8 : 16),
                 Expanded(
-                  child: _buildJobTag('Apply', const Color(0xFFFF6B2C), true),
+                  child: _buildJobTag(
+                    context,
+                    'Apply',
+                    const Color(0xFFFF6B2C),
+                    true,
+                  ),
                 ),
               ],
             ),
@@ -1218,11 +1226,49 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
     );
   }
 
-  Widget _buildJobTag(String label, Color color, bool isApplyButton) {
+  Widget _buildJobTag(
+    BuildContext context,
+    String label,
+    Color color,
+    bool isApplyButton,
+  ) {
+    // Responsive padding based on screen size
+    double horizontalPadding;
+    double verticalPadding;
+
+    if (isApplyButton) {
+      // Apply button responsive padding
+      if (Responsive.isSmallScreen(context)) {
+        // Small screens (<360px): Reduce padding significantly
+        horizontalPadding = 12;
+        verticalPadding = 8;
+      } else if (Responsive.isMediumScreen(context)) {
+        // Medium screens (360-400px): Moderate padding
+        horizontalPadding = 18;
+        verticalPadding = 9;
+      } else {
+        // Large screens (>400px): Original padding
+        horizontalPadding = 28;
+        verticalPadding = 10;
+      }
+    } else {
+      // Other tags responsive padding
+      if (Responsive.isSmallScreen(context)) {
+        horizontalPadding = 12;
+        verticalPadding = 6;
+      } else if (Responsive.isMediumScreen(context)) {
+        horizontalPadding = 16;
+        verticalPadding = 7;
+      } else {
+        horizontalPadding = 20;
+        verticalPadding = 8;
+      }
+    }
+
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isApplyButton ? 28 : 20,
-        vertical: isApplyButton ? 10 : 8,
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
       ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
@@ -1238,6 +1284,8 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
           height: 1.302,
         ),
         textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

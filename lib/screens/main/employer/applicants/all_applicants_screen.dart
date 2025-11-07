@@ -323,7 +323,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
                             Text(
                               'Applied for ${applicant['jobTitle']}',
                               style: const TextStyle(
-                                color: const Color(0xFF2F51A7),
+                                color: Color(0xFF2F51A7),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
