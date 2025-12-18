@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloudinary/cloudinary.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MediaUploadService {
@@ -61,7 +62,7 @@ class MediaUploadService {
   // Upload document to Cloudinary
   Future<Map<String, dynamic>> uploadDocument(String filePath, String fileName) async {
     try {
-      print('📤 [UPLOAD] Starting document upload: $fileName');
+      debugPrint('[MEDIA_UPLOAD_SERVICE] Starting document upload: $fileName');
       
       // Check if file exists
       final file = File(filePath);
@@ -77,7 +78,7 @@ class MediaUploadService {
           : '';
       
       if (fileExtension.isEmpty) {
-        print('⚠️ [WARNING] No file extension found in fileName!');
+        debugPrint('[MEDIA_UPLOAD_SERVICE][WARN] No file extension found in fileName.');
       }
       
       // Generate unique public_id with timestamp and original filename (with extension)
@@ -109,10 +110,10 @@ class MediaUploadService {
         if (!finalUrl.endsWith(fileExtension) && fileExtension.isNotEmpty) {
           final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'];
           finalUrl = 'https://res.cloudinary.com/$cloudName/raw/upload/$publicId';
-          print('   ✅ URL reconstructed with extension');
+          debugPrint('[MEDIA_UPLOAD_SERVICE] URL reconstructed with extension');
         }
         
-        print('✅ [SUCCESS] Document uploaded: $finalUrl');
+        debugPrint('[MEDIA_UPLOAD_SERVICE] Document uploaded: $finalUrl');
         
         return {
           'url': finalUrl,
@@ -125,7 +126,7 @@ class MediaUploadService {
         throw Exception('Upload failed: ${response.error}');
       }
     } catch (e) {
-      print('❌ [ERROR] Upload failed: $e');
+      debugPrint('[MEDIA_UPLOAD_SERVICE][ERROR] Upload failed: $e');
       throw Exception('Error uploading document: $e');
     }
   }

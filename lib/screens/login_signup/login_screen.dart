@@ -291,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 13),
                       child: Text(
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor',
+                        'Sign in to continue your job search, manage applications, and connect with employers.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,

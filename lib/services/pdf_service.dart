@@ -79,17 +79,17 @@ class PDFService {
         throw Exception('Invalid PDF file: ${pdfFile.path}');
       }
 
-      print('📄 [PDF SERVICE] Starting PDF upload process...');
-      print('   File: ${pdfFile.path}');
-      print('   Size: ${await pdfFile.length()} bytes');
+      debugPrint('[PDF_SERVICE] Starting PDF upload');
+      debugPrint('[PDF_SERVICE] File: ${pdfFile.path}');
+      debugPrint('[PDF_SERVICE] Size: ${await pdfFile.length()} bytes');
 
       // Upload the original PDF to Cloudinary (now uses /raw/upload with proper extension)
-      print('📤 [PDF SERVICE] Uploading PDF file to Cloudinary...');
+      debugPrint('[PDF_SERVICE] Uploading PDF to Cloudinary');
       final pdfUrl = await CloudinaryService.uploadDocument(pdfFile);
       if (pdfUrl == null) {
         throw Exception('Failed to upload PDF to Cloudinary');
       }
-      print('✅ [PDF SERVICE] PDF uploaded successfully: $pdfUrl');
+      debugPrint('[PDF_SERVICE] Upload successful: $pdfUrl');
 
       // Generate preview URL for thumbnail display
       String? previewUrl;
@@ -104,17 +104,17 @@ class PDFService {
           // This works because Cloudinary can convert PDFs to images on-the-fly
           previewUrl = 'https://res.cloudinary.com/$cloudName/image/upload/pg_1,w_800,h_1000,c_fit,q_auto/$publicId.jpg';
           
-          print('✅ [PDF SERVICE] Preview URL generated: $previewUrl');
+          debugPrint('[PDF_SERVICE] Preview URL generated: $previewUrl');
         } else {
-          print('⚠️ [PDF SERVICE] Could not extract public ID from PDF URL');
+          debugPrint('[PDF_SERVICE][WARN] Could not extract public ID from PDF URL');
         }
       } catch (e) {
-        print('⚠️ [PDF SERVICE] Error generating preview URL: $e');
+        debugPrint('[PDF_SERVICE][WARN] Error generating preview URL: $e');
       }
 
-      print('🎉 [PDF SERVICE] Upload complete!');
-      print('   PDF URL (for sharing/opening): $pdfUrl');
-      print('   Preview URL (for thumbnail): $previewUrl');
+      debugPrint('[PDF_SERVICE] Upload complete');
+      debugPrint('[PDF_SERVICE] PDF URL: $pdfUrl');
+      debugPrint('[PDF_SERVICE] Preview URL: $previewUrl');
       
       // Return the raw PDF URL (now has proper .pdf extension) and preview URL
       return {
@@ -122,8 +122,8 @@ class PDFService {
         'previewUrl': previewUrl
       };
     } catch (e, stackTrace) {
-      print('❌ [PDF SERVICE] Error uploading resume: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('[PDF_SERVICE][ERROR] Error uploading resume: $e');
+      debugPrint('[PDF_SERVICE][ERROR] Stack trace: $stackTrace');
       return {'pdfUrl': null, 'previewUrl': null};
     }
   }

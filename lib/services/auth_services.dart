@@ -19,15 +19,15 @@ class AuthService {
   // Debug logging helper
   static void _debugLog(String message) {
     if (kDebugMode) {
-      debugPrint('🔵 [AUTH_SERVICE] $message');
+      debugPrint('[AUTH_SERVICE] $message');
     }
   }
   
   static void _errorLog(String message, dynamic error) {
     if (kDebugMode) {
-      debugPrint('🔴 [AUTH_SERVICE] $message');
-      debugPrint('🔴 [AUTH_SERVICE] Error: $error');
-      debugPrint('🔴 [AUTH_SERVICE] Error Type: ${error.runtimeType}');
+      debugPrint('[AUTH_SERVICE][ERROR] $message');
+      debugPrint('[AUTH_SERVICE][ERROR] Error: $error');
+      debugPrint('[AUTH_SERVICE][ERROR] Error Type: ${error.runtimeType}');
     }
   }
 
@@ -36,9 +36,9 @@ class AuthService {
 
   // Auth state changes stream
   static Stream<User?> get authStateChanges {
-    print('🔵 [AUTH_SERVICE] authStateChanges stream requested');
+    debugPrint('[AUTH_SERVICE] authStateChanges stream requested');
     return _auth.authStateChanges().map((user) {
-      print('🔵 [AUTH_SERVICE] Auth state changed - User: ${user?.uid ?? 'null'}');
+      debugPrint('[AUTH_SERVICE] Auth state changed - userUid=${user?.uid ?? 'null'}');
       return user;
     });
   }
@@ -130,7 +130,7 @@ class AuthService {
         await _googleSignIn.signOut();
         print('🔄 Signed out from Google before sign-in to force account picker');
       } catch (e) {
-        print('⚠️ Pre-signin signOut failed (this is okay): $e');
+        debugPrint('[AUTH_SERVICE][WARN] Pre-signin signOut failed (non-fatal): $e');
       }
 
       // Trigger the authentication flow
@@ -151,7 +151,7 @@ class AuthService {
 
       // Sign in to Firebase
       UserCredential userCredential = await _auth.signInWithCredential(credential);
-      print('✅ Google authentication successful for: ${userCredential.user?.email}');
+      debugPrint('[AUTH_SERVICE] Google authentication successful for: ${userCredential.user?.email}');
       return userCredential;
     } on FirebaseAuthException catch (e) {
       throw FirebaseAuthException(code: e.code);
@@ -176,12 +176,12 @@ class AuthService {
       
       if (!documentExists) {
         // No account exists - sign them out and throw error
-        print('❌ No Firestore document found - signing out user');
+        debugPrint('[AUTH_SERVICE][WARN] No Firestore user document found; signing out user');
         await signOut();
         throw NoAccountException('No account found. Please sign up first.');
       }
 
-      print('✅ User document found - sign-in successful');
+      debugPrint('[AUTH_SERVICE] User document found - sign-in successful');
       return userCredential;
     } on NoAccountException {
       rethrow; // Pass through our custom exception
@@ -205,7 +205,7 @@ class AuthService {
       // Step 2: Create user document with the specified role
       await _createOrUpdateGoogleUser(userCredential.user!, role);
 
-      print('✅ Google sign-up completed successfully with role: $role');
+      debugPrint('[AUTH_SERVICE] Google sign-up completed successfully with role: $role');
       return userCredential;
     } catch (e) {
       throw Exception('Google Sign-Up failed: ${e.toString()}');
@@ -224,7 +224,7 @@ class AuthService {
           .get();
 
       if (employerDoc.exists) {
-        print('✅ Found document in employers collection');
+        debugPrint('[AUTH_SERVICE] Found document in employers collection');
         return true;
       }
 
@@ -235,14 +235,14 @@ class AuthService {
           .get();
 
       if (userDoc.exists) {
-        print('✅ Found document in users_specific collection');
+        debugPrint('[AUTH_SERVICE] Found document in users_specific collection');
         return true;
       }
 
-      print('❌ No document found in either collection');
+      debugPrint('[AUTH_SERVICE][WARN] No document found in either collection');
       return false;
     } catch (e) {
-      print('⚠️ Error checking user document: $e');
+      debugPrint('[AUTH_SERVICE][WARN] Error checking user document: $e');
       return false;
     }
   }
@@ -410,21 +410,19 @@ class AuthService {
   // Get user role with better error handling and migration support
   static Future<String?> getUserRole() async {
     try {
-      print('\n🔵 ═══════════════════════════════════════════════════════');
-      print('🔵 [GET_ROLE] Starting getUserRole');
-      print('🔵 ═══════════════════════════════════════════════════════');
+      debugPrint('\n[GET_ROLE] Starting getUserRole');
 
       if (currentUser == null) {
-        print('🔴 [GET_ROLE] No current user - returning null');
+        debugPrint('[GET_ROLE][WARN] No current user - returning null');
         return null;
       }
 
-      print('📧 [GET_ROLE] User Email: ${currentUser!.email}');
-      print('🆔 [GET_ROLE] User UID: ${currentUser!.uid}');
-      print('👤 [GET_ROLE] Display Name: ${currentUser!.displayName}');
+      debugPrint('[GET_ROLE] email=${currentUser!.email}');
+      debugPrint('[GET_ROLE] uid=${currentUser!.uid}');
+      debugPrint('[GET_ROLE] displayName=${currentUser!.displayName}');
 
       // STEP 1: Check employers collection FIRST
-      print('\n📁 [GET_ROLE] STEP 1: Checking EMPLOYERS collection...');
+      debugPrint('[GET_ROLE] Step 1: checking employers collection');
       try {
         final startTime = DateTime.now();
         DocumentSnapshot employerDoc = await _firestore
@@ -432,34 +430,30 @@ class AuthService {
             .doc(currentUser!.uid)
             .get()
             .timeout(const Duration(seconds: 5), onTimeout: () {
-          print('⏱️ [GET_ROLE] TIMEOUT checking employers collection (5 seconds)');
+          debugPrint('[GET_ROLE][WARN] Timeout checking employers collection (5 seconds)');
           throw Exception('Timeout checking employers collection');
         });
         final duration = DateTime.now().difference(startTime);
-        print('⏱️ [GET_ROLE] Query completed in ${duration.inMilliseconds}ms');
+        debugPrint('[GET_ROLE] Employers query completed in ${duration.inMilliseconds}ms');
 
         if (employerDoc.exists) {
-          print('✅ [GET_ROLE] FOUND in employers collection');
+          debugPrint('[GET_ROLE] Found in employers collection');
           final data = employerDoc.data() as Map<String, dynamic>?;
-          print('📋 [GET_ROLE] Document data:');
-          data?.forEach((key, value) {
-            print('   $key: $value');
-          });
-          print('🎯 [GET_ROLE] Returning role: EMPLOYER');
-          print('🔵 ═══════════════════════════════════════════════════════\n');
+          if (kDebugMode) {
+            debugPrint('[GET_ROLE][DEBUG] employers doc keys=${data?.keys.toList()}');
+          }
+          debugPrint('[GET_ROLE] Returning role: employer');
           return 'employer';
         } else {
-          print('❌ [GET_ROLE] Document does NOT exist in employers collection');
+          debugPrint('[GET_ROLE] Not found in employers collection');
         }
       } catch (e) {
-        print('⚠️ [GET_ROLE] ERROR checking employers collection:');
-        print('   Error: $e');
-        print('   Type: ${e.runtimeType}');
-        print('   Continuing to check users_specific...');
+        debugPrint('[GET_ROLE][WARN] Error checking employers collection: $e (${e.runtimeType})');
+        debugPrint('[GET_ROLE] Continuing to users_specific...');
       }
 
       // STEP 2: Check users_specific collection
-      print('\n📁 [GET_ROLE] STEP 2: Checking USERS_SPECIFIC collection...');
+      debugPrint('[GET_ROLE] Step 2: checking users_specific collection');
       try {
         final startTime = DateTime.now();
         DocumentSnapshot userDoc = await _firestore
@@ -467,62 +461,47 @@ class AuthService {
             .doc(currentUser!.uid)
             .get()
             .timeout(const Duration(seconds: 5), onTimeout: () {
-          print('⏱️ [GET_ROLE] TIMEOUT checking users_specific collection (5 seconds)');
+          debugPrint('[GET_ROLE][WARN] Timeout checking users_specific collection (5 seconds)');
           throw Exception('Timeout checking users_specific collection');
         });
         final duration = DateTime.now().difference(startTime);
-        print('⏱️ [GET_ROLE] Query completed in ${duration.inMilliseconds}ms');
+        debugPrint('[GET_ROLE] users_specific query completed in ${duration.inMilliseconds}ms');
 
         if (userDoc.exists) {
-          print('✅ [GET_ROLE] FOUND in users_specific collection');
+          debugPrint('[GET_ROLE] Found in users_specific collection');
           final data = userDoc.data() as Map<String, dynamic>?;
-          print('📋 [GET_ROLE] Document data:');
-          data?.forEach((key, value) {
-            print('   $key: $value');
-          });
-          print('🎯 [GET_ROLE] Returning role: USER');
-          print('🔵 ═══════════════════════════════════════════════════════\n');
+          if (kDebugMode) {
+            debugPrint('[GET_ROLE][DEBUG] users_specific doc keys=${data?.keys.toList()}');
+          }
+          debugPrint('[GET_ROLE] Returning role: user');
           return 'user';
         } else {
-          print('❌ [GET_ROLE] Document does NOT exist in users_specific collection');
-          print('📊 [GET_ROLE] Document ID checked: ${currentUser!.uid}');
+          debugPrint('[GET_ROLE] Not found in users_specific collection (docId=${currentUser!.uid})');
         }
       } catch (e) {
-        print('⚠️ [GET_ROLE] ERROR checking users_specific collection:');
-        print('   Error: $e');
-        print('   Type: ${e.runtimeType}');
+        debugPrint('[GET_ROLE][WARN] Error checking users_specific collection: $e (${e.runtimeType})');
       }
 
       // STEP 3: Check old employees collection for migration
-      print('\n📁 [GET_ROLE] STEP 3: Checking EMPLOYEES collection (legacy)...');
+      debugPrint('[GET_ROLE] Step 3: checking legacy employees collection (migration)');
       try {
         bool migrated = await _migrateEmployeeToEmployer(currentUser!.uid);
         if (migrated) {
-          print('✅ [GET_ROLE] Successfully migrated from employees to employers');
-          print('🎯 [GET_ROLE] Returning role: EMPLOYER');
-          print('🔵 ═══════════════════════════════════════════════════════\n');
+          debugPrint('[GET_ROLE] Migrated from employees to employers');
+          debugPrint('[GET_ROLE] Returning role: employer');
           return 'employer';
         }
       } catch (e) {
-        print('⚠️ [GET_ROLE] Migration failed: $e');
+        debugPrint('[GET_ROLE][WARN] Migration failed: $e');
       }
 
       // User document doesn't exist - return null (DO NOT CREATE DEFAULT)
-      print('\n❌ [GET_ROLE] No user document found in any collection');
-      print('📧 [GET_ROLE] Email: ${currentUser!.email}');
-      print('🆔 [GET_ROLE] UID: ${currentUser!.uid}');
-      print('🎯 [GET_ROLE] Returning: null (user needs to sign up)');
-      print('🔵 ═══════════════════════════════════════════════════════\n');
+      debugPrint('[GET_ROLE][WARN] No user document found in any collection');
+      debugPrint('[GET_ROLE] Returning null (user needs to sign up)');
       return null;
     } catch (e) {
-      print('\n🔴 ═══════════════════════════════════════════════════════');
-      print('🔴 [GET_ROLE] CRITICAL ERROR in getUserRole');
-      print('🔴 ═══════════════════════════════════════════════════════');
-      print('❌ Error: $e');
-      print('📝 Error type: ${e.runtimeType}');
-      print('📚 Stack trace:');
-      print(StackTrace.current);
-      print('🔴 ═══════════════════════════════════════════════════════\n');
+      debugPrint('[GET_ROLE][ERROR] Critical error in getUserRole: $e (${e.runtimeType})');
+      debugPrint(StackTrace.current.toString());
       throw Exception('Failed to get user role: ${e.toString()}');
     }
   }
@@ -838,12 +817,12 @@ class AuthService {
     print('\n🔨 [CREATE_USER_DOC] Starting document creation...');
     
     if (currentUser == null) {
-      print('🔴 [CREATE_USER_DOC] No current user - aborting');
+      debugPrint('[CREATE_USER_DOC][WARN] No current user - aborting');
       return;
     }
 
-    print('📧 [CREATE_USER_DOC] Email: ${currentUser!.email}');
-    print('🆔 [CREATE_USER_DOC] UID: ${currentUser!.uid}');
+    debugPrint('[CREATE_USER_DOC] Email: ${currentUser!.email}');
+    debugPrint('[CREATE_USER_DOC] UID: ${currentUser!.uid}');
     print('🎭 [CREATE_USER_DOC] Role: $defaultRole');
 
     Map<String, dynamic> userData = {
@@ -856,15 +835,17 @@ class AuthService {
       'onboardingCompleted': false,
     };
 
-    print('📋 [CREATE_USER_DOC] User data to be saved:');
+    if (kDebugMode) {
+      debugPrint('[CREATE_USER_DOC][DEBUG] User data to be saved:');
+    }
     userData.forEach((key, value) {
       print('   $key: $value');
     });
 
     String collectionName =
         defaultRole == 'employer' ? 'employers' : 'users_specific';
-    print('📁 [CREATE_USER_DOC] Target collection: $collectionName');
-    print('🆔 [CREATE_USER_DOC] Document ID: ${currentUser!.uid}');
+    debugPrint('[CREATE_USER_DOC] Target collection: $collectionName');
+    debugPrint('[CREATE_USER_DOC] Document ID: ${currentUser!.uid}');
     
     try {
       print('⏳ [CREATE_USER_DOC] Writing to Firestore...');
@@ -872,9 +853,9 @@ class AuthService {
           .collection(collectionName)
           .doc(currentUser!.uid)
           .set(userData);
-      print('✅ [CREATE_USER_DOC] Document created successfully!');
+      debugPrint('[CREATE_USER_DOC] Document created successfully');
     } catch (e) {
-      print('🔴 [CREATE_USER_DOC] ERROR creating document:');
+      debugPrint('[CREATE_USER_DOC][ERROR] Error creating document: $e');
       print('   Error: $e');
       print('   Type: ${e.runtimeType}');
       rethrow;
@@ -1060,28 +1041,28 @@ class AuthService {
       print('\n🔍 [GET_USER_DATA] Fetching user data from role-specific collection...');
       
       if (currentUser == null) {
-        print('🔴 [GET_USER_DATA] No current user');
+        debugPrint('[GET_USER_DATA][WARN] No current user');
         return null;
       }
 
-      print('🆔 [GET_USER_DATA] UID: ${currentUser!.uid}');
+      debugPrint('[GET_USER_DATA] UID: ${currentUser!.uid}');
 
       // Check EMPLOYERS collection first
-      print('📁 [GET_USER_DATA] Checking employers collection...');
+      debugPrint('[GET_USER_DATA] Checking employers collection...');
       DocumentSnapshot employerDoc =
           await _firestore.collection('employers').doc(currentUser!.uid).get();
 
       if (employerDoc.exists) {
-        print('✅ [GET_USER_DATA] FOUND in employers collection');
+        debugPrint('[GET_USER_DATA] Found in employers collection');
         final data = employerDoc.data() as Map<String, dynamic>?;
-        print('📋 [GET_USER_DATA] Role from data: ${data?['role']}');
+        debugPrint('[GET_USER_DATA] Role from data: ${data?['role']}');
         return data;
       } else {
-        print('❌ [GET_USER_DATA] NOT found in employers collection');
+        debugPrint('[GET_USER_DATA] Not found in employers collection');
       }
 
       // Check users_specific collection
-      print('📁 [GET_USER_DATA] Checking users_specific collection...');
+      debugPrint('[GET_USER_DATA] Checking users_specific collection...');
       DocumentSnapshot userDoc =
           await _firestore
               .collection('users_specific')
@@ -1089,18 +1070,18 @@ class AuthService {
               .get();
 
       if (userDoc.exists) {
-        print('✅ [GET_USER_DATA] FOUND in users_specific collection');
+        debugPrint('[GET_USER_DATA] Found in users_specific collection');
         final data = userDoc.data() as Map<String, dynamic>?;
-        print('📋 [GET_USER_DATA] Role from data: ${data?['role']}');
+        debugPrint('[GET_USER_DATA] Role from data: ${data?['role']}');
         return data;
       } else {
-        print('❌ [GET_USER_DATA] NOT found in users_specific collection');
+        debugPrint('[GET_USER_DATA] Not found in users_specific collection');
       }
 
-      print('🔴 [GET_USER_DATA] User data not found in any collection');
+      debugPrint('[GET_USER_DATA][WARN] User data not found in any collection');
       return null;
     } catch (e) {
-      print('🔴 [GET_USER_DATA] ERROR: $e');
+      debugPrint('[GET_USER_DATA][ERROR] Error: $e');
       throw Exception('Failed to get user data: ${e.toString()}');
     }
   }
@@ -1283,9 +1264,9 @@ class AuthService {
         data['dateOfBirth'] != null &&
         data['age'] != null) {
       completion += 20;
-      debugPrint('✅ [COMPLETION] Personal Info section complete (+20%)');
+      debugPrint('[COMPLETION] Personal Info section complete (+20%)');
     } else {
-      debugPrint('❌ [COMPLETION] Personal Info incomplete');
+      debugPrint('[COMPLETION] Personal Info incomplete');
       if (!_isFieldNotEmpty(data['phone'])) debugPrint('   Missing: phone');
       if (!_isFieldNotEmpty(data['gender'])) debugPrint('   Missing: gender');
       if (data['dateOfBirth'] == null) debugPrint('   Missing: dateOfBirth');
@@ -1298,9 +1279,9 @@ class AuthService {
         _isFieldNotEmpty(data['state']) &&
         _isFieldNotEmpty(data['zipCode'])) {
       completion += 20;
-      debugPrint('✅ [COMPLETION] Address section complete (+20%)');
+      debugPrint('[COMPLETION] Address section complete (+20%)');
     } else {
-      debugPrint('❌ [COMPLETION] Address incomplete');
+      debugPrint('[COMPLETION] Address incomplete');
       if (!_isFieldNotEmpty(data['address'])) debugPrint('   Missing: address');
       if (!_isFieldNotEmpty(data['city'])) debugPrint('   Missing: city');
       if (!_isFieldNotEmpty(data['state'])) debugPrint('   Missing: state');
@@ -1311,9 +1292,9 @@ class AuthService {
     if (_isFieldNotEmpty(data['educationLevel']) &&
         _isFieldNotEmpty(data['college'])) {
       completion += 20;
-      debugPrint('✅ [COMPLETION] Education section complete (+20%)');
+      debugPrint('[COMPLETION] Education section complete (+20%)');
     } else {
-      debugPrint('❌ [COMPLETION] Education incomplete');
+      debugPrint('[COMPLETION] Education incomplete');
       if (!_isFieldNotEmpty(data['educationLevel'])) debugPrint('   Missing: educationLevel');
       if (!_isFieldNotEmpty(data['college'])) debugPrint('   Missing: college');
     }
@@ -1338,9 +1319,9 @@ class AuthService {
     
     if (hasSkillsAndAvailability) {
       completion += 20;
-      debugPrint('✅ [COMPLETION] Skills & Availability section complete (+20%)');
+      debugPrint('[COMPLETION] Skills & Availability section complete (+20%)');
     } else {
-      debugPrint('❌ [COMPLETION] Skills & Availability incomplete');
+      debugPrint('[COMPLETION] Skills & Availability incomplete');
       if (skills == null || (skills is List && skills.isEmpty)) {
         debugPrint('   Missing: skills');
       }
@@ -1353,14 +1334,14 @@ class AuthService {
     
     if (hasProfileAndResume) {
       completion += 20;
-      debugPrint('✅ [COMPLETION] Profile & Resume section complete (+20%)');
+      debugPrint('[COMPLETION] Profile & Resume section complete (+20%)');
     } else {
-      debugPrint('❌ [COMPLETION] Profile & Resume incomplete');
+      debugPrint('[COMPLETION] Profile & Resume incomplete');
       if (!_isFieldNotEmpty(data['profileImageUrl'])) debugPrint('   Missing: profileImageUrl');
       if (!_isFieldNotEmpty(data['resumeUrl'])) debugPrint('   Missing: resumeUrl');
     }
 
-    debugPrint('📊 [COMPLETION] User total: $completion%');
+    debugPrint('[COMPLETION] User total: $completion%');
     return completion;
   }
 
@@ -1391,9 +1372,9 @@ class AuthService {
         _isFieldNotEmpty(companyInfo['companyAddress']) &&
         _isFieldNotEmpty(companyInfo['industry'])) {
       completedSections++;
-      debugPrint('✅ [COMPLETION] Company Basic Info section complete');
+      debugPrint('[COMPLETION] Company Basic Info section complete');
     } else {
-      debugPrint('❌ [COMPLETION] Company Basic Info incomplete');
+      debugPrint('[COMPLETION] Company Basic Info incomplete');
     }
 
     // Section 2: Company Details (size, year, description) - 20%
@@ -1402,9 +1383,9 @@ class AuthService {
         _isFieldNotEmpty(companyInfo['establishedYear']) &&
         _isFieldNotEmpty(companyInfo['companyDescription'])) {
       completedSections++;
-      debugPrint('✅ [COMPLETION] Company Details section complete');
+      debugPrint('[COMPLETION] Company Details section complete');
     } else {
-      debugPrint('❌ [COMPLETION] Company Details incomplete');
+      debugPrint('[COMPLETION] Company Details incomplete');
     }
 
     // Section 3: Contact Information (email, phone, website) - 20%
@@ -1412,9 +1393,9 @@ class AuthService {
         _isFieldNotEmpty(companyInfo['companyEmail']) &&
         _isFieldNotEmpty(companyInfo['companyPhone'])) {
       completedSections++;
-      debugPrint('✅ [COMPLETION] Contact Info section complete');
+      debugPrint('[COMPLETION] Contact Info section complete');
     } else {
-      debugPrint('❌ [COMPLETION] Contact Info incomplete');
+      debugPrint('[COMPLETION] Contact Info incomplete');
       if (companyInfo != null) {
         if (!_isFieldNotEmpty(companyInfo['companyEmail'])) debugPrint('   Missing: companyEmail');
         if (!_isFieldNotEmpty(companyInfo['companyPhone'])) debugPrint('   Missing: companyPhone');
@@ -1425,9 +1406,9 @@ class AuthService {
     if (companyInfo != null &&
         _isFieldNotEmpty(companyInfo['companyLogo'])) {
       completedSections++;
-      debugPrint('✅ [COMPLETION] Company Logo section complete');
+      debugPrint('[COMPLETION] Company Logo section complete');
     } else {
-      debugPrint('❌ [COMPLETION] Company Logo incomplete');
+      debugPrint('[COMPLETION] Company Logo incomplete');
     }
 
     // Section 5: Personal Information (fullName and employerInfo if exists) - 20%
@@ -1438,14 +1419,14 @@ class AuthService {
         _isFieldNotEmpty(employerInfo['department'])) {
       // Has detailed employer info
       hasPersonalInfo = true;
-      debugPrint('✅ [COMPLETION] Personal Info section complete (employerInfo)');
+      debugPrint('[COMPLETION] Personal Info section complete (employerInfo)');
     } else if (_isFieldNotEmpty(data['fullName']) &&
                _isFieldNotEmpty(data['email'])) {
       // Has basic personal info at root level
       hasPersonalInfo = true;
-      debugPrint('✅ [COMPLETION] Personal Info section complete (basic)');
+      debugPrint('[COMPLETION] Personal Info section complete (basic)');
     } else {
-      debugPrint('❌ [COMPLETION] Personal Info incomplete');
+      debugPrint('[COMPLETION] Personal Info incomplete');
     }
     
     if (hasPersonalInfo) {
@@ -1455,7 +1436,7 @@ class AuthService {
     // Calculate percentage (20%, 40%, 60%, 80%, or 100%)
     final percentage = completedSections * 20;
     
-    debugPrint('📊 [COMPLETION] Employer: $completedSections/5 sections = $percentage%');
+    debugPrint('[COMPLETION] Employer: $completedSections/5 sections = $percentage%');
     return percentage;
   }
 
@@ -1503,13 +1484,13 @@ class AuthService {
       await Future.delayed(const Duration(seconds: 1));
 
       if (currentUser == null) {
-        debugPrint('⚠️ [PROFILE_COMPLETION] No user logged in');
+        debugPrint('[PROFILE_COMPLETION][WARN] No user logged in');
         return;
       }
 
       final role = await getUserRole();
       if (role == null) {
-        debugPrint('⚠️ [PROFILE_COMPLETION] No role found');
+        debugPrint('[PROFILE_COMPLETION][WARN] No role found');
         return;
       }
 
@@ -1522,7 +1503,7 @@ class AuthService {
           .get();
 
       if (!userDoc.exists) {
-        debugPrint('⚠️ [PROFILE_COMPLETION] User document not found');
+        debugPrint('[PROFILE_COMPLETION][WARN] User document not found');
         return;
       }
 
@@ -1531,7 +1512,7 @@ class AuthService {
 
       // Check if already marked as complete - if so, don't recalculate
       if (data['onboardingCompleted'] == true) {
-        debugPrint('✅ [PROFILE_COMPLETION] Already 100% complete, skipping update');
+        debugPrint('[PROFILE_COMPLETION] Already 100% complete, skipping update');
         return;
       }
 
@@ -1540,7 +1521,7 @@ class AuthService {
           ? _calculateEmployerCompletionPercentage(data)
           : _calculateUserCompletionPercentage(data);
 
-      debugPrint('📊 [PROFILE_COMPLETION] Calculated: $percentage%');
+      debugPrint('[PROFILE_COMPLETION] Calculated: $percentage%');
 
       // Determine if profile is now complete
       final isComplete = percentage >= 100;
@@ -1552,9 +1533,9 @@ class AuthService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      debugPrint('✅ [PROFILE_COMPLETION] Updated: $percentage% (Complete: $isComplete)');
+      debugPrint('[PROFILE_COMPLETION] Updated: $percentage% (Complete: $isComplete)');
     } catch (e) {
-      debugPrint('❌ [PROFILE_COMPLETION] Error: $e');
+      debugPrint('[PROFILE_COMPLETION][ERROR] Error: $e');
     }
   }
 

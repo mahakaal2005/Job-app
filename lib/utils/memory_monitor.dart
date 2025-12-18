@@ -19,8 +19,8 @@ class MemoryMonitor {
     final timeDiff = now.difference(_lastMemoryCheck!).inMinutes;
     if (timeDiff >= 1) {
       if (_firestoreOperationCount > _maxFirestoreOpsPerMinute) {
-        debugPrint('🚨 MEMORY WARNING: $_firestoreOperationCount Firestore operations in $timeDiff minute(s)');
-        debugPrint('🚨 This may indicate an infinite loop or memory leak!');
+        debugPrint('[MEMORY_MONITOR][WARN] High Firestore activity: $_firestoreOperationCount ops in $timeDiff minute(s)');
+        debugPrint('[MEMORY_MONITOR][WARN] This may indicate an infinite loop or a leak.');
         
         // Log to crash reporting if available
         if (kDebugMode) {
@@ -38,7 +38,7 @@ class MemoryMonitor {
     }
     
     if (kDebugMode) {
-      debugPrint('🔵 Firestore operation: $operation (Count: $_firestoreOperationCount)');
+      debugPrint('[MEMORY_MONITOR] Firestore op: $operation (count=$_firestoreOperationCount)');
     }
   }
   
@@ -46,45 +46,45 @@ class MemoryMonitor {
   static void trackStreamSubscription(String streamName, bool isCreated) {
     if (isCreated) {
       _streamSubscriptionCount++;
-      debugPrint('🔵 Stream created: $streamName (Active: $_streamSubscriptionCount)');
+      debugPrint('[MEMORY_MONITOR] Stream created: $streamName (active=$_streamSubscriptionCount)');
     } else {
       _streamSubscriptionCount--;
-      debugPrint('🔴 Stream disposed: $streamName (Active: $_streamSubscriptionCount)');
+      debugPrint('[MEMORY_MONITOR] Stream disposed: $streamName (active=$_streamSubscriptionCount)');
     }
     
     // Warn if too many active streams
     if (_streamSubscriptionCount > 10) {
-      debugPrint('🚨 MEMORY WARNING: $_streamSubscriptionCount active streams');
-      debugPrint('🚨 This may indicate stream subscriptions not being disposed!');
+      debugPrint('[MEMORY_MONITOR][WARN] High active stream count: $_streamSubscriptionCount');
+      debugPrint('[MEMORY_MONITOR][WARN] This may indicate stream subscriptions are not being disposed.');
     }
   }
   
   /// Log memory usage information
   static void logMemoryUsage(String context) {
     if (kDebugMode) {
-      debugPrint('📊 Memory check: $context');
-      debugPrint('📊 Active streams: $_streamSubscriptionCount');
-      debugPrint('📊 Firestore ops this minute: $_firestoreOperationCount');
+      debugPrint('[MEMORY_MONITOR] Memory check: $context');
+      debugPrint('[MEMORY_MONITOR] Active streams: $_streamSubscriptionCount');
+      debugPrint('[MEMORY_MONITOR] Firestore ops (current minute): $_firestoreOperationCount');
     }
   }
   
   /// Emergency memory cleanup (call if memory issues detected)
   static void emergencyCleanup() {
-    debugPrint('🚨 EMERGENCY MEMORY CLEANUP INITIATED');
+    debugPrint('[MEMORY_MONITOR][WARN] Emergency cleanup initiated');
     
     // Clear location service cache
     try {
       // This will be available after our LocationService fix
       // LocationService.clearCache();
-      debugPrint('✅ Location cache cleared');
+      debugPrint('[MEMORY_MONITOR] Location cache cleared');
     } catch (e) {
-      debugPrint('❌ Failed to clear location cache: $e');
+      debugPrint('[MEMORY_MONITOR][WARN] Failed to clear location cache: $e');
     }
     
     // Force garbage collection (note: gc() is not available in release mode)
     if (kDebugMode) {
       // In debug mode, we can suggest garbage collection
-      debugPrint('✅ Garbage collection suggested (automatic in release mode)');
+      debugPrint('[MEMORY_MONITOR] Garbage collection suggested (automatic in release mode)');
     }
     
     // Reset counters
@@ -92,7 +92,7 @@ class MemoryMonitor {
     _streamSubscriptionCount = 0;
     _lastMemoryCheck = DateTime.now();
     
-    debugPrint('🚨 EMERGENCY CLEANUP COMPLETED');
+    debugPrint('[MEMORY_MONITOR][WARN] Emergency cleanup completed');
   }
   
   /// Check if memory usage is healthy

@@ -7,8 +7,14 @@ class EmpHelpSupportScreen extends StatelessWidget {
   const EmpHelpSupportScreen({super.key});
 
   // Support contact information
-  static const String supportEmail = 'support@lookgig.com';
-  static const String supportPhone = '+1-555-123-4567';
+  static const String supportEmail = String.fromEnvironment(
+    'SUPPORT_EMAIL',
+    defaultValue: 'support@example.com',
+  );
+  static const String supportPhone = String.fromEnvironment(
+    'SUPPORT_PHONE',
+    defaultValue: '+1-000-000-0000',
+  );
 
   // Launch email app with pre-filled support email
   Future<void> _launchEmail(BuildContext context) async {

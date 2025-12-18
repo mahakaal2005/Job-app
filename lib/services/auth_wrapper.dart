@@ -14,15 +14,13 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('🔵 [AUTH_WRAPPER] AuthWrapper build() called');
+    debugPrint('[AUTH_WRAPPER] build()');
     return StreamBuilder<User?>(
       stream: AuthService.authStateChanges,
       builder: (context, snapshot) {
-        print('🔵 [AUTH_WRAPPER] StreamBuilder called - ConnectionState: ${snapshot.connectionState}');
-        print('🔵 [AUTH_WRAPPER] StreamBuilder - HasData: ${snapshot.hasData}');
-        print('🔵 [AUTH_WRAPPER] StreamBuilder - HasError: ${snapshot.hasError}');
+        debugPrint('[AUTH_WRAPPER] authStateChanges: state=${snapshot.connectionState} hasData=${snapshot.hasData} hasError=${snapshot.hasError}');
         if (snapshot.hasData) {
-          print('🔵 [AUTH_WRAPPER] User UID: ${snapshot.data?.uid}');
+          debugPrint('[AUTH_WRAPPER] userUid=${snapshot.data?.uid}');
         }
         // Show loading while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -225,7 +223,7 @@ class AuthWrapper extends StatelessWidget {
               }
             } else {
               // Default case - redirect to user onboarding if role is not set
-              print('⚠️ WARNING AuthWrapper: No role found, defaulting to user onboarding');
+              debugPrint('[AUTH_WRAPPER][WARN] No role found, defaulting to user onboarding');
               return const StudentOnboardingScreen();
             }
           },
@@ -241,7 +239,7 @@ class AuthWrapper extends StatelessWidget {
       
       // Run comprehensive debug check in background
       AuthService.debugCheckUserInAllCollections().catchError((e) {
-        print('🔴 [AUTH_WRAPPER] Background debug check failed: $e');
+        debugPrint('[AUTH_WRAPPER][WARN] Background debug check failed: $e');
       });
       
       // Get user role from AuthService

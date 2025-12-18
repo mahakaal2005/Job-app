@@ -98,14 +98,14 @@ class ChatService {
         .collection('messages')
         .add(newMessage);
     
-    print('✅ [CHAT] Message saved: ${docRef.id}');
+    debugPrint('[CHAT_SERVICE] Message saved: ${docRef.id}');
 
     // Update the chat metadata with appropriate preview
     String lastMessagePreview = message;
     if (messageType == 'image') {
-      lastMessagePreview = '📷 Photo';
+      lastMessagePreview = 'Photo';
     } else if (messageType == 'document') {
-      lastMessagePreview = '📄 ${fileName ?? 'Document'}';
+      lastMessagePreview = fileName ?? 'Document';
     }
 
     await _firestore.collection('chats').doc(chatId).set({
@@ -258,7 +258,7 @@ class ChatService {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
-        debugPrint('⚠️ No user logged in for unread count');
+        debugPrint('[CHAT_SERVICE][WARN] No user logged in for unread count');
         return Stream.value(0);
       }
       
@@ -273,11 +273,11 @@ class ChatService {
             return snapshot.docs.length;
           })
           .handleError((error) {
-            debugPrint('❌ Error in unread count stream: $error');
+            debugPrint('[CHAT_SERVICE][ERROR] Error in unread count stream: $error');
             return 0;
           });
     } catch (e) {
-      debugPrint('❌ Error creating unread count stream: $e');
+      debugPrint('[CHAT_SERVICE][ERROR] Error creating unread count stream: $e');
       return Stream.value(0);
     }
   }

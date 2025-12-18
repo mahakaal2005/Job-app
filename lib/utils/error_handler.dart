@@ -12,8 +12,8 @@ class ErrorHandler {
     
     // In debug mode, log the actual error
     if (_debugMode) {
-      debugPrint('🔴 ERROR DETAILS: $error');
-      debugPrint('🔴 ERROR TYPE: ${error.runtimeType}');
+      debugPrint('[ERROR_HANDLER][DEBUG] Details: $error');
+      debugPrint('[ERROR_HANDLER][DEBUG] Type: ${error.runtimeType}');
     }
 
     // Network errors

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class LocationData {
@@ -127,18 +128,24 @@ class LocationService {
     if (_cache.length >= _maxCacheSize) {
       final firstKey = _cache.keys.first;
       _cache.remove(firstKey);
-      print('🔴 LocationService: Cache limit reached, removed: $firstKey');
+      if (kDebugMode) {
+        debugPrint('[LOCATION_SERVICE] Cache limit reached, removed: $firstKey');
+      }
     }
     
     _cache[address] = locationData;
-    print('🔵 LocationService: Cached location for: $address (Cache size: ${_cache.length})');
+    if (kDebugMode) {
+      debugPrint('[LOCATION_SERVICE] Cached: $address (size=${_cache.length})');
+    }
   }
 
   /// Clear cache to free memory (useful for debugging memory issues)
   static void clearCache() {
     final cacheSize = _cache.length;
     _cache.clear();
-    print('🔴 LocationService: Cache cleared, freed $cacheSize entries');
+    if (kDebugMode) {
+      debugPrint('[LOCATION_SERVICE] Cache cleared, freed $cacheSize entries');
+    }
   }
 
   /// Get current cache size (for monitoring)
