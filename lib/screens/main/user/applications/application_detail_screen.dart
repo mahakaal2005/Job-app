@@ -14,7 +14,7 @@ class ApplicationDetailScreen extends StatelessWidget {
     final status = application['status'] ?? 'pending';
 
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: SafeArea(
         child: Column(
           children: [

@@ -65,10 +65,10 @@ class EmployerFieldHintWidget extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8, bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: (color ?? AppColors.lookGigPurple).withOpacity(0.1),
+        color: (color ?? AppColors.gigAppPurple).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: (color ?? AppColors.lookGigPurple).withOpacity(0.3),
+          color: (color ?? AppColors.gigAppPurple).withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -77,7 +77,7 @@ class EmployerFieldHintWidget extends StatelessWidget {
           Icon(
             icon,
             size: 16,
-            color: color ?? AppColors.lookGigPurple,
+            color: color ?? AppColors.gigAppPurple,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -85,7 +85,7 @@ class EmployerFieldHintWidget extends StatelessWidget {
               hint,
               style: TextStyle(
                 fontSize: 12,
-                color: color ?? AppColors.lookGigPurple,
+                color: color ?? AppColors.gigAppPurple,
                 height: 1.4,
               ),
             ),
@@ -618,7 +618,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
             fontFamily: 'DM Sans',
           ),
         ),
@@ -626,7 +626,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
           'You can complete your company profile anytime from the Settings section. A complete profile helps you attract better candidates!',
           style: TextStyle(
             fontSize: 14,
-            color: AppColors.lookGigDescriptionText,
+            color: AppColors.gigAppDescriptionText,
             fontFamily: 'DM Sans',
             height: 1.5,
           ),
@@ -641,7 +641,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, false),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigLightPurple,
+                      backgroundColor: AppColors.gigAppLightPurple,
                       foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -668,7 +668,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigPurple,
+                      backgroundColor: AppColors.gigAppPurple,
                       foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -1276,10 +1276,10 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
         color: isCompleted 
             ? Colors.green 
             : isCurrentPage 
-                ? AppColors.lookGigPurple 
+                ? AppColors.gigAppPurple 
                 : Colors.grey.withOpacity(0.3),
         border: Border.all(
-          color: isCurrentPage ? AppColors.lookGigPurple : Colors.transparent,
+          color: isCurrentPage ? AppColors.gigAppPurple : Colors.transparent,
           width: 2,
         ),
       ),
@@ -1394,12 +1394,12 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
     return Theme(
       data: Theme.of(context).copyWith(
         colorScheme: ColorScheme.light(
-          primary: AppColors.lookGigPurple,
-          secondary: AppColors.lookGigPurple,
+          primary: AppColors.gigAppPurple,
+          secondary: AppColors.gigAppPurple,
         ),
         inputDecorationTheme: InputDecorationTheme(
           focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: AppColors.lookGigPurple, width: 2),
+            borderSide: const BorderSide(color: AppColors.gigAppPurple, width: 2),
             borderRadius: BorderRadius.circular(8),
           ),
           enabledBorder: OutlineInputBorder(
@@ -1448,7 +1448,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                         decoration: BoxDecoration(
                           color:
                               i <= _currentPage
-                                  ? AppColors.lookGigPurple
+                                  ? AppColors.gigAppPurple
                                   : AppColors.grey.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -1511,7 +1511,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _previousPage,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.lookGigLightPurple,
+                          backgroundColor: AppColors.gigAppLightPurple,
                           foregroundColor: AppColors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -1552,7 +1552,7 @@ class _EmployerOnboardingScreenState extends State<EmployerOnboardingScreen> {
                                 }
                               },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lookGigPurple,
+                        backgroundColor: AppColors.gigAppPurple,
                         foregroundColor: AppColors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(

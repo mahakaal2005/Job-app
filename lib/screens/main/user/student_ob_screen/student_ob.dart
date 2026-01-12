@@ -67,10 +67,10 @@ class FieldHintWidget extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8, bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: (color ?? AppColors.lookGigPurple).withOpacity(0.1),
+        color: (color ?? AppColors.gigAppPurple).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: (color ?? AppColors.lookGigPurple).withOpacity(0.3),
+          color: (color ?? AppColors.gigAppPurple).withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -79,7 +79,7 @@ class FieldHintWidget extends StatelessWidget {
           Icon(
             icon,
             size: 16,
-            color: color ?? AppColors.lookGigPurple,
+            color: color ?? AppColors.gigAppPurple,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -87,7 +87,7 @@ class FieldHintWidget extends StatelessWidget {
               hint,
               style: TextStyle(
                 fontSize: 12,
-                color: color ?? AppColors.lookGigPurple,
+                color: color ?? AppColors.gigAppPurple,
                 height: 1.4,
               ),
             ),
@@ -599,7 +599,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: AppColors.lookGigPurple,
+              primary: AppColors.gigAppPurple,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
@@ -1124,10 +1124,10 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
         color: isCompleted 
             ? Colors.green 
             : isCurrentPage 
-                ? AppColors.lookGigPurple 
+                ? AppColors.gigAppPurple 
                 : Colors.grey.withOpacity(0.3),
         border: Border.all(
-          color: isCurrentPage ? AppColors.lookGigPurple : Colors.transparent,
+          color: isCurrentPage ? AppColors.gigAppPurple : Colors.transparent,
           width: 2,
         ),
       ),
@@ -1156,7 +1156,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(
-          color: isHighlighted ? Colors.red : AppColors.lookGigPurple,
+          color: isHighlighted ? Colors.red : AppColors.gigAppPurple,
           width: 2,
         ),
       ),
@@ -1471,7 +1471,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(
-          color: isHighlighted ? Colors.red : AppColors.lookGigPurple,
+          color: isHighlighted ? Colors.red : AppColors.gigAppPurple,
           width: 2,
         ),
       ),
@@ -1527,7 +1527,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     return Tooltip(
       message: tooltip,
       decoration: BoxDecoration(
-        color: AppColors.lookGigPurple,
+        color: AppColors.gigAppPurple,
         borderRadius: BorderRadius.circular(8),
       ),
       textStyle: const TextStyle(color: Colors.white, fontSize: 12),
@@ -1632,7 +1632,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
             fontFamily: 'DM Sans',
           ),
         ),
@@ -1640,7 +1640,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           'You can complete your profile anytime from the Settings section. A complete profile helps you get better job matches!',
           style: TextStyle(
             fontSize: 14,
-            color: AppColors.lookGigDescriptionText,
+            color: AppColors.gigAppDescriptionText,
             fontFamily: 'DM Sans',
             height: 1.5,
           ),
@@ -1655,7 +1655,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, false),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigLightPurple,
+                      backgroundColor: AppColors.gigAppLightPurple,
                       foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -1682,7 +1682,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigPurple,
+                      backgroundColor: AppColors.gigAppPurple,
                       foregroundColor: AppColors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -1954,7 +1954,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.lookGigPurple),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.gigAppPurple),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -1985,13 +1985,13 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
     return Theme(
       data: Theme.of(context).copyWith(
         colorScheme: ColorScheme.light(
-          primary: AppColors.lookGigPurple,
-          secondary: AppColors.lookGigPurple,
+          primary: AppColors.gigAppPurple,
+          secondary: AppColors.gigAppPurple,
         ),
         inputDecorationTheme: InputDecorationTheme(
           focusedBorder: OutlineInputBorder(
             borderSide: const BorderSide(
-              color: AppColors.lookGigPurple,
+              color: AppColors.gigAppPurple,
               width: 2,
             ),
             borderRadius: BorderRadius.circular(8),
@@ -2060,7 +2060,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       value: (_currentPage + 1) / 5,
                       backgroundColor: AppColors.grey.withOpacity(0.3),
                       valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.lookGigPurple,
+                        AppColors.gigAppPurple,
                       ),
                     ),
                   ],
@@ -2101,7 +2101,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _previousPage,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.lookGigLightPurple,
+                              backgroundColor: AppColors.gigAppLightPurple,
                               foregroundColor: AppColors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -2137,7 +2137,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                                       : null // Disable if profile image or resume not uploaded
                                   : _nextPage,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.lookGigPurple,
+                            backgroundColor: AppColors.gigAppPurple,
                             foregroundColor: AppColors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -2225,7 +2225,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: AppColors.lookGigPurple,
+              color: AppColors.gigAppPurple,
               fontFamily: 'DM Sans',
             ),
           ),
@@ -2233,7 +2233,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
             'You can complete your profile anytime from the Settings section. A complete profile helps you get better job matches!',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.lookGigDescriptionText,
+              color: AppColors.gigAppDescriptionText,
               fontFamily: 'DM Sans',
               height: 1.5,
             ),
@@ -2248,7 +2248,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, false),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lookGigLightPurple,
+                        backgroundColor: AppColors.gigAppLightPurple,
                         foregroundColor: AppColors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -2275,7 +2275,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lookGigPurple,
+                        backgroundColor: AppColors.gigAppPurple,
                         foregroundColor: AppColors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -2810,8 +2810,8 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                           _selectedSkills.remove(skill);
                         });
                       },
-                      backgroundColor: AppColors.lookGigPurple.withOpacity(0.1),
-                      deleteIconColor: AppColors.lookGigPurple,
+                      backgroundColor: AppColors.gigAppPurple.withOpacity(0.1),
+                      deleteIconColor: AppColors.gigAppPurple,
                     );
                   }).toList(),
             ),
@@ -2850,7 +2850,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                                 style: const TextStyle(fontSize: 13),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.lookGigPurple,
+                                backgroundColor: AppColors.gigAppPurple,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -2920,14 +2920,14 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.lookGigPurple.withOpacity(0.1),
+                  color: AppColors.gigAppPurple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$_weeklyHours hrs/week',
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                   ),
                 ),
               ),
@@ -2963,7 +2963,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                         }
                       });
                     },
-                    activeColor: AppColors.lookGigPurple,
+                    activeColor: AppColors.gigAppPurple,
                     controlAffinity: ListTileControlAffinity.leading,
                   );
                 }).toList(),
@@ -3046,7 +3046,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       height: 36,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                       ),
                       child:
                           _isUploadingImage
@@ -3077,9 +3077,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.lookGigPurple.withOpacity(0.05),
+              color: AppColors.gigAppPurple.withOpacity(0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.lookGigPurple.withOpacity(0.2)),
+              border: Border.all(color: AppColors.gigAppPurple.withOpacity(0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3088,7 +3088,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                   children: [
                     const Icon(
                       Icons.lightbulb_outline,
-                      color: AppColors.lookGigPurple,
+                      color: AppColors.gigAppPurple,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -3096,7 +3096,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       'Tips for Success',
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                       ),
                     ),
                   ],
@@ -3139,22 +3139,22 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.lookGigLightPurple.withOpacity(0.1),
+              color: AppColors.gigAppLightPurple.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.lookGigPurple.withOpacity(0.2)),
+              border: Border.all(color: AppColors.gigAppPurple.withOpacity(0.2)),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.description_outlined,
-                  color: AppColors.lookGigPurple,
+                  color: AppColors.gigAppPurple,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _resumeFileName ?? 'Resume uploaded',
                     style: const TextStyle(
-                      color: AppColors.lookGigPurple,
+                      color: AppColors.gigAppPurple,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -3178,7 +3178,7 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                       ),
                     )
                     : const Icon(Icons.upload_file),
@@ -3186,9 +3186,9 @@ class _StudentOnboardingScreenState extends State<StudentOnboardingScreen> {
               _resumeFile == null ? 'Upload Resume' : 'Change Resume',
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.lookGigPurple,
+              foregroundColor: AppColors.gigAppPurple,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              side: BorderSide(color: AppColors.lookGigPurple.withOpacity(0.5)),
+              side: BorderSide(color: AppColors.gigAppPurple.withOpacity(0.5)),
             ),
           ),
         ),

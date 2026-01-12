@@ -396,7 +396,7 @@ class _EmpProfileState extends State<EmpProfile> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.lookGigProfileText,
+                color: AppColors.gigAppProfileText,
               ),
             ),
             const SizedBox(height: 4),
@@ -404,7 +404,7 @@ class _EmpProfileState extends State<EmpProfile> {
               title,
               style: const TextStyle(
                 fontSize: 12,
-                color: AppColors.lookGigDescriptionText,
+                color: AppColors.gigAppDescriptionText,
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
@@ -431,7 +431,7 @@ class _EmpProfileState extends State<EmpProfile> {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
             ),
           ),
           const SizedBox(height: 8),
@@ -443,7 +443,7 @@ class _EmpProfileState extends State<EmpProfile> {
             decoration: InputDecoration(
               filled: true,
               fillColor:
-                  isEditing ? AppColors.white : AppColors.lookGigLightGray,
+                  isEditing ? AppColors.white : AppColors.gigAppLightGray,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,
@@ -459,7 +459,7 @@ class _EmpProfileState extends State<EmpProfile> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: AppColors.lookGigPurple,
+                  color: AppColors.gigAppPurple,
                   width: 2,
                 ),
               ),
@@ -484,7 +484,7 @@ class _EmpProfileState extends State<EmpProfile> {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
             ),
           ),
           const SizedBox(height: 8),
@@ -492,7 +492,7 @@ class _EmpProfileState extends State<EmpProfile> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.lookGigLightGray,
+              color: AppColors.gigAppLightGray,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.borderGrey),
             ),
@@ -503,7 +503,7 @@ class _EmpProfileState extends State<EmpProfile> {
                 color:
                     value.isEmpty
                         ? AppColors.hintText
-                        : AppColors.lookGigDescriptionText,
+                        : AppColors.gigAppDescriptionText,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -542,13 +542,13 @@ class _EmpProfileState extends State<EmpProfile> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
             ),
           ),
           trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
-            color: AppColors.lookGigDescriptionText,
+            color: AppColors.gigAppDescriptionText,
           ),
         ),
       ),
@@ -593,11 +593,11 @@ class _EmpProfileState extends State<EmpProfile> {
             style: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 16,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
             ),
           ),
-          iconColor: AppColors.lookGigPurple,
-          collapsedIconColor: AppColors.lookGigDescriptionText,
+          iconColor: AppColors.gigAppPurple,
+          collapsedIconColor: AppColors.gigAppDescriptionText,
           children: children,
         ),
       ),
@@ -640,7 +640,7 @@ class _EmpProfileState extends State<EmpProfile> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                     width: 2,
                   ),
                 ),
@@ -660,7 +660,7 @@ class _EmpProfileState extends State<EmpProfile> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.lookGigLightGray,
+                color: AppColors.gigAppLightGray,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.borderGrey),
               ),
@@ -671,7 +671,7 @@ class _EmpProfileState extends State<EmpProfile> {
                   color:
                       _selectedCompanySize == null
                           ? AppColors.hintText
-                          : AppColors.lookGigDescriptionText,
+                          : AppColors.gigAppDescriptionText,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -685,9 +685,9 @@ class _EmpProfileState extends State<EmpProfile> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        backgroundColor: AppColors.lookGigLightGray,
+        backgroundColor: AppColors.gigAppLightGray,
         body: Center(
-          child: CircularProgressIndicator(color: AppColors.lookGigPurple),
+          child: CircularProgressIndicator(color: AppColors.gigAppPurple),
         ),
       );
     }
@@ -700,7 +700,7 @@ class _EmpProfileState extends State<EmpProfile> {
     final companySize = companyInfo?['companySize'] ?? 'N/A';
 
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildEMPLOYERProfileHeader(fullName, companyName, industry),
@@ -869,8 +869,8 @@ class _EmpProfileState extends State<EmpProfile> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -971,7 +971,7 @@ class _EmpProfileState extends State<EmpProfile> {
                                                                   .expectedTotalBytes!
                                                           : null,
                                                   color:
-                                                      AppColors.lookGigPurple,
+                                                      AppColors.gigAppPurple,
                                                 ),
                                               );
                                             },
@@ -988,7 +988,7 @@ class _EmpProfileState extends State<EmpProfile> {
                                                       : 'C',
                                                   style: const TextStyle(
                                                     color:
-                                                        AppColors.lookGigPurple,
+                                                        AppColors.gigAppPurple,
                                                     fontSize: 36,
                                                     fontWeight: FontWeight.bold,
                                                   ),
@@ -1003,7 +1003,7 @@ class _EmpProfileState extends State<EmpProfile> {
                                                 ? companyName[0].toUpperCase()
                                                 : 'C',
                                             style: const TextStyle(
-                                              color: AppColors.lookGigPurple,
+                                              color: AppColors.gigAppPurple,
                                               fontSize: 36,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -1041,13 +1041,13 @@ class _EmpProfileState extends State<EmpProfile> {
                                                       strokeWidth: 2,
                                                       color:
                                                           AppColors
-                                                              .lookGigPurple,
+                                                              .gigAppPurple,
                                                     ),
                                               )
                                               : const Icon(
                                                 Icons.camera_alt,
                                                 size: 16,
-                                                color: AppColors.lookGigPurple,
+                                                color: AppColors.gigAppPurple,
                                               ),
                                     ),
                                   ),

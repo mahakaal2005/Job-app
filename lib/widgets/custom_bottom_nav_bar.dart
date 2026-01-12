@@ -79,8 +79,8 @@ class CustomBottomNavBar extends StatelessWidget {
   }) {
     // All icons use the same color scheme
     Color iconColor = isActive 
-        ? AppColors.lookGigActiveIcon 
-        : AppColors.lookGigInactiveIcon;
+        ? AppColors.gigAppActiveIcon 
+        : AppColors.gigAppInactiveIcon;
 
     // Home icon needs to be slightly larger to match other icons visually
     double iconSize = useSpecialHomeColor ? 28 : 24;
@@ -106,8 +106,8 @@ class CustomBottomNavBar extends StatelessWidget {
     required bool isActive,
   }) {
     Color iconColor = isActive 
-        ? AppColors.lookGigActiveIcon 
-        : AppColors.lookGigInactiveIcon;
+        ? AppColors.gigAppActiveIcon 
+        : AppColors.gigAppInactiveIcon;
 
     return GestureDetector(
       onTap: () => onTap(index),
@@ -143,8 +143,8 @@ class CustomBottomNavBar extends StatelessWidget {
     required bool isActive,
   }) {
     Color iconColor = isActive 
-        ? AppColors.lookGigActiveIcon 
-        : AppColors.lookGigInactiveIcon;
+        ? AppColors.gigAppActiveIcon 
+        : AppColors.gigAppInactiveIcon;
 
     return GestureDetector(
       onTap: () => onTap(index),
@@ -166,8 +166,8 @@ class CustomBottomNavBar extends StatelessWidget {
     required bool isActive,
   }) {
     Color iconColor = isActive 
-        ? AppColors.lookGigActiveIcon 
-        : AppColors.lookGigInactiveIcon;
+        ? AppColors.gigAppActiveIcon 
+        : AppColors.gigAppInactiveIcon;
 
     return GestureDetector(
       onTap: () => onTap(index),
@@ -190,7 +190,7 @@ class CustomBottomNavBar extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: AppColors.lookGigPurple,
+          color: AppColors.gigAppPurple,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(

@@ -7,7 +7,7 @@ class EmpPrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildHeader(context),
@@ -135,8 +135,8 @@ class EmpPrivacyPolicyScreen extends StatelessWidget {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -242,12 +242,12 @@ class EmpPrivacyPolicyScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
               fontFamily: 'DM Sans',
             ),
           ),
           iconColor: const Color(0xFFFF9228),
-          collapsedIconColor: AppColors.lookGigDescriptionText,
+          collapsedIconColor: AppColors.gigAppDescriptionText,
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 38),
@@ -255,7 +255,7 @@ class EmpPrivacyPolicyScreen extends StatelessWidget {
                 content,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: AppColors.lookGigDescriptionText,
+                  color: AppColors.gigAppDescriptionText,
                   height: 1.6,
                   fontFamily: 'DM Sans',
                 ),

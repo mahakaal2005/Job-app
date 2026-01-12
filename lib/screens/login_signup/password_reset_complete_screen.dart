@@ -8,7 +8,7 @@ class PasswordResetCompleteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: SafeArea(
         child: Center(
           child: Container(
@@ -42,7 +42,7 @@ class PasswordResetCompleteScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: AppColors.lookGigDescriptionText,
+                      color: AppColors.gigAppDescriptionText,
                       fontFamily: 'DM Sans',
                       height: 1.6,
                     ),
@@ -73,7 +73,7 @@ class PasswordResetCompleteScreen extends StatelessWidget {
                   width: 317,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
@@ -93,7 +93,7 @@ class PasswordResetCompleteScreen extends StatelessWidget {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigPurple,
+                      backgroundColor: AppColors.gigAppPurple,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(6),
                       ),

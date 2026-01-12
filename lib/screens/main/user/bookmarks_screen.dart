@@ -114,7 +114,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
       backgroundColor: const Color(0xFFF9F9F9),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.lookGigPurple))
+            ? const Center(child: CircularProgressIndicator(color: AppColors.gigAppPurple))
             : _savedJobs.isEmpty
                 ? _buildEmptyState()
                 : Column(
@@ -525,12 +525,12 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
 
   Widget _buildCompanyLogoFallback(String companyName) {
     return Container(
-      color: AppColors.lookGigPurple.withOpacity(0.1),
+      color: AppColors.gigAppPurple.withOpacity(0.1),
       child: Center(
         child: Text(
           companyName.isNotEmpty ? companyName[0].toUpperCase() : 'C',
           style: const TextStyle(
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),

@@ -198,11 +198,11 @@ class _CustomDropdownFieldState extends State<CustomDropdownField> {
                             ),
                             selected: isSelected,
                             selectedTileColor:
-                                AppColors.lookGigPurple.withOpacity(0.1),
+                                AppColors.gigAppPurple.withOpacity(0.1),
                             trailing: isSelected
                                 ? const Icon(
                                     Icons.check_circle,
-                                    color: AppColors.lookGigPurple,
+                                    color: AppColors.gigAppPurple,
                                   )
                                 : null,
                             onTap: () {

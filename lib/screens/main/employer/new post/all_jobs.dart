@@ -54,7 +54,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildCustomHeader(context),
@@ -102,7 +102,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                               ? Center(
                                 child: CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.lookGigPurple,
+                                    AppColors.gigAppPurple,
                                   ),
                                 ),
                               )
@@ -159,8 +159,8 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -511,8 +511,8 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.lookGigPurple.withOpacity(0.15),
-                  AppColors.lookGigProfileGradientEnd.withOpacity(0.15),
+                  AppColors.gigAppPurple.withOpacity(0.15),
+                  AppColors.gigAppProfileGradientEnd.withOpacity(0.15),
                 ],
               ),
               shape: BoxShape.circle,
@@ -575,7 +575,7 @@ class _AllJobListingsScreenState extends State<AllJobListingsScreen> {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.lookGigPurple,
+              backgroundColor: AppColors.gigAppPurple,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

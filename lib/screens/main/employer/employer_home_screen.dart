@@ -829,8 +829,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.lookGigProfileGradientStart,
-                      AppColors.lookGigProfileGradientEnd,
+                      AppColors.gigAppProfileGradientStart,
+                      AppColors.gigAppProfileGradientEnd,
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
@@ -957,8 +957,8 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.lookGigPurple.withOpacity(0.1),
-            AppColors.lookGigPurple.withOpacity(0.3),
+            AppColors.gigAppPurple.withOpacity(0.1),
+            AppColors.gigAppPurple.withOpacity(0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -968,7 +968,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Text(
           (_companyInfo?['companyName'] ?? 'C').substring(0, 1).toUpperCase(),
           style: const TextStyle(
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -1236,7 +1236,7 @@ class _DashboardPageState extends State<DashboardPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.lookGigPurple,
+                color: AppColors.gigAppPurple,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
@@ -1319,14 +1319,14 @@ class AllApplicantsNavigationCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.lookGigPurple,
-              AppColors.lookGigProfileGradientEnd,
+              AppColors.gigAppPurple,
+              AppColors.gigAppProfileGradientEnd,
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.lookGigPurple.withOpacity(0.3),
+              color: AppColors.gigAppPurple.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

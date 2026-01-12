@@ -191,7 +191,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildHeader(),
@@ -363,8 +363,8 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -439,7 +439,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
             fontFamily: 'DM Sans',
           ),
         ),
@@ -464,7 +464,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
             fontFamily: 'DM Sans',
           ),
         ),
@@ -486,13 +486,13 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
             validator: validator,
             style: const TextStyle(
               fontSize: 16,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
               fontFamily: 'DM Sans',
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(
-                color: AppColors.lookGigDescriptionText,
+                color: AppColors.gigAppDescriptionText,
                 fontSize: 16,
                 fontFamily: 'DM Sans',
               ),
@@ -508,7 +508,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.lookGigPurple, width: 2),
+                borderSide: const BorderSide(color: AppColors.gigAppPurple, width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -557,7 +557,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.lookGigProfileText,
+                    color: AppColors.gigAppProfileText,
                     fontFamily: 'DM Sans',
                   ),
                 ),
@@ -571,7 +571,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
               width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.lookGigDescriptionText.withOpacity(0.3)),
+                border: Border.all(color: AppColors.gigAppDescriptionText.withOpacity(0.3)),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -625,7 +625,7 @@ class _EmployerPersonalInfoEditScreenState extends State<EmployerPersonalInfoEdi
       child: ElevatedButton(
         onPressed: _isLoading ? null : _savePersonalInfo,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.lookGigPurple,
+          backgroundColor: AppColors.gigAppPurple,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

@@ -65,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          color: AppColors.lookGigPurple,
+          color: AppColors.gigAppPurple,
         ),
         child: Center(
           child: AnimatedBuilder(
@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
                       const SizedBox(height: 20),
                       // App Name
                       const Text(
-                        'Gig Work',
+                        'GigApp',
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w700,

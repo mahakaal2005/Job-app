@@ -40,7 +40,7 @@ class ApplySuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: SafeArea(
         child: Column(
           children: [
@@ -523,7 +523,7 @@ class ApplySuccessScreen extends StatelessWidget {
                 width: buttonWidth,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: AppColors.lookGigPurple,
+                  color: AppColors.gigAppPurple,
                   borderRadius: BorderRadius.circular(6),
                   boxShadow: [
                     BoxShadow(

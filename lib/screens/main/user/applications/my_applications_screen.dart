@@ -71,7 +71,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: SafeArea(
         child: Column(
           children: [
@@ -279,7 +279,7 @@ class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.lookGigPurple,
+                          color: AppColors.gigAppPurple,
                           fontFamily: 'DM Sans',
                         ),
                       ),

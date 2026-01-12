@@ -280,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                         fontFamily: 'DM Sans',
                         height: 1.302,
                       ),
@@ -296,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.lookGigDescriptionText,
+                          color: AppColors.gigAppDescriptionText,
                           fontFamily: 'DM Sans',
                           height: 1.6,
                         ),
@@ -316,7 +316,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.lookGigPurple,
+                              color: AppColors.gigAppPurple,
                               fontFamily: 'DM Sans',
                               height: 1.302,
                             ),
@@ -341,7 +341,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.lookGigPurple.withOpacity(0.6),
+                              color: AppColors.gigAppPurple.withOpacity(0.6),
                               fontFamily: 'DM Sans',
                               height: 1.302,
                             ),
@@ -349,7 +349,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               hintText: 'Brandonelouis@gmail.com',
                               hintStyle: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.lookGigPurple.withOpacity(0.6),
+                                color: AppColors.gigAppPurple.withOpacity(0.6),
                                 fontFamily: 'DM Sans',
                                 height: 1.302,
                               ),
@@ -364,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: const BorderSide(
-                                  color: AppColors.lookGigPurple,
+                                  color: AppColors.gigAppPurple,
                                   width: 1,
                                 ),
                               ),
@@ -400,7 +400,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.lookGigPurple,
+                              color: AppColors.gigAppPurple,
                               fontFamily: 'Open Sans',
                                 height: 1.3618,
                               ),
@@ -446,7 +446,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: const BorderSide(
-                                    color: AppColors.lookGigPurple,
+                                    color: AppColors.gigAppPurple,
                                     width: 1,
                                   ),
                                 ),
@@ -550,7 +550,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
-                                color: AppColors.lookGigPurple,
+                                color: AppColors.gigAppPurple,
                                 fontFamily: 'DM Sans',
                                 height: 1.302,
                               ),
@@ -567,7 +567,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       constraints: const BoxConstraints(maxWidth: 266),
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                         borderRadius: BorderRadius.circular(6),
                         boxShadow: [
                           BoxShadow(
@@ -580,7 +580,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _signIn,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.lookGigPurple,
+                          backgroundColor: AppColors.gigAppPurple,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
                           ),
@@ -640,7 +640,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.lookGigPurple,
+                                color: AppColors.gigAppPurple,
                                 fontFamily: 'DM Sans',
                                 letterSpacing: 0.84,
                                 height: 1.302,
@@ -664,7 +664,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: AppColors.lookGigDescriptionText,
+                            color: AppColors.gigAppDescriptionText,
                             fontFamily: 'Open Sans',
                             height: 1.3618,
                           ),

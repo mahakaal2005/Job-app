@@ -151,18 +151,18 @@ class AppColors {
   static const Color brandNeutral = smokeyGrey;
   static const Color brandLight = lightBeige;
   
-  // Look Gig Brand Colors
-  static const Color lookGigPurple = Color(0xFF130160);
-  static const Color lookGigLightPurple = Color(0xFFD6CDFE); // Light purple for buttons
-  static const Color lookGigLightGray = Color(0xFFF9F9F9);
-  static const Color lookGigDescriptionText = Color(0xFF524B6B);
-  static const Color lookGigActiveIcon = Color(0xFF7551FF);
-  static const Color lookGigDarkPurple = Color(0xFF0D0140);
-  static const Color lookGigInactiveIcon = Color(0xFFA49EB5);
-  static const Color lookGigProfileText = Color(0xFF150B3D);
-  static const Color lookGigProfileGradientStart = Color(0xFF7551FF);
-  static const Color lookGigProfileGradientEnd = Color(0xFFA993FF);
-  static const Color lookGigOrange = Color(0xFFFF6B35); // Warm orange for onboarding icons
+  // GigApp Brand Colors
+  static const Color gigAppPurple = Color(0xFF130160);
+  static const Color gigAppLightPurple = Color(0xFFD6CDFE); // Light purple for buttons
+  static const Color gigAppLightGray = Color(0xFFF9F9F9);
+  static const Color gigAppDescriptionText = Color(0xFF524B6B);
+  static const Color gigAppActiveIcon = Color(0xFF7551FF);
+  static const Color gigAppDarkPurple = Color(0xFF0D0140);
+  static const Color gigAppInactiveIcon = Color(0xFFA49EB5);
+  static const Color gigAppProfileText = Color(0xFF150B3D);
+  static const Color gigAppProfileGradientStart = Color(0xFF7551FF);
+  static const Color gigAppProfileGradientEnd = Color(0xFFA993FF);
+  static const Color gigAppOrange = Color(0xFFFF6B35); // Warm orange for onboarding icons
   
   // Profile Screen Specific Colors (from Figma)
   static const Color profileHeaderGradientStart = Color(0xFF7551FF);

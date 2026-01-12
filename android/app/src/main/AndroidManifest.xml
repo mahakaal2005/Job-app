@@ -17,7 +17,7 @@
     
 
     <application
-        android:label="Gig Work"
+        android:label="GigApp"
         android:name=".MyApplication"
         android:icon="@mipmap/ic_launcher">
 

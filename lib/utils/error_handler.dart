@@ -95,7 +95,7 @@ class ErrorHandler {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
           ),
         ),
         content: Text(
@@ -113,7 +113,7 @@ class ErrorHandler {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.lookGigPurple,
+                color: AppColors.gigAppPurple,
               ),
             ),
           ),
@@ -223,7 +223,7 @@ class ErrorHandler {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
           ),
         ),
         content: Text(
@@ -250,7 +250,7 @@ class ErrorHandler {
               onOpenSettings();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.lookGigPurple,
+              backgroundColor: AppColors.gigAppPurple,
 
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -288,7 +288,7 @@ class ErrorHandler {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: AppColors.lookGigPurple,
+                color: AppColors.gigAppPurple,
               ),
             ),
           ],
@@ -317,7 +317,7 @@ class ErrorHandler {
               onRetry();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.lookGigPurple,
+              backgroundColor: AppColors.gigAppPurple,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

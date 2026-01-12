@@ -21,7 +21,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: supportEmail,
-      query: 'subject=Support Request - Gig Work App',
+      query: 'subject=Support Request - GigApp App',
     );
 
     try {
@@ -57,7 +57,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [_buildHeader(context), Expanded(child: _buildBody(context))],
       ),
@@ -86,8 +86,8 @@ class EmpHelpSupportScreen extends StatelessWidget {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -262,7 +262,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
             fontFamily: 'DM Sans',
           ),
         ),
@@ -315,7 +315,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.lookGigProfileText,
+                      color: AppColors.gigAppProfileText,
                       fontFamily: 'DM Sans',
                     ),
                   ),
@@ -324,7 +324,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
                     subtitle,
                     style: const TextStyle(
                       fontSize: 14,
-                      color: AppColors.lookGigDescriptionText,
+                      color: AppColors.gigAppDescriptionText,
                       fontFamily: 'DM Sans',
                     ),
                   ),
@@ -334,7 +334,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
             const Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: AppColors.lookGigDescriptionText,
+              color: AppColors.gigAppDescriptionText,
             ),
           ],
         ),
@@ -385,12 +385,12 @@ class EmpHelpSupportScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
               fontFamily: 'DM Sans',
             ),
           ),
           iconColor: const Color(0xFFFF9228),
-          collapsedIconColor: AppColors.lookGigDescriptionText,
+          collapsedIconColor: AppColors.gigAppDescriptionText,
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 38),
@@ -398,7 +398,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
                 answer,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: AppColors.lookGigDescriptionText,
+                  color: AppColors.gigAppDescriptionText,
                   height: 1.5,
                   fontFamily: 'DM Sans',
                 ),
@@ -423,7 +423,7 @@ class EmpHelpSupportScreen extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
             fontFamily: 'DM Sans',
           ),
         ),

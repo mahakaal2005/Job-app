@@ -198,7 +198,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildCustomHeader(context),
@@ -337,8 +337,8 @@ class _EditJobScreenState extends State<EditJobScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -487,7 +487,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.lookGigPurple,
+              color: AppColors.gigAppPurple,
               fontFamily: 'DM Sans',
             ),
           ),
@@ -509,13 +509,13 @@ class _EditJobScreenState extends State<EditJobScreen> {
       maxLines: maxLines,
       validator: validator,
       style: const TextStyle(
-        color: AppColors.lookGigPurple,
+        color: AppColors.gigAppPurple,
         fontFamily: 'DM Sans',
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(
-          color: AppColors.lookGigDescriptionText,
+          color: AppColors.gigAppDescriptionText,
           fontFamily: 'DM Sans',
         ),
         border: OutlineInputBorder(
@@ -529,7 +529,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
             width: 2,
           ),
         ),
@@ -553,7 +553,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
             fontFamily: 'DM Sans',
           ),
         ),
@@ -571,7 +571,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
             isExpanded: true,
             underline: const SizedBox(),
             style: const TextStyle(
-              color: AppColors.lookGigPurple,
+              color: AppColors.gigAppPurple,
               fontFamily: 'DM Sans',
             ),
             dropdownColor: AppColors.cardBackground,
@@ -617,7 +617,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.lookGigPurple,
+              color: AppColors.gigAppPurple,
               fontFamily: 'DM Sans',
             ),
           ),
@@ -628,13 +628,13 @@ class _EditJobScreenState extends State<EditJobScreen> {
                 child: TextField(
                   controller: controller,
                   style: const TextStyle(
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                     fontFamily: 'DM Sans',
                   ),
                   decoration: InputDecoration(
                     hintText: hintText,
                     hintStyle: const TextStyle(
-                      color: AppColors.lookGigDescriptionText,
+                      color: AppColors.gigAppDescriptionText,
                       fontFamily: 'DM Sans',
                     ),
                     border: OutlineInputBorder(
@@ -652,7 +652,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                         width: 2,
                       ),
                     ),

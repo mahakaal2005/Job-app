@@ -89,7 +89,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildCustomHeader(context),
@@ -432,7 +432,7 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
       case 'shortlisted':
         return const Color(0xFF2F51A7);
       default:
-        return AppColors.lookGigPurple;
+        return AppColors.gigAppPurple;
     }
   }
 
@@ -459,8 +459,8 @@ class _AllApplicantsScreenState extends State<AllApplicantsScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,

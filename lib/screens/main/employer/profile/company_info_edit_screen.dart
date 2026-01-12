@@ -103,7 +103,7 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildHeader(),
@@ -172,8 +172,8 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -278,7 +278,7 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
           ),
         ),
         const SizedBox(height: 8),
@@ -297,10 +297,10 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
-            style: const TextStyle(color: AppColors.lookGigProfileText),
+            style: const TextStyle(color: AppColors.gigAppProfileText),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.lookGigDescriptionText),
+              hintStyle: const TextStyle(color: AppColors.gigAppDescriptionText),
               prefixIcon: maxLines > 1
                   ? Align(
                       alignment: Alignment.topLeft,
@@ -343,7 +343,7 @@ class _CompanyInfoEditScreenState extends State<CompanyInfoEditScreen> {
       child: ElevatedButton(
         onPressed: _isSaving ? null : _saveChanges,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.lookGigPurple,
+          backgroundColor: AppColors.gigAppPurple,
           foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,

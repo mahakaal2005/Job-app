@@ -273,16 +273,16 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppColors.lookGigLightGray,
+        backgroundColor: AppColors.gigAppLightGray,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: AppColors.lookGigPurple),
+              CircularProgressIndicator(color: AppColors.gigAppPurple),
               const SizedBox(height: 16),
               Text(
                 'Loading Analytics...',
-                style: TextStyle(color: AppColors.lookGigDescriptionText, fontSize: 16),
+                style: TextStyle(color: AppColors.gigAppDescriptionText, fontSize: 16),
               ),
             ],
           ),
@@ -294,7 +294,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
       // Show different UI based on error type
       if (_error == 'no_jobs') {
         return Scaffold(
-          backgroundColor: AppColors.lookGigLightGray,
+          backgroundColor: AppColors.gigAppLightGray,
           body: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -308,7 +308,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppColors.lookGigPurple.withOpacity(0.15),
+                          AppColors.gigAppPurple.withOpacity(0.15),
                           const Color(0xFF6C5CE7).withOpacity(0.15),
                         ],
                       ),
@@ -317,7 +317,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     child: Icon(
                       Icons.work_outline,
                       size: 64,
-                      color: AppColors.lookGigPurple,
+                      color: AppColors.gigAppPurple,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -326,7 +326,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.lookGigProfileText,
+                      color: AppColors.gigAppProfileText,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -335,7 +335,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.lookGigDescriptionText,
+                      color: AppColors.gigAppDescriptionText,
                       height: 1.5,
                     ),
                   ),
@@ -355,7 +355,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigPurple,
+                      backgroundColor: AppColors.gigAppPurple,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 16,
@@ -374,7 +374,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
       
       if (_error == 'profile_incomplete') {
         return Scaffold(
-          backgroundColor: AppColors.lookGigLightGray,
+          backgroundColor: AppColors.gigAppLightGray,
           body: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -388,7 +388,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppColors.lookGigPurple.withOpacity(0.15),
+                          AppColors.gigAppPurple.withOpacity(0.15),
                           const Color(0xFF6C5CE7).withOpacity(0.15),
                         ],
                       ),
@@ -397,7 +397,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     child: Icon(
                       Icons.analytics_outlined,
                       size: 64,
-                      color: AppColors.lookGigPurple,
+                      color: AppColors.gigAppPurple,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -406,7 +406,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.lookGigProfileText,
+                      color: AppColors.gigAppProfileText,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -415,7 +415,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.lookGigDescriptionText,
+                      color: AppColors.gigAppDescriptionText,
                       height: 1.5,
                     ),
                   ),
@@ -441,7 +441,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigPurple,
+                      backgroundColor: AppColors.gigAppPurple,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -457,7 +457,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
       
       // Show error UI for other errors
       return Scaffold(
-        backgroundColor: AppColors.lookGigLightGray,
+        backgroundColor: AppColors.gigAppLightGray,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -471,7 +471,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.lookGigProfileText,
+                    color: AppColors.gigAppProfileText,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -486,7 +486,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                   icon: const Icon(Icons.refresh),
                   label: const Text('Retry'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lookGigPurple,
+                    backgroundColor: AppColors.gigAppPurple,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -505,14 +505,14 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
     final isSmallScreen = screenWidth < 600;
 
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildAnalyticsHeader(),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadData,
-              color: AppColors.lookGigPurple,
+              color: AppColors.gigAppPurple,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -571,8 +571,8 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -622,7 +622,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
           ),
         ),
         const SizedBox(height: 12),
@@ -774,12 +774,12 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.lookGigProfileText,
+                  color: AppColors.gigAppProfileText,
                 ),
               ),
               Text(
                 subtitle,
-                style: TextStyle(fontSize: 12, color: AppColors.lookGigDescriptionText),
+                style: TextStyle(fontSize: 12, color: AppColors.gigAppDescriptionText),
               ),
             ],
           ),
@@ -843,7 +843,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                   '${entry.key.capitalize()} (${entry.value})',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.lookGigDescriptionText,
+                    color: AppColors.gigAppDescriptionText,
                   ),
                 ),
               ],
@@ -899,7 +899,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                       return Text(
                         _dailyApplications[value.toInt()]['date'],
                         style: TextStyle(
-                          color: AppColors.lookGigDescriptionText,
+                          color: AppColors.gigAppDescriptionText,
                           fontSize: 10,
                         ),
                       );
@@ -972,11 +972,11 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                 sections:
                     _jobTypeDistribution.entries.map((entry) {
                       final colors = [
-                        AppColors.lookGigPurple,
+                        AppColors.gigAppPurple,
                         const Color(0xFF2F51A7),
-                        AppColors.lookGigProfileGradientEnd,
-                        AppColors.lookGigDescriptionText,
-                        AppColors.lookGigActiveIcon,
+                        AppColors.gigAppProfileGradientEnd,
+                        AppColors.gigAppDescriptionText,
+                        AppColors.gigAppActiveIcon,
                       ];
                       final colorIndex = _jobTypeDistribution.keys
                           .toList()
@@ -1011,11 +1011,11 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
 
   Widget _buildJobTypeLegend() {
     final colors = [
-      AppColors.lookGigPurple,
+      AppColors.gigAppPurple,
       const Color(0xFF2F51A7),
-      AppColors.lookGigProfileGradientEnd,
-      AppColors.lookGigDescriptionText,
-      AppColors.lookGigActiveIcon,
+      AppColors.gigAppProfileGradientEnd,
+      AppColors.gigAppDescriptionText,
+      AppColors.gigAppActiveIcon,
     ];
 
     return Column(
@@ -1045,7 +1045,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                     entry.key.capitalize(),
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.lookGigDescriptionText,
+                      color: AppColors.gigAppDescriptionText,
                     ),
                   ),
                 ],
@@ -1113,7 +1113,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                       child: Text(
                         shortRange,
                         style: TextStyle(
-                          color: AppColors.lookGigDescriptionText,
+                          color: AppColors.gigAppDescriptionText,
                           fontSize: 10,
                         ),
                       ),
@@ -1131,7 +1131,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
                   return Text(
                     value.toInt().toString(),
                     style: TextStyle(
-                      color: AppColors.lookGigDescriptionText,
+                      color: AppColors.gigAppDescriptionText,
                       fontSize: 10,
                     ),
                   );
@@ -1297,7 +1297,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.lookGigProfileText,
+              color: AppColors.gigAppProfileText,
             ),
           ),
           if (legend != null) ...[const SizedBox(height: 12), legend],
@@ -1319,7 +1319,7 @@ class _EmpAnalyticsState extends State<EmpAnalytics> {
       case 'interviewed':
         return const Color(0xFF2F51A7);
       default:
-        return AppColors.lookGigPurple;
+        return AppColors.gigAppPurple;
     }
   }
 }

@@ -376,7 +376,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           // Custom Header matching All Job Listings design
@@ -421,7 +421,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                   style: const TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.lookGigPurple,
+                                    color: AppColors.gigAppPurple,
                                     fontFamily: 'DM Sans',
                                   ),
                                 ),
@@ -430,7 +430,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                   _job.companyName,
                                   style: const TextStyle(
                                     fontSize: 18,
-                                    color: AppColors.lookGigPurple,
+                                    color: AppColors.gigAppPurple,
                                     fontWeight: FontWeight.w600,
                                     fontFamily: 'DM Sans',
                                   ),
@@ -499,7 +499,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.lookGigPurple,
+                          color: AppColors.gigAppPurple,
                           fontFamily: 'DM Sans',
                         ),
                       ),
@@ -542,7 +542,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.lookGigPurple,
+                              color: AppColors.gigAppPurple,
                               fontFamily: 'DM Sans',
                             ),
                           ),
@@ -563,7 +563,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             child: const Text(
                               'View All',
                               style: TextStyle(
-                                color: AppColors.lookGigPurple,
+                                color: AppColors.gigAppPurple,
                                 fontWeight: FontWeight.w600,
                                 fontFamily: 'DM Sans',
                               ),
@@ -579,7 +579,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             child: Text(
                               'No applicants yet',
                               style: const TextStyle(
-                                color: AppColors.lookGigDescriptionText,
+                                color: AppColors.gigAppDescriptionText,
                                 fontSize: 16,
                                 fontFamily: 'DM Sans',
                               ),
@@ -704,7 +704,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.lookGigPurple.withOpacity(0.1),
+                              color: AppColors.gigAppPurple.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -788,12 +788,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   Widget _buildInfoRow(IconData icon, String? text) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.lookGigPurple, size: 18),
+        Icon(icon, color: AppColors.gigAppPurple, size: 18),
         const SizedBox(width: 8),
         Text(
           text ?? 'Not specified',
           style: const TextStyle(
-            color: AppColors.lookGigDescriptionText,
+            color: AppColors.gigAppDescriptionText,
             fontSize: 14,
             fontFamily: 'DM Sans',
           ),
@@ -811,7 +811,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: AppColors.lookGigPurple,
+            color: AppColors.gigAppPurple,
             fontFamily: 'DM Sans',
           ),
         ),
@@ -820,7 +820,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           Text(
             'No $title specified',
             style: const TextStyle(
-              color: AppColors.lookGigDescriptionText,
+              color: AppColors.gigAppDescriptionText,
               fontStyle: FontStyle.italic,
               fontFamily: 'DM Sans',
             ),
@@ -838,7 +838,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         const Text(
                           '• ',
                           style: TextStyle(
-                            color: AppColors.lookGigPurple,
+                            color: AppColors.gigAppPurple,
                             fontSize: 16,
                           ),
                         ),
@@ -846,7 +846,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           child: Text(
                             item,
                             style: const TextStyle(
-                              color: AppColors.lookGigDescriptionText,
+                              color: AppColors.gigAppDescriptionText,
                               fontSize: 14,
                               fontFamily: 'DM Sans',
                             ),
@@ -884,8 +884,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -1012,7 +1012,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       case 'shortlisted':
         return Colors.orange;
       default:
-        return AppColors.lookGigPurple;
+        return AppColors.gigAppPurple;
     }
   }
 }

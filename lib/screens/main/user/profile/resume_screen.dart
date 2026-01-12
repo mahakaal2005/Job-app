@@ -212,7 +212,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFFF9F9F9), // From Figma fill_BXQ825
         body: const Center(
-          child: CircularProgressIndicator(color: AppColors.lookGigPurple),
+          child: CircularProgressIndicator(color: AppColors.gigAppPurple),
         ),
       );
     }
@@ -373,7 +373,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
             _isUploadingResume
                 ? const Center(
                   child: CircularProgressIndicator(
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                     strokeWidth: 2,
                   ),
                 )

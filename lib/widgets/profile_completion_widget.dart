@@ -96,7 +96,7 @@ class ProfileCompletionWidget extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF130160), // lookGigPurple
+            Color(0xFF130160), // gigAppPurple
             Color(0xFF6C5CE7), // Lighter purple
           ],
           begin: Alignment.topLeft,
@@ -172,7 +172,7 @@ class ProfileCompletionWidget extends StatelessWidget {
             onPressed: () => _handleCompletePressed(context, role),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
-              foregroundColor: AppColors.lookGigPurple,
+              foregroundColor: AppColors.gigAppPurple,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),

@@ -104,7 +104,7 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildHeader(),
@@ -160,8 +160,8 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -300,7 +300,7 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
           ),
         ),
         const SizedBox(height: 8),
@@ -319,10 +319,10 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
           child: TextFormField(
             controller: controller,
             keyboardType: keyboardType,
-            style: const TextStyle(color: AppColors.lookGigProfileText),
+            style: const TextStyle(color: AppColors.gigAppProfileText),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.lookGigDescriptionText),
+              hintStyle: const TextStyle(color: AppColors.gigAppDescriptionText),
               prefixIcon: Icon(icon, color: const Color(0xFF2F51A7)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -360,7 +360,7 @@ class _CompanyDetailsEditScreenState extends State<CompanyDetailsEditScreen> {
       child: ElevatedButton(
         onPressed: _isSaving ? null : _saveChanges,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.lookGigPurple,
+          backgroundColor: AppColors.gigAppPurple,
           foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,

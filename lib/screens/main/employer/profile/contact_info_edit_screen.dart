@@ -199,7 +199,7 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildHeader(),
@@ -261,8 +261,8 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -340,7 +340,7 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
           ),
         ),
         const SizedBox(height: 8),
@@ -359,10 +359,10 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
           child: TextFormField(
             controller: controller,
             keyboardType: keyboardType,
-            style: const TextStyle(color: AppColors.lookGigProfileText),
+            style: const TextStyle(color: AppColors.gigAppProfileText),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.lookGigDescriptionText),
+              hintStyle: const TextStyle(color: AppColors.gigAppDescriptionText),
               prefixIcon: Icon(icon, color: const Color(0xFF2F51A7)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -408,7 +408,7 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.lookGigProfileText,
+            color: AppColors.gigAppProfileText,
           ),
         ),
         const SizedBox(height: 8),
@@ -472,7 +472,7 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
           Text(
             _getPhoneHint(),
             style: TextStyle(
-              color: AppColors.lookGigDescriptionText,
+              color: AppColors.gigAppDescriptionText,
               fontSize: 12,
               fontFamily: 'DM Sans',
             ),
@@ -504,7 +504,7 @@ class _ContactInfoEditScreenState extends State<ContactInfoEditScreen> {
       child: ElevatedButton(
         onPressed: _isSaving ? null : _saveChanges,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.lookGigPurple,
+          backgroundColor: AppColors.gigAppPurple,
           foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,

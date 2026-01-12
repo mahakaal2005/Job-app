@@ -221,7 +221,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppSpacing.horizontal(context),
@@ -251,7 +251,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.lookGigDescriptionText,
+                    color: AppColors.gigAppDescriptionText,
                     height: 1.6,
                   ),
                 ),
@@ -304,7 +304,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(
-                          color: AppColors.lookGigPurple,
+                          color: AppColors.gigAppPurple,
                           width: 1,
                         ),
                       ),
@@ -383,7 +383,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(
-                          color: AppColors.lookGigPurple,
+                          color: AppColors.gigAppPurple,
                           width: 1,
                         ),
                       ),
@@ -468,7 +468,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(
-                          color: AppColors.lookGigPurple,
+                          color: AppColors.gigAppPurple,
                           width: 1,
                         ),
                       ),
@@ -524,7 +524,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: _selectedRole == 'user'
-                                ? AppColors.lookGigPurple
+                                ? AppColors.gigAppPurple
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(6),
                             boxShadow: [
@@ -543,7 +543,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               fontWeight: FontWeight.w700,
                               color: _selectedRole == 'user'
                                   ? Colors.white
-                                  : AppColors.lookGigPurple,
+                                  : AppColors.gigAppPurple,
                             ),
                           ),
                         ),
@@ -561,7 +561,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: _selectedRole == 'employer'
-                                ? AppColors.lookGigPurple
+                                ? AppColors.gigAppPurple
                                 : Colors.white,
                             borderRadius: BorderRadius.circular(6),
                             boxShadow: [
@@ -580,7 +580,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               fontWeight: FontWeight.w700,
                               color: _selectedRole == 'employer'
                                   ? Colors.white
-                                  : AppColors.lookGigPurple,
+                                  : AppColors.gigAppPurple,
                             ),
                           ),
                         ),
@@ -615,7 +615,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             _rememberMe = value ?? false;
                           });
                         },
-                        activeColor: AppColors.lookGigPurple,
+                        activeColor: AppColors.gigAppPurple,
                         checkColor: Colors.white,
                         side: BorderSide.none,
                       ),
@@ -639,7 +639,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   width: double.infinity,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
@@ -652,7 +652,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signUp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lookGigPurple,
+                      backgroundColor: AppColors.gigAppPurple,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -710,7 +710,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             return const Icon(
                               Icons.g_mobiledata,
                               size: 24,
-                              color: AppColors.lookGigPurple,
+                              color: AppColors.gigAppPurple,
                             );
                           },
                         ),
@@ -742,7 +742,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
-                          color: AppColors.lookGigDescriptionText,
+                          color: AppColors.gigAppDescriptionText,
                           fontFamily: 'Open Sans',
                           height: 1.3618,
                         ),

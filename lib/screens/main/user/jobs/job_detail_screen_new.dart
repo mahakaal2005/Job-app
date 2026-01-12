@@ -170,7 +170,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: SafeArea(
         child: Column(
           children: [
@@ -498,14 +498,14 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                   decoration: BoxDecoration(
                     // Selected: Dark purple, Unselected: Light purple
                     color: _isDescriptionTab 
-                        ? AppColors.lookGigPurple      // Active: Dark purple #130160
+                        ? AppColors.gigAppPurple      // Active: Dark purple #130160
                         : const Color(0xFFD6CDFE),     // Inactive: Light purple
                     borderRadius: BorderRadius.circular(6),
                     // Enhanced shadow when active for depth
                     boxShadow: _isDescriptionTab
                         ? [
                             BoxShadow(
-                              color: AppColors.lookGigPurple.withOpacity(0.3),
+                              color: AppColors.gigAppPurple.withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                               spreadRadius: 0,
@@ -521,7 +521,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                       fontSize: 14,
                       height: 1.302,
                       // White text when active, dark purple when inactive
-                      color: _isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
+                      color: _isDescriptionTab ? Colors.white : AppColors.gigAppPurple,
                     ),
                   ),
                 ),
@@ -550,14 +550,14 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                   decoration: BoxDecoration(
                     // Selected: Dark purple, Unselected: Light purple
                     color: !_isDescriptionTab 
-                        ? AppColors.lookGigPurple      // Active: Dark purple #130160
+                        ? AppColors.gigAppPurple      // Active: Dark purple #130160
                         : const Color(0xFFD6CDFE),     // Inactive: Light purple
                     borderRadius: BorderRadius.circular(6),
                     // Enhanced shadow when active for depth
                     boxShadow: !_isDescriptionTab
                         ? [
                             BoxShadow(
-                              color: AppColors.lookGigPurple.withOpacity(0.3),
+                              color: AppColors.gigAppPurple.withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                               spreadRadius: 0,
@@ -573,7 +573,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                       fontSize: 14,
                       height: 1.302,
                       // White text when active, dark purple when inactive
-                      color: !_isDescriptionTab ? Colors.white : AppColors.lookGigPurple,
+                      color: !_isDescriptionTab ? Colors.white : AppColors.gigAppPurple,
                     ),
                   ),
                 ),
@@ -1292,7 +1292,7 @@ class _JobDetailScreenNewState extends State<JobDetailScreenNew> {
                         decoration: BoxDecoration(
                           color: _hasApplied 
                               ? const Color(0xFF2F51A7) 
-                              : AppColors.lookGigPurple,
+                              : AppColors.gigAppPurple,
                           borderRadius: BorderRadius.circular(6),
                           boxShadow: [
                             BoxShadow(

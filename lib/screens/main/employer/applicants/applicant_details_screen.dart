@@ -115,7 +115,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildCustomHeader(context),
@@ -158,7 +158,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                     style: const TextStyle(
                                       fontSize: 36,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.lookGigPurple,
+                                      color: AppColors.gigAppPurple,
                                     ),
                                   )
                                   : null,
@@ -178,7 +178,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                           'Applied for ${widget.jobTitle}',
                           style: const TextStyle(
                             fontSize: 16,
-                            color: AppColors.lookGigPurple,
+                            color: AppColors.gigAppPurple,
                             fontWeight: FontWeight.w500,
                             fontFamily: 'DM Sans',
                           ),
@@ -841,7 +841,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.lookGigPurple,
+                                  backgroundColor: AppColors.gigAppPurple,
                                   foregroundColor: AppColors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
@@ -895,7 +895,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.lookGigPurple,
+                                  backgroundColor: AppColors.gigAppPurple,
                                   foregroundColor: AppColors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
@@ -936,7 +936,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.lookGigPurple,
+                                backgroundColor: AppColors.gigAppPurple,
                                 foregroundColor: AppColors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(6),
@@ -982,7 +982,7 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.lookGigPurple,
+                                  backgroundColor: AppColors.gigAppPurple,
                                   foregroundColor: AppColors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
@@ -1235,8 +1235,8 @@ class _ApplicantDetailsScreenState extends State<ApplicantDetailsScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,

@@ -663,7 +663,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shareText += '\n\n📄 Resume Preview: $resumePreviewUrl';
       }
 
-      shareText += '\n\n✨ Shared from Gig Work App';
+      shareText += '\n\n✨ Shared from GigApp App';
 
       debugPrint('=== FINAL SHARE TEXT ===');
       debugPrint(shareText);
@@ -826,15 +826,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppColors.lookGigLightGray,
+        backgroundColor: AppColors.gigAppLightGray,
         body: Center(
-          child: CircularProgressIndicator(color: AppColors.lookGigPurple),
+          child: CircularProgressIndicator(color: AppColors.gigAppPurple),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [_buildNewProfileHeader(), Expanded(child: _buildBody())],
       ),
@@ -1790,7 +1790,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 1.302,
                         color:
                             AppColors
-                                .lookGigActiveIcon, // From Figma fill_I1PCYA
+                                .gigAppActiveIcon, // From Figma fill_I1PCYA
                       ),
                     ),
                   ),
@@ -2376,14 +2376,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: AppColors.white,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: AppColors.lookGigPurple,
+                                  color: AppColors.gigAppPurple,
                                   width: 1,
                                 ),
                               ),
                               child: const Icon(
                                 Icons.camera_alt,
                                 size: 12,
-                                color: AppColors.lookGigPurple,
+                                color: AppColors.gigAppPurple,
                               ),
                             ),
                           ),
@@ -2551,7 +2551,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.lookGigPurple,
+        color: AppColors.gigAppPurple,
         borderRadius: BorderRadius.circular(41),
       ),
       child: Center(
@@ -2606,7 +2606,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       return const Icon(
                         Icons.work,
                         size: 24,
-                        color: AppColors.lookGigProfileText,
+                        color: AppColors.gigAppProfileText,
                       );
                     },
                   ),
@@ -2620,7 +2620,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                         height: 1.302,
-                        color: AppColors.lookGigProfileText,
+                        color: AppColors.gigAppProfileText,
                       ),
                     ),
                   ),
@@ -2635,7 +2635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         return const Icon(
                           Icons.add,
                           size: 24,
-                          color: AppColors.lookGigProfileText,
+                          color: AppColors.gigAppProfileText,
                         );
                       },
                     ),
@@ -2653,7 +2653,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           return const Icon(
                             Icons.edit,
                             size: 24,
-                            color: AppColors.lookGigProfileText,
+                            color: AppColors.gigAppProfileText,
                           );
                         },
                       ),
@@ -2685,7 +2685,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
                           height: 1.302,
-                          color: AppColors.lookGigProfileText,
+                          color: AppColors.gigAppProfileText,
                         ),
                       ),
                       const SizedBox(height: 8),

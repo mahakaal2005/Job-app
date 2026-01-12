@@ -335,7 +335,7 @@ class _CompanyLogoEditScreenState extends State<CompanyLogoEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildHeader(),
@@ -402,8 +402,8 @@ class _CompanyLogoEditScreenState extends State<CompanyLogoEditScreen> {
             ),
             gradient: LinearGradient(
               colors: [
-                AppColors.lookGigProfileGradientStart,
-                AppColors.lookGigProfileGradientEnd,
+                AppColors.gigAppProfileGradientStart,
+                AppColors.gigAppProfileGradientEnd,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -539,17 +539,17 @@ class _CompanyLogoEditScreenState extends State<CompanyLogoEditScreen> {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: AppColors.lookGigLightGray,
+      color: AppColors.gigAppLightGray,
       child: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.business, size: 60, color: AppColors.lookGigDescriptionText),
+            Icon(Icons.business, size: 60, color: AppColors.gigAppDescriptionText),
             SizedBox(height: 8),
             Text(
               'No Logo',
               style: TextStyle(
-                color: AppColors.lookGigDescriptionText,
+                color: AppColors.gigAppDescriptionText,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -597,13 +597,13 @@ class _CompanyLogoEditScreenState extends State<CompanyLogoEditScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDestructive ? AppColors.error : AppColors.lookGigProfileText,
+            color: isDestructive ? AppColors.error : AppColors.gigAppProfileText,
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
           size: 16,
-          color: isDestructive ? AppColors.error : AppColors.lookGigDescriptionText,
+          color: isDestructive ? AppColors.error : AppColors.gigAppDescriptionText,
         ),
         onTap: onTap,
       ),
@@ -617,7 +617,7 @@ class _CompanyLogoEditScreenState extends State<CompanyLogoEditScreen> {
       child: ElevatedButton(
         onPressed: _isUploading ? null : _uploadLogo,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.lookGigPurple,
+          backgroundColor: AppColors.gigAppPurple,
           foregroundColor: AppColors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,

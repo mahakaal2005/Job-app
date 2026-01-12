@@ -238,7 +238,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                               country.dialCode,
                               style: TextStyle(
                                 color: isSelected
-                                    ? AppColors.lookGigPurple
+                                    ? AppColors.gigAppPurple
                                     : Colors.grey[600],
                                 fontWeight: isSelected
                                     ? FontWeight.bold
@@ -248,7 +248,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                             ),
                             selected: isSelected,
                             selectedTileColor:
-                                AppColors.lookGigPurple.withOpacity(0.1),
+                                AppColors.gigAppPurple.withOpacity(0.1),
                             onTap: () {
                               setState(() {
                                 _selectedCountryCode = country.dialCode;

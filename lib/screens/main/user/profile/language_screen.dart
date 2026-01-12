@@ -182,7 +182,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFFF9F9F9),
         body: const Center(
-          child: CircularProgressIndicator(color: AppColors.lookGigPurple),
+          child: CircularProgressIndicator(color: AppColors.gigAppPurple),
         ),
       );
     }

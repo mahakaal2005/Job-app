@@ -18,7 +18,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          color: AppColors.lookGigLightGray,
+          color: AppColors.gigAppLightGray,
         ),
         child: SafeArea(
           child: Column(
@@ -29,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: Align(
                           alignment: Alignment.topRight,
                           child: Text(
-                            'LookGig',
+                            'GigApp',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -97,7 +97,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
-                                  color: AppColors.lookGigDescriptionText,
+                                  color: AppColors.gigAppDescriptionText,
                                   fontFamily: 'DM Sans',
                                   height: 1.3,
                                 ),

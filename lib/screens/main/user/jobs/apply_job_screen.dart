@@ -320,7 +320,7 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: SafeArea(
         child: Column(
           children: [
@@ -939,7 +939,7 @@ class _ApplyJobScreenState extends State<ApplyJobScreen> {
           width: 317,
           height: 50,
           decoration: BoxDecoration(
-            color: _isSubmitting ? Colors.grey : AppColors.lookGigPurple,
+            color: _isSubmitting ? Colors.grey : AppColors.gigAppPurple,
             borderRadius: BorderRadius.circular(6),
             boxShadow: [
               BoxShadow(

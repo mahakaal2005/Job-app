@@ -228,7 +228,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       body: Column(
         children: [
           _buildCustomHeader(context),
@@ -328,7 +328,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     ElevatedButton(
                       onPressed: _isLoading ? null : _createJob,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lookGigPurple,
+                        backgroundColor: AppColors.gigAppPurple,
                         foregroundColor: AppColors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -377,8 +377,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           ),
           gradient: LinearGradient(
             colors: [
-              AppColors.lookGigProfileGradientStart,
-              AppColors.lookGigProfileGradientEnd,
+              AppColors.gigAppProfileGradientStart,
+              AppColors.gigAppProfileGradientEnd,
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,

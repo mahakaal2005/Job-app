@@ -222,7 +222,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                   width: 30,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.lookGigProfileText,
+                    color: AppColors.gigAppProfileText,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -239,7 +239,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
                 height: 1.302,
-                color: AppColors.lookGigProfileText,
+                color: AppColors.gigAppProfileText,
                 decoration: TextDecoration.none,
               ),
             ),
@@ -277,7 +277,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                       width: 213,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                         borderRadius: BorderRadius.circular(6),
                         boxShadow: [
                           BoxShadow(
@@ -365,9 +365,9 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: AppColors.lookGigLightGray,
+        backgroundColor: AppColors.gigAppLightGray,
         body: const Center(
-          child: CircularProgressIndicator(color: AppColors.lookGigPurple),
+          child: CircularProgressIndicator(color: AppColors.gigAppPurple),
         ),
       );
     }
@@ -382,7 +382,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.lookGigLightGray,
+        backgroundColor: AppColors.gigAppLightGray,
         resizeToAvoidBottomInset: false,
         body: SafeArea(
           child: SingleChildScrollView(
@@ -410,11 +410,11 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                                 'assets/images/about_me_back_icon.png',
                                 width: 24,
                                 height: 24,
-                                color: AppColors.lookGigProfileText,
+                                color: AppColors.gigAppProfileText,
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Icon(
                                     Icons.arrow_back,
-                                    color: AppColors.lookGigProfileText,
+                                    color: AppColors.gigAppProfileText,
                                     size: 24,
                                   );
                                 },
@@ -449,7 +449,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                                         fontWeight: FontWeight.w600,
                                         fontSize: 16,
                                         height: 1.362,
-                                        color: AppColors.lookGigProfileText,
+                                        color: AppColors.gigAppProfileText,
                                       ),
                                     ),
 
@@ -520,7 +520,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                                                   fontSize: 14,
                                                   color:
                                                       AppColors
-                                                          .lookGigProfileText,
+                                                          .gigAppProfileText,
                                                 ),
                                               ),
                                             ),
@@ -541,7 +541,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                                   width: MediaQuery.of(context).size.width.clamp(213, 335),
                                   height: 50,
                                   decoration: BoxDecoration(
-                                    color: AppColors.lookGigPurple,
+                                    color: AppColors.gigAppPurple,
                                     borderRadius: BorderRadius.circular(6),
                                     boxShadow: [
                                       BoxShadow(
@@ -622,7 +622,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                     width: 30,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.lookGigProfileText,
+                      color: AppColors.gigAppProfileText,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -640,7 +640,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
                 height: 1.302,
-                color: AppColors.lookGigProfileText,
+                color: AppColors.gigAppProfileText,
                 decoration: TextDecoration.none,
               ),
             ),
@@ -681,7 +681,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                       width: 213,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: AppColors.lookGigPurple,
+                        color: AppColors.gigAppPurple,
                         borderRadius: BorderRadius.circular(6),
                         boxShadow: [
                           BoxShadow(

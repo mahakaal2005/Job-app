@@ -167,7 +167,7 @@ class ProfileGatingService {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: AppColors.lookGigPurple,
+              color: AppColors.gigAppPurple,
               fontFamily: 'DM Sans',
             ),
           ),
@@ -179,7 +179,7 @@ class ProfileGatingService {
                 'You need to complete your profile to $actionName.',
                 style: const TextStyle(
                   fontSize: 14,
-                  color: AppColors.lookGigDescriptionText,
+                  color: AppColors.gigAppDescriptionText,
                   fontFamily: 'DM Sans',
                 ),
               ),
@@ -189,7 +189,7 @@ class ProfileGatingService {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.lookGigPurple,
+                  color: AppColors.gigAppPurple,
                   fontFamily: 'DM Sans',
                 ),
               ),
@@ -199,9 +199,9 @@ class ProfileGatingService {
                 borderRadius: BorderRadius.circular(8),
                 child: LinearProgressIndicator(
                   value: completionPercentage / 100,
-                  backgroundColor: AppColors.lookGigLightPurple.withOpacity(0.3),
+                  backgroundColor: AppColors.gigAppLightPurple.withOpacity(0.3),
                   valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppColors.lookGigPurple,
+                    AppColors.gigAppPurple,
                   ),
                   minHeight: 8,
                 ),
@@ -218,7 +218,7 @@ class ProfileGatingService {
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(false),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lookGigLightPurple,
+                        backgroundColor: AppColors.gigAppLightPurple,
                         foregroundColor: AppColors.white,
                         elevation: 0,
                         padding: EdgeInsets.zero,
@@ -248,7 +248,7 @@ class ProfileGatingService {
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lookGigPurple,
+                        backgroundColor: AppColors.gigAppPurple,
                         foregroundColor: AppColors.white,
                         elevation: 0,
                         padding: EdgeInsets.zero,

@@ -326,8 +326,8 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.lookGigPurple,
-                  AppColors.lookGigPurple.withOpacity(0.8),
+                  AppColors.gigAppPurple,
+                  AppColors.gigAppPurple.withOpacity(0.8),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -356,7 +356,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                                     style: const TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.lookGigPurple,
+                                      color: AppColors.gigAppPurple,
                                     ),
                                   ),
                                 ),
@@ -368,7 +368,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.lookGigPurple,
+                                  color: AppColors.gigAppPurple,
                                 ),
                               ),
                     ),
@@ -393,7 +393,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                 ListTile(
                   leading: const Icon(
                     Icons.person_outline,
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                   ),
                   title: const Text('My Profile'),
                   onTap: () {
@@ -404,7 +404,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                 ListTile(
                   leading: const Icon(
                     Icons.bookmark_outline,
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                   ),
                   title: const Text('Saved Jobs'),
                   onTap: () {
@@ -415,7 +415,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
                 ListTile(
                   leading: const Icon(
                     Icons.help_outline,
-                    color: AppColors.lookGigPurple,
+                    color: AppColors.gigAppPurple,
                   ),
                   title: const Text('Help & Support'),
                   onTap: () {
@@ -477,7 +477,7 @@ class _UserHomeScreenNewState extends State<UserHomeScreenNew>
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.lookGigLightGray,
+      backgroundColor: AppColors.gigAppLightGray,
       drawer: _buildDrawer(),
       body: _buildBody(),
       bottomNavigationBar: CustomBottomNavBar(

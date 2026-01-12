@@ -1,4 +1,4 @@
-# LookGig - Job Search & Recruitment Platform
+# GigApp - Job Search & Recruitment Platform
 
 A modern Flutter-based mobile application connecting job seekers with employers. Built with Firebase backend for real-time data synchronization and secure authentication.
 
@@ -42,8 +42,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/look-gig.git
-cd look-gig
+git clone https://github.com/YOUR_USERNAME/gig-app.git
+cd gig-app
 ```
 
 ### 2. Install Dependencies
@@ -88,7 +88,7 @@ cp .env.example .env
 Edit `.env` and add your credentials:
 
 ```env
-APP_NAME=LookGig
+APP_NAME=GigApp
 APP_VERSION=1.0.0
 
 # Cloudinary Configuration
@@ -195,7 +195,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email support@lookgig.com or open an issue in the repository.
+For support, email support@gigapp.com or open an issue in the repository.
 
 ## 🔄 Changelog
 
